@@ -86,3 +86,4 @@ Linguagem baseada em XML usada para descrever formalmente os elementos, atributo
 
 ### Sefin Nacional / ADN (Ambiente de Dados Nacional)
 Infraestrutura tecnológica e conjunto de servidores mantidos pelo governo federal (Receita Federal do Brasil e Serpro) que centralizam a recepção, processamento, emissão e distribuição das Notas Fiscais de Serviços Eletrônicas (NFS-e) de padrão nacional.
+

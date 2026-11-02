@@ -1,15 +1,15 @@
 # Backlog do Projeto — NFS-e Nacional API
 
-> **Docs-as-Code — Planejamento Ágil, Especificações & Roadmap**  
-> Repositório: [`heviane/nfse-nacional-api`](https://github.com/heviane/nfse-nacional-api)  
-> Quadro de Acompanhamento: [AI Engineering Hub — Portfolio & Roadmap (Project 14)](https://github.com/users/heviane/projects/14)  
+> **Docs-as-Code — Planejamento Ágil, Especificações & Roadmap**
+> Repositório: [`heviane/nfse-nacional-api`](https://github.com/heviane/nfse-nacional-api)
+> Quadro de Acompanhamento: [AI Engineering Hub — Portfolio & Roadmap (Project 14)](https://github.com/users/heviane/projects/14)
 > Versão Atual: `v0.1.0-alpha` (Incepção & Fase Zero Concluída)
 
 ---
 
 ## 📌 Sumário Executivo
 
-Este backlog organiza a evolução do projeto **NFS-e Nacional API**, concebido como middleware desacoplado entre ERPs e o **Ambiente Nacional da NFS-e (Sefin Nacional / ADN)**.  
+Este backlog organiza a evolução do projeto **NFS-e Nacional API**, concebido como middleware desacoplado entre ERPs e o **Ambiente Nacional da NFS-e (Sefin Nacional / ADN)**.
 O desenvolvimento é orientado a especificações (**Spec-Driven Development — SDD**), testes antecipados (**TDD**), decisões arquiteturais documentadas (**ADRs**) e fatias verticais incrementais.
 
 ---
@@ -25,34 +25,34 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ### Épico 0: Governança & Higiene Inicial do Repositório (Fase Zero) — 🟢 100% Concluído
 
-| Status |    ID    | Prioridade | Item                                             | Descrição / Critérios de Aceite                                                                                                      |
-| :----: | :------: | :--------: | :----------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-|   🟢   | `SET-01` |    `P0`    | **Segurança no `.gitignore` & Configuração**     | Blindar o `.gitignore` contra certificados A1 (`*.pfx`, `*.p12`, `*.pem`, `*.jks`) e padronizar o `.editorconfig` para Java/XML/XSD. |
-|   🟢   | `SET-02` |    `P0`    | **README Oficial do Projeto**                    | Criar [`README.md`](../README.md) com identidade da API, badges, diagrama de arquitetura Mermaid e pré-requisitos técnicos.          |
-|   🟢   | `SET-03` |    `P1`    | **Ajuste do `AGENTS.md` Local**                  | Adequar o contrato de IA para a stack Java, padrão de testes e regras estritas de segurança fiscal.                                 |
-|   🟢   | `SET-04` |    `P1`    | **Higiene do Editor & Diretrizes do Copilot**   | Padronizar `.vscode/extensions.json` e `.vscode/settings.json` para Java/XML e alinhar `.github/copilot-instructions.md`.           |
+| Status |    ID    | Prioridade | Item                                          | Descrição / Critérios de Aceite                                                                                                      |
+| :----: | :------: | :--------: | :-------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+|   🟢   | `SET-01` |    `P0`    | **Segurança no `.gitignore` & Configuração**  | Blindar o `.gitignore` contra certificados A1 (`*.pfx`, `*.p12`, `*.pem`, `*.jks`) e padronizar o `.editorconfig` para Java/XML/XSD. |
+|   🟢   | `SET-02` |    `P0`    | **README Oficial do Projeto**                 | Criar [`README.md`](../README.md) com identidade da API, badges, diagrama de arquitetura Mermaid e pré-requisitos técnicos.          |
+|   🟢   | `SET-03` |    `P1`    | **Ajuste do `AGENTS.md` Local**               | Adequar o contrato de IA para a stack Java, padrão de testes e regras estritas de segurança fiscal.                                  |
+|   🟢   | `SET-04` |    `P1`    | **Higiene do Editor & Diretrizes do Copilot** | Padronizar `.vscode/extensions.json` e `.vscode/settings.json` para Java/XML e alinhar `.github/copilot-instructions.md`.            |
 
 ---
 
 ### Épico 1: Arquitetura Técnica & Decisões Fundamentais (ADRs)
 
-| Status |    ID    | Prioridade | Item                                                                 | Descrição / Critérios de Aceite                                                                                                    |
-| :----: | :------: | :--------: | :------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
-|   🟢   | `ARQ-01` |    `P0`    | **ADR-001: Escolha da Linguagem & Plataforma de Execução (Java 17+)** | Documentar a escolha técnica do Java 17 com base no ambiente do cliente (Tomcat BrasilCloud) e maturidade fiscal/criptográfica.  |
-|   🟢   | `ARQ-02` |    `P0`    | **ADR-002: Escolha do Build Tool (Maven vs Gradle)**                 | Formalizar a escolha do gerenciador de build (Maven) considerando compatibilidade com ecossistema fiscal e plugins XSD.            |
-|   ⚪   | `ARQ-03` |    `P0`    | **ADR-003: Framework Web & Runtime (Spring Boot / WAR)**             | Definir a stack e modelo de empacotamento (WAR para servlet container Tomcat na BrasilCloud).                                      |
-|   ⚪   | `ARQ-04` |    `P1`    | **ADR-004: Padrão Arquitetural (Hexagonal / Ports & Adapters)**      | Estabelecer o isolamento do Core Fiscal (regras de DPS, validação e assinatura) desacoplado do framework web.                      |
+| Status |    ID    | Prioridade | Item                                                                  | Descrição / Critérios de Aceite                                                                                                 |
+| :----: | :------: | :--------: | :-------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
+|   🟢   | `ARQ-01` |    `P0`    | **ADR-001: Escolha da Linguagem & Plataforma de Execução (Java 17+)** | Documentar a escolha técnica do Java 17 com base no ambiente do cliente (Tomcat BrasilCloud) e maturidade fiscal/criptográfica. |
+|   🟢   | `ARQ-02` |    `P0`    | **ADR-002: Escolha do Build Tool (Maven vs Gradle)**                  | Formalizar a escolha do gerenciador de build (Maven) considerando compatibilidade com ecossistema fiscal e plugins XSD.         |
+|   🟢   | `ARQ-03` |    `P0`    | **ADR-003: Framework Web & Runtime (Spring Boot / WAR)**              | Definir a stack e modelo de empacotamento (WAR para servlet container Tomcat na BrasilCloud).                                   |
+|   ⚪   | `ARQ-04` |    `P1`    | **ADR-004: Padrão Arquitetural (Hexagonal / Ports & Adapters)**       | Estabelecer o isolamento do Core Fiscal (regras de DPS, validação e assinatura) desacoplado do framework web.                   |
 
 ---
 
 ### Épico 2: Setup do Ambiente Java & Walking Skeleton
 
-| Status |    ID    | Prioridade | Item                                                         | Descrição / Critérios de Aceite                                                                                                    |
-| :----: | :------: | :--------: | :----------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
-|   ⚪   | `JAV-01` |    `P0`    | **Inicialização do Projeto (Build Tool & Wrapper `mvnw`)**   | Gerar estrutura inicial orientada pelas ADRs com `pom.xml`, wrapper executável e compilação limpa via terminal.                    |
-|   ⚪   | `JAV-02` |    `P0`    | **Configuração de Dependências & JVM (Java 17)**             | Configurar plugins de compilação, encoding UTF-8, suíte de testes (JUnit 5, AssertJ) e dependências básicas de runtime.            |
-|   ⚪   | `JAV-03` |    `P1`    | **Walking Skeleton & Health Check Endpoint (`GET /health`)** | Implementar endpoint mínimo funcional para verificação de subida da aplicação e testes automatizados de fumaça (*smoke test*).     |
-|   ⚪   | `JAV-04` |    `P2`    | **Perfis de Execução no VS Code (`launch.json` / `tasks`)**  | Configurar perfis de depuração com F5 para Java e tarefas integradas de compilação/execução no editor.                             |
+| Status |    ID    | Prioridade | Item                                                         | Descrição / Critérios de Aceite                                                                                                |
+| :----: | :------: | :--------: | :----------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+|   ⚪   | `JAV-01` |    `P0`    | **Inicialização do Projeto (Build Tool & Wrapper `mvnw`)**   | Gerar estrutura inicial orientada pelas ADRs com `pom.xml`, wrapper executável e compilação limpa via terminal.                |
+|   ⚪   | `JAV-02` |    `P0`    | **Configuração de Dependências & JVM (Java 17)**             | Configurar plugins de compilação, encoding UTF-8, suíte de testes (JUnit 5, AssertJ) e dependências básicas de runtime.        |
+|   ⚪   | `JAV-03` |    `P1`    | **Walking Skeleton & Health Check Endpoint (`GET /health`)** | Implementar endpoint mínimo funcional para verificação de subida da aplicação e testes automatizados de fumaça (_smoke test_). |
+|   ⚪   | `JAV-04` |    `P2`    | **Perfis de Execução no VS Code (`launch.json` / `tasks`)**  | Configurar perfis de depuração com F5 para Java e tarefas integradas de compilação/execução no editor.                         |
 
 ---
 
@@ -99,16 +99,15 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 Propostas técnicas para avaliação nas próximas iterações:
 
-1. **Dashboard Administrativo / Web UI:**  
+1. **Dashboard Administrativo / Web UI:**
    Painel visual leve (React/Vite ou UI embutida) para que o cliente ou sua equipe contábil visualize notas transmitidas, logs de rejeição da Receita e status dos certificados A1.
-2. **Suporte Multi-Tenant / Multi-Certificados:**  
+2. **Suporte Multi-Tenant / Multi-Certificados:**
    Capacidade de a mesma API gerenciar certificados A1 de diferentes filiais/empresas roteados por CNPJ.
-3. **Melhorias no Repositório Template (`project-starter-kit`):**  
+3. **Melhorias no Repositório Template (`project-starter-kit`):**
    - Revisar o template oficial para mantê-lo agnóstico de stack e enriquecê-lo com o template padrão de `BACKLOG.md`.
    - O ideal seria que ao criar um repositório a partir deste template, o readme fosse criado customizado com base nos metadados informados para a criação, e não simplesmente copiar o README do template, pois isso é inútil.
    - Existem arquivos no repositório template que são específicos dele, e não devemos importar para o novo repositório. O que podemos fazer?
 
-## 📝 Notas & Decisões Registradas
+## 📝 Notas & Registro de Pensamentos
 
-- **Decisão de Sequenciamento:** A tarefa `SET-04` original (Walking Skeleton Java) foi movida para um épico posterior às decisões de arquitetura, dando origem ao **Épico 2: Setup do Ambiente Java & Walking Skeleton** (`JAV-01` a `JAV-04`).
-- **Definição da Fase Zero:** O **Épico 0** foi consolidado estritamente em torno da governança de repositório padrão e higiene do ambiente de trabalho (onde o único pressuposto técnico prévio era o uso de Java), encontrando-se **100% concluído**.
+- Analisar a necessidade de criar uma documentação especifica para explicar o contexto, o problema e a solução pensada para o caso do cliente 001.
