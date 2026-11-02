@@ -149,6 +149,10 @@ https://<url-do-tunnel>/prefeitura/notafiscal/nfse.asmx
 
 Este cenário valida o comportamento da API para **novos clientes ou sistemas modernos** que se integram via REST/JSON com DTOs limpos, sem precisar conhecer SOAP ou detalhes de criptografia XML.
 
+> [!TIP]
+> Um arquivo pronto com este payload está disponível em:  
+> [`src/test/resources/samples/payload-emissao-rest.json`](../../src/test/resources/samples/payload-emissao-rest.json)
+
 ### Opção 1.1: Via Swagger UI (Interativo no Navegador — Sem ferramentas externas)
 1. Com a API rodando, acesse no navegador:  
    `http://localhost:8080/swagger-ui/index.html`
@@ -191,6 +195,10 @@ curl -X POST http://localhost:8080/api/v1/dps/emitir \
 ## 8. 🔄 Cenário 2: Teste via ERP Legado (Cliente 001 GeneXus 18 / SOAP ACL)
 
 Este cenário valida a **Camada Anticorrupção (ACL)**: o ERP GeneXus 18 continua disparando as requisições SOAP no padrão municipal antigo da SIL Tecnologia, e a nossa API atua como um emulador transparente, convertendo tudo para o padrão nacional do Sefin.
+
+> [!TIP]
+> Uma amostra do envelope SOAP real enviado pelo GeneXus 18 está salva em:  
+> [`src/test/resources/samples/envelope-soap-genexus.xml`](../../src/test/resources/samples/envelope-soap-genexus.xml)
 
 ### Passo 2.1: Teste de Reconhecimento do WSDL
 Antes de emitir, garanta que o GeneXus ou o navegador consiga ler o WSDL emulado:
