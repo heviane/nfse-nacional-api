@@ -110,4 +110,7 @@ Propostas técnicas para avaliação nas próximas iterações:
 
 ## 📝 Notas & Registro de Pensamentos
 
+Notas para não esquecer, para análise futura
+
 - Analisar a necessidade de criar uma documentação especifica para explicar o contexto, o problema e a solução pensada para o caso do cliente 001.
+- incluir no glossário arquitetura exagonal.
