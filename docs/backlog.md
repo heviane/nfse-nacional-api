@@ -111,15 +111,16 @@ Propostas técnicas para avaliação nas próximas iterações:
    Criar workflow no GitHub Actions para automatizar a compilação do `.war` e deploy contínuo via SSH/SFTP no servidor do cliente, reduzindo o trabalho manual após a fase de estabilização.
 5. **Estudo de Modelo de Negócio para Futuros Clientes:**
    Avaliar a viabilidade de transformar a API em um SaaS centralizado (hospedagem própria com cobrança por volume de notas via REST) versus distribuição self-hosted (instâncias dedicadas por cliente).
+6. **Assinatura Criptográfica de Commits no GitHub (Chave SSH/GPG):**
+   Configurar chave de assinatura (SSH Signing Key ou GPG) no Git local e vincular à conta do GitHub para obter o selo "Verified" em todos os commits, garantindo rastreabilidade e integridade criptográfica.
 
 ## 📝 Notas & Registro de Pensamentos
 
-Notas para avaliação:
+Notas analisadas e resolvidas:
 
-- Verificar o status de **"Unverified"** no histórico de commit do github:
-  - Quais as implicações?
-  - Devemos fazer algo?
-- Analise da documentação **"./docs/nfse-nacional/"**:
-  - Os arquivos "migração" e "migração-2" faz sentido após a criação de "./docs/clients/". Devemos analisar eles e unir o que for relevante com o "./docs/clients/".
-  - O conteúdo do arquivo "sefin_vs_adn.md" deveria estar no glossário? Deveriamos criar 2 glossários, um de desenvolvimento e um de negócio sobre a NFS-e?
-  - O arquivo "./docs/nfse-nacional/docs.md" deveria ser o README do diretório, organizando a informação e linkando os outros arquivos.
+- ✅ **Status "Unverified" no GitHub**: Analisado. Não bloqueia compilação, testes, deploys ou push, mas foi adicionada a melhoria no Banco de Ideias (Item 6) para configuração de chave SSH/GPG.
+- ✅ **Reorganização de `./docs/nfse-nacional/`**: Concluída.
+  - Conteúdo municipal e migração SIL consolidados em [`docs/clients/cliente-001.md`](clients/cliente-001.md).
+  - Conceitos de Sefin vs ADN consolidados em [`docs/glossario-nfse.md`](glossario-nfse.md).
+  - Glossário unificado dividido em dois domínios: [`docs/glossario-engenharia.md`](glossario-engenharia.md) e [`docs/glossario-nfse.md`](glossario-nfse.md).
+  - Arquivo `docs.md` transformado em índice oficial estruturado em [`docs/nfse-nacional/README.md`](nfse-nacional/README.md).

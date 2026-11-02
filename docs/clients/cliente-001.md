@@ -3,7 +3,8 @@
 > **Status:** `Ativo / Em Implantação Inicial`  
 > **Modelo Comercial:** Desenvolvimento sob demanda (*Work-for-hire*)  
 > **Data de Documentação:** 2026-11-02  
-> **Responsável Técnico:** @heviane
+> **Responsável Técnico:** @heviane  
+> **Origem / Município:** Vila Velha - ES (Transição SIL Tecnologia &rarr; Sefin Nacional)
 
 ---
 
@@ -17,7 +18,30 @@ O **Cliente 001** contratou o desenvolvimento do middleware de integração com 
 
 ---
 
-## 2. 🏛️ Topologia de Hospedagem & Infraestrutura
+## 2. 🏛️ Contexto Municipal & Origem da Migração (Vila Velha - ES / SIL Tecnologia)
+
+A necessidade de migração decorre da **Resolução CGSN nº 191/2026**, formalizada pela Secretaria Municipal de Finanças (SEMFI) da **Prefeitura Municipal de Vila Velha (PMVV)**:
+
+> *"A Prefeitura de Vila Velha, por meio da Secretaria Municipal de Finanças (SEMFI), informa que, a partir de 1º de novembro de 2026, as microempresas (ME) e empresas de pequeno porte (EPP) optantes pelo Simples Nacional deverão emitir suas Notas Fiscais de Serviços eletrônicas (NFS-e) pelo Emissor Nacional, conforme a Resolução CGSN nº 191/2026."*
+
+### 🔄 Transição: Provedor Municipal SIL vs. Emissor Nacional Sefin/ADN
+
+| Aspecto | Sistema Anterior (SIL Tecnologia / Vila Velha) | Novo Padrão Nacional (Sefin / ADN) | Impacto no Middleware |
+| :--- | :--- | :--- | :--- |
+| **Protocolo** | SOAP / XML (`/prefeitura/notafiscal/nfse.asmx`) | REST / JSON com mTLS | Camada Anticorrupção (ACL) recebe SOAP e envia REST. |
+| **Envelope de Envio** | Montava casca completa `<NFSe><infNFSe>...<DPS>` | Envio **estritamente da `<DPS>`** assinada | O Core Fiscal assina apenas a `<DPS>`, sem gerar `<NFSe>`. |
+| **Id da DPS** | `infDPS Id="DPS..."` (46 posições) | Mantido: `infDPS Id="DPS..."` (46 posições) | Compatibilidade direta na identificação da declaração. |
+| **Chave da Nota** | Formato local de 53 posições iniciado por `NFS...` | **Chave de Acesso Nacional de 50 dígitos numéricos** | Retorno nacional convertido para o formato esperado pelo ERP. |
+| **Cancelamento** | Referência interna municipal | Evento `101101` com `<chNFSe>` de 50 dígitos | Eventos exigem a chave nacional retornada na emissão. |
+
+### 📋 Parametrizações Específicas do Emitente (Simples Nacional)
+* **Regime Tributário:** Preenchimento obrigatório de `opSimpNac = 1` (Optante Simples Nacional) e `regApTribSN = 1` (Regime de apuração) no nó `<prest><regTrib>`.
+* **Tributação Federal:** Informar `tpRetPisCofins = 2` (sem retenção de PIS/COFINS na fonte).
+* **Reforma Tributária (IBS/CBS):** As regras relativas ao IBS e CBS para o Simples Nacional passam a vigorar a partir de **2027**. Para o envio em 2026, a aplicação valida esquemas atualizados sem destacar alíquotas cheias desses novos tributos.
+
+---
+
+## 3. ☁️ Topologia de Hospedagem & Infraestrutura
 
 * **Provedor de Nuvem:** **BrasilCloud** (em conta gerenciada e mantida pelo próprio cliente).
 * **Servidor de Aplicação:** **Apache Tomcat 10+** (suporte nativo à especificação Jakarta EE).
@@ -27,7 +51,7 @@ O **Cliente 001** contratou o desenvolvimento do middleware de integração com 
 
 ---
 
-## 3. 🔄 Fluxo de Integração & Camada Anticorrupção (ACL)
+## 4. 🔄 Fluxo de Integração & Camada Anticorrupção (ACL)
 
 A comunicação obedece à [ADR-004](../adrs/0004-padrao-arquitetural-hexagonal-acl.md) (Arquitetura Hexagonal com Camada Anticorrupção):
 
@@ -52,7 +76,7 @@ sequenceDiagram
 
 ---
 
-## 4. ⚙️ Variáveis de Ambiente no Servidor (`setenv.sh`)
+## 5. ⚙️ Variáveis de Ambiente no Servidor (`setenv.sh`)
 
 Para garantir que nenhuma credencial ou caminho absoluto fique chumbado no código-fonte, a configuração no Tomcat do cliente é realizada via variáveis de ambiente no arquivo de inicialização do Tomcat (`bin/setenv.sh`):
 
@@ -68,7 +92,7 @@ Para garantir que nenhuma credencial ou caminho absoluto fique chumbado no códi
 
 ---
 
-## 5. 🚀 Procedimento Operacional de Deploy (Manual — Fase 1)
+## 6. 🚀 Procedimento Operacional de Deploy (Manual — Fase 1)
 
 Atendendo à urgência imediata do Cliente 001 e familiaridade operacional:
 
@@ -83,15 +107,14 @@ Atendendo à urgência imediata do Cliente 001 e familiaridade operacional:
    - Garantir que o Tomcat descompacte o novo WAR.
 4. **Verificação de Saúde (*Smoke Test*):**
    - Acessar a rota de integridade: `http(s)://<dominio-brasilcloud>/nfse-nacional-api/health`
-   - Confirmar se o status retornado é `UP` e o certificado A1 foi validado em memória com sucesso.
+   - Confirmar se o status retornado é `UP`.
 5. **Teste de Emissão de DPS:**
    - Disparar uma emissão de teste no ambiente de homologação a partir do ERP para validar a ponta a ponta.
 
 ---
 
-## 6. 🔮 Roadmap para o Cliente 001
+## 7. 🔮 Próximos Passos para o Cliente 001
 
 - [ ] Obter e armazenar amostra do XML SOAP real enviado pelo ERP para desenhar o mapeamento exato de campos (*De/Para*).
 - [ ] Implementar endpoint de compatibilidade SOAP em `adapters.in.legacy`.
 - [ ] Futuro: Automatizar este processo de deploy via **GitHub Actions (CI/CD)** via SSH/SFTP.
-

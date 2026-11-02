@@ -104,3 +104,4 @@ Inspecionamos a implementação pré-existente em `E:\Projects\GitHub\heviane\as
 - [ ] **Teste 2 (Validação XSD Inválida):** Omitir campos obrigatórios (ex: `<cTribNac>`, `<CNPJ>`) e garantir que a exceção detalhe a regra violada.
 - [ ] **Teste 3 (Assinatura RSA-SHA256):** Assinar a DPS com certificado A1 de teste e validar matematicamente a assinatura contra a chave pública contida no `KeyInfo`.
 - [ ] **Teste 4 (Serialização GZIP Base64):** Testar descompactação e decodificação do Base64 garantindo que o XML retornado é idêntico ao original assinado em UTF-8.
+
