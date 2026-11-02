@@ -65,6 +65,9 @@ Uma convenção padronizada para escrever mensagens de commit no Git com prefixo
 ### Arquitetura Hexagonal (Ports & Adapters)
 Padrão arquitetural que visa isolar a lógica de negócio central (Core de Domínio) de tecnologias externas (frameworks web, bancos de dados, APIs de terceiros). A comunicação entre o Core e o mundo exterior é intermediada por contratos (*Portas*) e implementações técnicas (*Adaptadores*).
 
+### ACL (Anti-Corruption Layer / Camada Anticorrupção)
+Padrão de integração que atua como um tradutor intermediário entre dois sistemas ou subsistemas com modelos de dados diferentes. Ele converte requisições legadas para o formato limpo do novo domínio (e vice-versa), garantindo que particularidades ou débitos técnicos de clientes legados não contaminem o Core da aplicação.
+
 ---
 
 ## 4. Domínio Fiscal, Criptografia & Segurança
