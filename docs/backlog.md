@@ -58,11 +58,11 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ### Épico 3: Engenharia de Requisitos & Especificação Técnica (SDD) — 🟢 100% Concluído
 
-| Status |    ID     | Prioridade | Item                                                   | Descrição / Critérios de Aceite                                                                                             |
-| :----: | :-------: | :--------: | :----------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
-|   🟢   | `SPEC-01` |    `P0`    | **SPEC-001: Validação de DPS e Assinatura Digital**    | Elaborar a especificação da Fatia 1 (regras de validação de schemas XSD da DPS e assinatura XML A1).                        |
-|   🟢   | `SPEC-02` |    `P1`    | **Curadoria de Schemas e Exemplos Oficiais**           | Mapear e armazenar os schemas XSD oficiais do Sefin Nacional (v1.00 e v1.01) e amostras reais de DPS em `resources/schemas/`.|
-|   🟢   | `SPEC-03` |    `P1`    | **Análise de Compatibilidade do `assinador-xml-java`** | Avaliar os métodos da biblioteca atual de assinatura em relação aos requisitos da NFS-e Nacional (RSA-SHA256, DigestValue). |
+| Status |    ID     | Prioridade | Item                                                   | Descrição / Critérios de Aceite                                                                                               |
+| :----: | :-------: | :--------: | :----------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+|   🟢   | `SPEC-01` |    `P0`    | **SPEC-001: Validação de DPS e Assinatura Digital**    | Elaborar a especificação da Fatia 1 (regras de validação de schemas XSD da DPS e assinatura XML A1).                          |
+|   🟢   | `SPEC-02` |    `P1`    | **Curadoria de Schemas e Exemplos Oficiais**           | Mapear e armazenar os schemas XSD oficiais do Sefin Nacional (v1.00 e v1.01) e amostras reais de DPS em `resources/schemas/`. |
+|   🟢   | `SPEC-03` |    `P1`    | **Análise de Compatibilidade do `assinador-xml-java`** | Avaliar os métodos da biblioteca atual de assinatura em relação aos requisitos da NFS-e Nacional (RSA-SHA256, DigestValue).   |
 
 ---
 
@@ -87,12 +87,20 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ### Épico 6: Exposição da API REST, Camada Anticorrupção & Deploy BrasilCloud — 🟢 100% Concluído
 
-| Status |    ID    | Prioridade | Item                                                | Descrição / Critérios de Aceite                                                                          |
-| :----: | :------: | :--------: | :-------------------------------------------------- | :------------------------------------------------------------------------------------------------------- |
+| Status |    ID    | Prioridade | Item                                                | Descrição / Critérios de Aceite                                                                                                 |
+| :----: | :------: | :--------: | :-------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
 |   🟢   | `API-01` |    `P1`    | **Endpoints REST para o ERP**                       | Criar rotas padronizadas (`POST /api/v1/dps/emitir`, `GET /api/v1/nfse/{chave}`, `POST /api/v1/nfse/cancelar`) com DTOs limpos. |
-|   🟢   | `API-02` |    `P2`    | **Documentação Interativa (Swagger/OpenAPI)**       | Configurar interface Swagger UI e OpenAPI 3 para testes e integração rápida de novos clientes.            |
-|   🟢   | `API-03` |    `P1`    | **Build e Empacotamento para Tomcat (BrasilCloud)** | Configurar geração de artefato WAR otimizado para deploy no Apache Tomcat 10+ na BrasilCloud.           |
-|   🟢   | `API-04` |    `P0`    | **Camada Anticorrupção (ACL GeneXus 18)**           | Emulação do WebService SOAP SIL Tecnologia (`/prefeitura/notafiscal/nfse.asmx`) para zero alteração no ERP do Cliente 001. |
+|   🟢   | `API-02` |    `P2`    | **Documentação Interativa (Swagger/OpenAPI)**       | Configurar interface Swagger UI e OpenAPI 3 para testes e integração rápida de novos clientes.                                  |
+|   🟢   | `API-03` |    `P1`    | **Build e Empacotamento para Tomcat (BrasilCloud)** | Configurar geração de artefato WAR otimizado para deploy no Apache Tomcat 10+ na BrasilCloud.                                   |
+|   🟢   | `API-04` |    `P0`    | **Camada Anticorrupção (ACL GeneXus 18)**           | Emulação do WebService SOAP SIL Tecnologia (`/prefeitura/notafiscal/nfse.asmx`) para zero alteração no ERP do Cliente 001.      |
+
+---
+
+### Épico 7: Pós-MVP — Infraestrutura de Homologação Dedicada & Transição para Produção (⚪ A Fazer pós-testes)
+
+| Status |    ID    | Prioridade | Item                                                                                | Descrição / Critérios de Aceite                                                                                                                    |
+| :----: | :------: | :--------: | :---------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+|   ⚪   | `OPS-01` |    `P1`    | **Ambiente de Homologação Dedicado em VPS Linux (Tomcat 10 - Espelho BrasilCloud)** | Provisionar e configurar uma VPS Linux (Ubuntu + Tomcat 10 + JDK 17) com `setenv.sh` como réplica 1:1 da BrasilCloud para homologação antes do deploy definitivo no cliente. |
 
 ---
 
@@ -114,14 +122,9 @@ Propostas técnicas para avaliação nas próximas iterações:
    Avaliar a viabilidade de transformar a API em um SaaS centralizado (hospedagem própria com cobrança por volume de notas via REST) versus distribuição self-hosted (instâncias dedicadas por cliente).
 6. **Assinatura Criptográfica de Commits no GitHub (Chave SSH/GPG):**
    Configurar chave de assinatura (SSH Signing Key ou GPG) no Git local e vincular à conta do GitHub para obter o selo "Verified" em todos os commits, garantindo rastreabilidade e integridade criptográfica.
+7. **Deploy em PaaS Gerenciada com HTTPS Automático (Railway / Render):**
+   Avaliar a criação de `Dockerfile` e workflow para provisionamento rápido da API em PaaS moderna (ex: Railway, Render ou Fly.io), fornecendo URL pública HTTPS fixa com certificado SSL automático para testes externos imediatos sem depender de túneis locais (ngrok/Cloudflare).
 
 ## 📝 Notas & Registro de Pensamentos
 
 Notas analisadas e resolvidas:
-
-- ✅ **Status "Unverified" no GitHub**: Analisado. Não bloqueia compilação, testes, deploys ou push, mas foi adicionada a melhoria no Banco de Ideias (Item 6) para configuração de chave SSH/GPG.
-- ✅ **Reorganização de `./docs/nfse-nacional/`**: Concluída.
-  - Conteúdo municipal e migração SIL consolidados em [`docs/clients/cliente-001.md`](clients/cliente-001.md).
-  - Conceitos de Sefin vs ADN consolidados em [`docs/glossario-nfse.md`](glossario-nfse.md).
-  - Glossário unificado dividido em dois domínios: [`docs/glossario-engenharia.md`](glossario-engenharia.md) e [`docs/glossario-nfse.md`](glossario-nfse.md).
-  - Arquivo `docs.md` transformado em índice oficial estruturado em [`docs/nfse-nacional/README.md`](nfse-nacional/README.md).
