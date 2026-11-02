@@ -64,8 +64,8 @@ class EmissaoDpsControllerTest {
     @Test
     @DisplayName("Deve emitir DPS com sucesso e retornar HTTP 200 com NFS-e autorizada")
     void deveEmitirDpsComSucesso() throws Exception {
-        String xmlDps = "<DPS><infDPS Id=\"DPS320520023603027800015900001000000000032037\"></infDPS></DPS>";
-        String xmlNfse = "<NFSe versao=\"1.00\"><infNFSe Id=\"NFS32052001236030278000159000000003203726110114333510\"></infNFSe></NFSe>";
+        String xmlDps = "<DPS><infDPS Id=\"DPS320520020000000000019100001000000000000001\"></infDPS></DPS>";
+        String xmlNfse = "<NFSe versao=\"1.00\"><infNFSe Id=\"NFS32052002601000000000019100001000000000000001123456\"></infNFSe></NFSe>";
         String gzipB64 = compactarGZipBase64(xmlNfse);
 
         RespostaEmissaoSefin respostaSefin = new RespostaEmissaoSefin(
@@ -74,7 +74,7 @@ class EmissaoDpsControllerTest {
                 "2026-11-02T16:00:00-03:00",
                 100,
                 "NFS-e gerada com sucesso",
-                "32052001236030278000159000000003203726110114333510",
+                "32052002601000000000019100001000000000000001123456",
                 gzipB64
         );
 
@@ -93,7 +93,7 @@ class EmissaoDpsControllerTest {
                 .andExpect(jsonPath("$.sucesso").value(true))
                 .andExpect(jsonPath("$.codigoStatus").value(100))
                 .andExpect(jsonPath("$.motivoStatus").value("NFS-e gerada com sucesso"))
-                .andExpect(jsonPath("$.chaveAcesso").value("32052001236030278000159000000003203726110114333510"))
+                .andExpect(jsonPath("$.chaveAcesso").value("32052002601000000000019100001000000000000001123456"))
                 .andExpect(jsonPath("$.xmlNfse").value(xmlNfse));
     }
 

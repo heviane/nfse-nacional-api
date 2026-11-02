@@ -70,7 +70,7 @@ class ValidadorSchemaServiceTest {
     @Test
     @DisplayName("Deve rejeitar DPS com formato inválido de CNPJ no prestador")
     void deveRejeitarDpsComCnpjInvalido() {
-        String xmlInvalido = xmlValido.replace("<CNPJ>36030278000159</CNPJ>", "<CNPJ>123</CNPJ>");
+        String xmlInvalido = xmlValido.replace("<CNPJ>00000000000191</CNPJ>", "<CNPJ>123</CNPJ>");
 
         List<String> erros = validador.validarDps(xmlInvalido);
 

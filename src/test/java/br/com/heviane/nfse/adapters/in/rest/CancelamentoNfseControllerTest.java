@@ -62,8 +62,8 @@ class CancelamentoNfseControllerTest {
     @Test
     @DisplayName("Deve registrar evento de cancelamento com sucesso e retornar HTTP 200")
     void deveCancelarNfseComSucesso() throws Exception {
-        String chave = "32052001236030278000159000000003203726110114333510";
-        String idEvento = "E1011013205200123603027800015900000000320372611011433351001";
+        String chave = "32052002601000000000019100001000000000000001123456";
+        String idEvento = "E1011013205200260100000000001910000100000000000000112345601";
         String xmlEvento = "<retEvento><infEvento Id=\"" + idEvento + "\"></infEvento></retEvento>";
         String gzipB64 = compactarGZipBase64(xmlEvento);
 
@@ -83,7 +83,7 @@ class CancelamentoNfseControllerTest {
 
         CancelamentoNfseRequest request = new CancelamentoNfseRequest(
                 chave,
-                "36030278000159",
+                "00000000000191",
                 "1",
                 "Cancelamento solicitado devido a erro de emissao pelo prestador",
                 AmbienteSefin.HOMOLOGACAO
@@ -108,7 +108,7 @@ class CancelamentoNfseControllerTest {
 
         CancelamentoNfseRequest request = new CancelamentoNfseRequest(
                 "chave_invalida_curta",
-                "36030278000159",
+                "00000000000191",
                 "1",
                 "Cancelamento solicitado devido a erro de emissao pelo prestador",
                 AmbienteSefin.HOMOLOGACAO
@@ -128,8 +128,8 @@ class CancelamentoNfseControllerTest {
         when(certificadoProvider.obterCertificado(any(), any())).thenReturn(certificadoA1);
 
         CancelamentoNfseRequest request = new CancelamentoNfseRequest(
-                "32052001236030278000159000000003203726110114333510",
-                "36030278000159",
+                "32052002601000000000019100001000000000000001123456",
+                "00000000000191",
                 "1",
                 "Curto",
                 AmbienteSefin.HOMOLOGACAO
@@ -151,8 +151,8 @@ class CancelamentoNfseControllerTest {
                 .thenThrow(new SefinTransmissaoException("Erro no servidor de eventos Sefin", 500, null, null));
 
         CancelamentoNfseRequest request = new CancelamentoNfseRequest(
-                "32052001236030278000159000000003203726110114333510",
-                "36030278000159",
+                "32052002601000000000019100001000000000000001123456",
+                "00000000000191",
                 "1",
                 "Cancelamento solicitado devido a erro de emissao pelo prestador",
                 AmbienteSefin.HOMOLOGACAO

@@ -45,7 +45,7 @@ public class ConsultaNfseController {
                     content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     public ResponseEntity<ConsultaNfseResponse> consultar(
-            @Parameter(description = "Chave de Acesso da NFS-e composta por exatamente 50 dígitos numéricos", example = "32052001236030278000159000000003203726110114333510")
+            @Parameter(description = "Chave de Acesso da NFS-e composta por exatamente 50 dígitos numéricos", example = "32052002601000000000019100001000000000000001123456")
             @PathVariable("chaveAcesso") String chaveAcesso,
             @Parameter(description = "Ambiente do Sefin Nacional (HOMOLOGACAO ou PRODUCAO)")
             @RequestParam(value = "ambiente", defaultValue = "HOMOLOGACAO") AmbienteSefin ambiente,

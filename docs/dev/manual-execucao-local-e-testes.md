@@ -165,7 +165,7 @@ Este cenário valida o comportamento da API para **novos clientes ou sistemas mo
    ```json
    {
      "ambiente": "HOMOLOGACAO",
-     "xmlDps": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" versao=\"1.00\"><infDPS Id=\"DPS320520023603027800015900001000000000032037\"><tpAmb>2</tpAmb><dhEmi>2026-11-02T16:00:00-03:00</dhEmi><verAplic>LkSistemas_v1.00</verAplic><serie>00001</serie><nDPS>32037</nDPS><dCompet>2026-11-02</dCompet><tpEmit>1</tpEmit><cLocEmi>3205200</cLocEmi><prest><CNPJ>36030278000159</CNPJ><IM>9657</IM><xNome>LK ASSESSORIA LTDA</xNome><fone>2734346700</fone><email>LKVIX@LKVIX.COM.BR</email><regTrib><opSimpNac>1</opSimpNac><regApTribSN>1</regApTribSN><regEspTrib>0</regEspTrib></regTrib></prest><toma><CNPJ>01211121000145</CNPJ><xNome>TOMADOR TESTE LTDA</xNome><end><endNac><cMun>3205309</cMun><CEP>29010364</CEP></endNac><xLgr>AV PRINCESA ISABEL, 574</xLgr><nro>574</nro><xBairro>CENTRO</xBairro></end></toma><serv><locPrest><cLocPrestacao>3205200</cLocPrestacao></locPrest><cServ><cTribNac>010301</cTribNac><cTribMun>700</cTribMun><xDescServ>Servicos de desenvolvimento de sistemas de informacao.</xDescServ></cServ></serv><valores><vServPrest><vServ>100.00</vServ></vServPrest><trib><tribMun><tribISSQN>1</tribISSQN><tpRetISSQN>2</tpRetISSQN><pAliq>2.50</pAliq></tribMun><tribFed><piscofins><CST>07</CST><vBCPisCofins>0.00</vBCPisCofins><pAliqPis>0.00</pAliqPis><pAliqCofins>0.00</pAliqCofins><vPis>0.00</vPis><vCofins>0.00</vCofins><tpRetPisCofins>2</tpRetPisCofins></piscofins></tribFed><totTrib><indTotTrib>0</indTotTrib></totTrib></trib></valores></infDPS></DPS>"
+     "xmlDps": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" versao=\"1.00\"><infDPS Id=\"DPS320520020000000000019100001000000000000001\"><tpAmb>2</tpAmb><dhEmi>2026-11-02T17:00:00-03:00</dhEmi><verAplic>ERP_v1.00</verAplic><serie>00001</serie><nDPS>1</nDPS><dCompet>2026-11-02</dCompet><tpEmit>1</tpEmit><cLocEmi>3205200</cLocEmi><prest><CNPJ>00000000000191</CNPJ><IM>12345</IM><xNome>EMPRESA PRESTADORA DE SERVICOS LTDA</xNome><fone>27999998888</fone><email>contato@prestadordeexemplo.com.br</email><regTrib><opSimpNac>1</opSimpNac><regApTribSN>1</regApTribSN><regEspTrib>0</regEspTrib></regTrib></prest><toma><CNPJ>99999999000191</CNPJ><xNome>TOMADOR DE SERVICOS TESTE LTDA</xNome><end><endNac><cMun>3205309</cMun><CEP>29010000</CEP></endNac><xLgr>AVENIDA EXEMPLO</xLgr><nro>100</nro><xBairro>CENTRO</xBairro></end></toma><serv><locPrest><cLocPrestacao>3205200</cLocPrestacao></locPrest><cServ><cTribNac>010301</cTribNac><cTribMun>700</cTribMun><xDescServ>Servicos de desenvolvimento e licencamento de programas de computador.</xDescServ></cServ></serv><valores><vServPrest><vServ>100.00</vServ></vServPrest><trib><tribMun><tribISSQN>1</tribISSQN><tpRetISSQN>2</tpRetISSQN><pAliq>2.50</pAliq></tribMun><tribFed><piscofins><CST>07</CST><vBCPisCofins>0.00</vBCPisCofins><pAliqPis>0.00</pAliqPis><pAliqCofins>0.00</pAliqCofins><vPis>0.00</vPis><vCofins>0.00</vCofins><tpRetPisCofins>2</tpRetPisCofins></piscofins></tribFed><totTrib><indTotTrib>0</indTotTrib></totTrib></trib></valores></infDPS></DPS>"
    }
    ```
 6. Clique no botão azul **`Execute`**.
@@ -175,7 +175,7 @@ Este cenário valida o comportamento da API para **novos clientes ou sistemas mo
      "sucesso": true,
      "codigoStatus": 100,
      "motivoStatus": "NFS-e gerada com sucesso",
-     "chaveAcesso": "32052001236030278000159000000003203726110114333510",
+     "chaveAcesso": "32052002601000000000019100001000000000000001123456",
      "xmlNfse": "<NFSe versao=\"1.00\">...</NFSe>"
    }
    ```
@@ -252,7 +252,7 @@ O GeneXus receberá um HTTP 200 contendo o envelope SOAP idêntico ao que a pref
           <Sucesso>true</Sucesso>
           <CodigoStatus>100</CodigoStatus>
           <MotivoStatus>NFS-e gerada com sucesso</MotivoStatus>
-          <ChaveAcesso>32052001236030278000159000000003203726110114333510</ChaveAcesso>
+          <ChaveAcesso>32052002601000000000019100001000000000000001123456</ChaveAcesso>
           <XmlNfse>&lt;NFSe...&gt;</XmlNfse>
         </RetornoEmissao>
       </GerarNfseResult>

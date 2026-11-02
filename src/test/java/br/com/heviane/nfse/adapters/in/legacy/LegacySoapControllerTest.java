@@ -74,7 +74,7 @@ class LegacySoapControllerTest {
     @Test
     @DisplayName("Deve processar envelope SOAP com DPS em texto claro e retornar SOAP com sucesso")
     void deveProcessarEnvelopeSoapComDpsEmTextoClaro() throws Exception {
-        String chave = "32052001236030278000159000000003203726110114333510";
+        String chave = "32052002601000000000019100001000000000000001123456";
         String xmlNfse = "<NFSe versao=\"1.00\"><infNFSe Id=\"NFS" + chave + "\"></infNFSe></NFSe>";
         String gzipB64 = compactarGZipBase64(xmlNfse);
 
@@ -100,7 +100,7 @@ class LegacySoapControllerTest {
                     <sil:GerarNfse>
                       <sil:xmlEnvio>
                         <DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
-                          <infDPS Id="DPS320520023603027800015900001000000000032037"></infDPS>
+                          <infDPS Id="DPS320520020000000000019100001000000000000001"></infDPS>
                         </DPS>
                       </sil:xmlEnvio>
                     </sil:GerarNfse>
@@ -121,7 +121,7 @@ class LegacySoapControllerTest {
     @Test
     @DisplayName("Deve processar envelope SOAP com XML escapado em entidades HTML")
     void deveProcessarEnvelopeSoapComXmlEscapado() throws Exception {
-        String chave = "32052001236030278000159000000003203726110114333510";
+        String chave = "32052002601000000000019100001000000000000001123456";
         String xmlNfse = "<NFSe versao=\"1.00\"></NFSe>";
         String gzipB64 = compactarGZipBase64(xmlNfse);
 

@@ -13,10 +13,10 @@ public record CancelamentoNfseResponse(
         @Schema(description = "Descrição/motivo retornado pelo Sefin Nacional", example = "Evento registrado e vinculado a NFS-e")
         String motivoStatus,
 
-        @Schema(description = "Chave de Acesso de 50 dígitos da NFS-e", example = "32052001236030278000159000000003203726110114333510")
+        @Schema(description = "Chave de Acesso de 50 dígitos da NFS-e", example = "32052002601000000000019100001000000000000001123456")
         String chaveAcesso,
 
-        @Schema(description = "Identificador único do evento gerado", example = "E1011013205200123603027800015900000000320372611011433351001")
+        @Schema(description = "Identificador único do evento gerado", example = "E1011013205200260100000000001910000100000000000000112345601")
         String idEvento,
 
         @Schema(description = "Conteúdo XML oficial do evento de cancelamento")

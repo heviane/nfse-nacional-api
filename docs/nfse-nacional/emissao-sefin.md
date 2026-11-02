@@ -38,26 +38,26 @@ A API do Sefin Nacional espera um objeto JSON com o campo `dpsXmlGZipB64` (ou se
 
 ## 3. XML da `<DPS>` que deve ser assinado e serializado
 
-Abaixo está a estrutura do XML assinado da DPS (com base nos dados cadastrais da sua empresa no Simples Nacional e tomador dos seus testes):
+Abaixo está a estrutura do XML assinado da DPS (com dados genéricos para testes):
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
-  <infDPS Id="DPS320520023603027800015900001000000000032037">
+  <infDPS Id="DPS320520020000000000019100001000000000000001">
     <tpAmb>2</tpAmb>
-    <dhEmi>2026-11-01T22:45:00-03:00</dhEmi>
-    <verAplic>LkSistemas_v1.00</verAplic>
+    <dhEmi>2026-11-02T17:00:00-03:00</dhEmi>
+    <verAplic>ERP_v1.00</verAplic>
     <serie>00001</serie>
-    <nDPS>32037</nDPS>
-    <dCompet>2026-11-01</dCompet>
+    <nDPS>1</nDPS>
+    <dCompet>2026-11-02</dCompet>
     <tpEmit>1</tpEmit>
     <cLocEmi>3205200</cLocEmi>
     <prest>
-      <CNPJ>36030278000159</CNPJ>
-      <IM>9657</IM>
-      <xNome>LK ASSESSORIA LTDA</xNome>
-      <fone>2734346700</fone>
-      <email>LKVIX@LKVIX.COM.BR</email>
+      <CNPJ>00000000000191</CNPJ>
+      <IM>12345</IM>
+      <xNome>EMPRESA PRESTADORA DE SERVICOS LTDA</xNome>
+      <fone>27999998888</fone>
+      <email>contato@prestadordeexemplo.com.br</email>
       <regTrib>
         <opSimpNac>1</opSimpNac>
         <regApTribSN>1</regApTribSN>
@@ -65,16 +65,16 @@ Abaixo está a estrutura do XML assinado da DPS (com base nos dados cadastrais d
       </regTrib>
     </prest>
     <toma>
-      <CNPJ>01211121000145</CNPJ>
-      <xNome>PALLASCRED FACTORING FOMENTO MERC LTDA</xNome>
+      <CNPJ>99999999000191</CNPJ>
+      <xNome>TOMADOR DE SERVICOS TESTE LTDA</xNome>
       <end>
         <endNac>
           <cMun>3205309</cMun>
-          <CEP>29010364</CEP>
+          <CEP>29010000</CEP>
         </endNac>
-        <xLgr>AV PRINCESA ISABEL, 574 SL 1111 BL A</xLgr>
-        <nro>5741111</nro>
-        <xBairro>CENTRO - EDF. PALLAS CENTER</xBairro>
+        <xLgr>AVENIDA EXEMPLO</xLgr>
+        <nro>100</nro>
+        <xBairro>CENTRO</xBairro>
       </end>
     </toma>
     <serv>
@@ -119,7 +119,7 @@ Abaixo está a estrutura do XML assinado da DPS (com base nos dados cadastrais d
     <SignedInfo>
       <CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
       <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
-      <Reference URI="#DPS320520023603027800015900001000000000032037">
+      <Reference URI="#DPS320520020000000000019100001000000000000001">
         <Transforms>
           <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
           <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
@@ -148,10 +148,10 @@ Quando autorizada, a resposta síncrona retorna o JSON contendo o XML completo d
 {
   "tipoAmbiente": 2,
   "versaoAplicativo": "SefinNacional_v1.0.0",
-  "dataHoraProcessamento": "2026-11-01T22:45:02-03:00",
+  "dataHoraProcessamento": "2026-11-02T17:00:02-03:00",
   "codigoStatus": 100,
   "motivoStatus": "NFS-e gerada com sucesso",
-  "chaveAcesso": "32052001236030278000159000000003203726110114333510",
+  "chaveAcesso": "32052002601000000000019100001000000000000001123456",
   "nfseXmlGZipB64": "H4sICAAAAAAC/3htbF9hdXRvcml6YWRv..."
 }
 ```

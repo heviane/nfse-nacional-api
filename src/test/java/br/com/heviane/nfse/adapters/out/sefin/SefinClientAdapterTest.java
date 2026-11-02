@@ -32,7 +32,7 @@ class SefinClientAdapterTest {
     private AssinadorDpsService assinador;
     private ObjectMapper objectMapper;
 
-    private static final String CHAVE_ACESSO_50 = "32052001236030278000159000000003203726110114333510";
+    private static final String CHAVE_ACESSO_50 = "32052002601000000000019100001000000000000001123456";
 
     @BeforeAll
     static void startMockServer() throws IOException {
@@ -235,7 +235,7 @@ class SefinClientAdapterTest {
 
         RequisicaoCancelamentoDps req = new RequisicaoCancelamentoDps(
                 CHAVE_ACESSO_50,
-                "36030278000159",
+                "00000000000191",
                 "1",
                 "Cancelamento solicitado devido a erro no preenchimento do tomador",
                 AmbienteSefin.HOMOLOGACAO
@@ -258,7 +258,7 @@ class SefinClientAdapterTest {
         // Justificativa menor que 15 caracteres
         assertThatThrownBy(() -> new RequisicaoCancelamentoDps(
                 CHAVE_ACESSO_50,
-                "36030278000159",
+                "00000000000191",
                 "1",
                 "Curto",
                 AmbienteSefin.HOMOLOGACAO

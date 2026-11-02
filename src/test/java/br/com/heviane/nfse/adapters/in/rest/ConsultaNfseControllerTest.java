@@ -58,7 +58,7 @@ class ConsultaNfseControllerTest {
     @Test
     @DisplayName("Deve consultar NFS-e por chave de acesso com sucesso e retornar HTTP 200")
     void deveConsultarNfsePorChaveComSucesso() throws Exception {
-        String chave = "32052001236030278000159000000003203726110114333510";
+        String chave = "32052002601000000000019100001000000000000001123456";
         String xmlNfse = "<NFSe versao=\"1.00\"><infNFSe Id=\"NFS" + chave + "\"></infNFSe></NFSe>";
         String gzipB64 = compactarGZipBase64(xmlNfse);
 
@@ -100,7 +100,7 @@ class ConsultaNfseControllerTest {
     @Test
     @DisplayName("Deve retornar HTTP 502 quando Sefin falhar na consulta")
     void deveRetornarBadGatewayQuandoSefinFalhar() throws Exception {
-        String chave = "32052001236030278000159000000003203726110114333510";
+        String chave = "32052002601000000000019100001000000000000001123456";
         when(certificadoProvider.obterCertificado(any(), any())).thenReturn(certificadoA1);
         when(consultarNfseUseCase.consultar(eq(chave), any(), any()))
                 .thenThrow(new SefinTransmissaoException("Serviço Sefin temporariamente indisponível", 503, null, null));

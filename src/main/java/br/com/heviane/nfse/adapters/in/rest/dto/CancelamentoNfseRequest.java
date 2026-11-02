@@ -5,10 +5,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Requisição para registro de cancelamento de NFS-e")
 public record CancelamentoNfseRequest(
-        @Schema(description = "Chave de acesso de 50 dígitos da NFS-e a cancelar", example = "32052001236030278000159000000003203726110114333510")
+        @Schema(description = "Chave de acesso de 50 dígitos da NFS-e a cancelar", example = "32052002601000000000019100001000000000000001123456")
         String chaveAcesso,
 
-        @Schema(description = "CNPJ de 14 dígitos do emitente/autor do pedido", example = "36030278000159")
+        @Schema(description = "CNPJ de 14 dígitos do emitente/autor do pedido", example = "00000000000191")
         String cnpjAutor,
 
         @Schema(description = "Código do motivo de cancelamento (ex: 1 - Erro na Emissão)", example = "1")

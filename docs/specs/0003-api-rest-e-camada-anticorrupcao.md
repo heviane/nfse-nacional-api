@@ -37,7 +37,7 @@ A aplicação atua como um middleware desacoplado com dois propósitos fundament
     "sucesso": true,
     "codigoStatus": 100,
     "motivoStatus": "NFS-e gerada com sucesso",
-    "chaveAcesso": "32052001236030278000159000000003203726110114333510",
+    "chaveAcesso": "32052002601000000000019100001000000000000001123456",
     "xmlNfse": "<NFSe versao=\"1.00\">...</NFSe>"
   }
   ```
@@ -53,8 +53,8 @@ A aplicação atua como um middleware desacoplado com dois propósitos fundament
 * **Corpo da Requisição (JSON):**
   ```json
   {
-    "chaveAcesso": "32052001236030278000159000000003203726110114333510",
-    "cnpjAutor": "36030278000159",
+    "chaveAcesso": "32052002601000000000019100001000000000000001123456",
+    "cnpjAutor": "00000000000191",
     "codigoMotivo": "1",
     "motivo": "Cancelamento solicitado devido a erro no preenchimento do tomador"
   }

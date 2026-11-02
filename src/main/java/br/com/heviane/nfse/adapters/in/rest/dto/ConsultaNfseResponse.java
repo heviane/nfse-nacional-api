@@ -13,7 +13,7 @@ public record ConsultaNfseResponse(
         @Schema(description = "Descrição/motivo retornado pelo Sefin Nacional", example = "NFS-e localizada com sucesso")
         String motivoStatus,
 
-        @Schema(description = "Chave de Acesso de 50 dígitos da NFS-e", example = "32052001236030278000159000000003203726110114333510")
+        @Schema(description = "Chave de Acesso de 50 dígitos da NFS-e", example = "32052002601000000000019100001000000000000001123456")
         String chaveAcesso,
 
         @Schema(description = "Conteúdo XML oficial da NFS-e")
