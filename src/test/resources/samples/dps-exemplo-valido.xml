@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DPS xmlns="http://www.sped.fazenda.gov.br/nfse" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="DPS123456">
+    <infDPS>
+        <tpAmb>2</tpAmb>
+        <dhEmi>2026-01-15T15:00:00-03:00</dhEmi>
+        <verAplic>Integracao_v1.0</verAplic>
+        <dCompet>2026-01-15</dCompet>
+        
+        <prest>
+            <CNPJ>36030278000159</CNPJ>
+            <regTrib>
+                <regEspTrib>6</regEspTrib> </regTrib>
+        </prest>
+        
+        <toma>
+            <CNPJ>53257633000146</CNPJ>
+            <xNome>TOMADOR TESTE S.A</xNome>
+            <end>
+                <endNac>
+                    <cMun>4314902</cMun>
+                    <CEP>91230210</CEP>
+                </endNac>
+            </end>
+        </toma>
+        
+        <serv>
+            <locPrest>
+                <cLocPrestacao>4314902</cLocPrestacao>
+            </locPrest>
+            <cServ>
+                <cTribNac>010101</cTribNac>
+                <cTribMun>105</cTribMun>
+                <xDescServ>SERVICO DE CONSULTORIA TECNICA TESTE</xDescServ>
+            </cServ>
+        </serv>
+        
+        <valores>
+            <vServPrest>
+                <vServ>100.00</vServ>
+            </vServPrest>
+            
+            <vDedRed>
+                <vDR>10.00</vDR>
+                <documentos>
+                    <docDedRed>
+                        <nDoc>9999</nDoc>
+                        <tpDedRed>7</tpDedRed> <xDescOutDed>Deducao de materiais</xDescOutDed>
+                        <dtEmiDoc>2026-01-10</dtEmiDoc>
+                        <vDeducaoReducao>10.00</vDeducaoReducao>
+                    </docDedRed>
+                </documentos>
+            </vDedRed>
+        </valores>
+        
+        <trib>
+            <tribMun>
+                <tribISSQN>1</tribISSQN> <cLocIncid>4314902</cLocIncid>
+                <vBC>90.00</vBC> <pAliq>3.00</pAliq>
+                <vISSQN>2.70</vISSQN>
+            </tribMun>
+        </trib>
+    </infDPS>
+</DPS>

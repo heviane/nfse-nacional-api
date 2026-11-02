@@ -1,0 +1,112 @@
+<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+    <infNFSe Id="NFS35306071100055555555555000190312810125110559995282">
+        <xLocEmi>MUNICIPIO</xLocEmi>
+        <xLocPrestacao>MUNICIPIO</xLocPrestacao>
+        <nNFSe>0</nNFSe>
+        <cLocIncid>0000000</cLocIncid>
+        <xLocIncid>MUNICIPIO</xLocIncid>
+        <xTribNac>DESCRIÇÃO DA cTribNac</xTribNac>
+        <verAplic>SilTecnologia_v1.00</verAplic>
+        <ambGer>1</ambGer>
+        <tpEmis>2</tpEmis>
+        <cStat>100</cStat>
+        <dhProc>2025-11-19T00:00:00-03:00</dhProc>
+        <nDFSe>55999528</nDFSe>
+        <emit>
+            <CPF>55555555555</CPF>
+            <IM>9999957</IM>
+            <xNome>EMPRESA DECLARANTE TESTE</xNome>
+            <enderNac>
+                <xLgr>08743-040 - R GRAMADO, 95</xLgr>
+                <nro>0</nro>
+                <xBairro>CJ R DO BOSQUE</xBairro>
+                <cMun>3530607</cMun>
+                <UF>SP</UF>
+                <CEP>08743040</CEP>
+            </enderNac>
+            <fone>1147474747</fone>
+            <email>suporte@nfe.com.br</email>
+        </emit>
+        <valores>
+            <vBC>1250.00</vBC>
+            <pAliqAplic>3.00</pAliqAplic>
+            <vISSQN>37.50</vISSQN>
+            <vTotalRet>27.77</vTotalRet>
+            <vLiq>1250.00</vLiq>
+        </valores>
+        <DPS versao="1.00">
+            <infDPS Id="DPS353060710005555555555500900000001903128101">
+                <tpAmb>2</tpAmb>
+                <dhEmi>2025-11-19T00:00:00-03:00</dhEmi>
+                <verAplic>SilTecnologia_v1.00</verAplic>
+                <serie>00001</serie>
+                <nDPS>1903128101</nDPS>
+                <dCompet>2025-11-19</dCompet>
+                <tpEmit>1</tpEmit>
+                <cLocEmi>3530607</cLocEmi>
+                <prest>
+                    <CPF>55555555555</CPF>
+                    <IM>9999957</IM>
+                    <fone>1147474747</fone>
+                    <email>nfe@suporte.com.br</email>
+                    <regTrib>
+                        <opSimpNac>1</opSimpNac>
+                        <regEspTrib>0</regEspTrib>
+                    </regTrib>
+                </prest>
+                <toma>
+                    <CNPJ>11111111111111</CNPJ>
+                    <xNome>EMPRESA TOMADORA TESTE</xNome>
+                    <end>
+                        <endNac>
+                            <cMun>3530607</cMun>
+                            <CEP>07400000</CEP>
+                        </endNac>
+                        <xLgr>RUA DOS BANCOS</xLgr>
+                        <nro>0</nro>
+                        <xBairro>CENTRO</xBairro>
+                    </end>
+                </toma>
+                <serv>
+                    <locPrest>
+                        <cLocPrestacao>3530607</cLocPrestacao>
+                    </locPrest>
+                    <cServ>
+                        <cTribNac>010101</cTribNac>
+                        <xDescServ>Descrição da nota fiscal de serviço</xDescServ>
+                        <cNBS>0000000000</cNBS>
+                    </cServ>
+                    <infoCompl>
+                        <xInfComp>xxxxxxxx</xInfComp>
+                    </infoCompl>
+                </serv>
+                <valores>
+                    <vServPrest>
+                        <vServ>1250.00</vServ>
+                    </vServPrest>
+                    <trib>
+                        <tribMun>
+                            <tribISSQN>1</tribISSQN>
+                            <tpRetISSQN>1</tpRetISSQN>
+                        </tribMun>
+                        <tribFed>
+                            <piscofins>
+                                <CST>01</CST>
+                                <vBCPisCofins>9152.15</vBCPisCofins>
+                                <pAliqPis>0.65</pAliqPis>
+                                <pAliqCofins>3.00</pAliqCofins>
+                                <vPis>59.49</vPis>
+                                <vCofins>274.56</vCofins>
+                                <tpRetPisCofins>1</tpRetPisCofins>
+                            </piscofins>
+                            <vRetCP>137.28</vRetCP>
+                            <vRetIRRF>137.28</vRetIRRF>
+                            <vRetCSLL>91.52</vRetCSLL>
+                        </tribFed>
+                    </trib>
+                </valores>
+            </infDPS>
+        </DPS>
+    </infNFSe>
+    <Signature xmlns="http://www.w3.org/2000/09/xmldsig#"> </Signature>
+</NFSe>

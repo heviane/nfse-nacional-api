@@ -29,3 +29,4 @@ class HealthControllerTest {
                 .andExpect(jsonPath("$.timestamp").isNotEmpty());
     }
 }
+

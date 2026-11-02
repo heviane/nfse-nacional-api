@@ -13,3 +13,4 @@ class NfseApplicationTests {
         // Teste de fumaça (Smoke Test): garante que todos os beans e configurações básicas iniciam com sucesso.
     }
 }
+

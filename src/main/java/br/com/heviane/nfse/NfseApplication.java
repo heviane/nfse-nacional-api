@@ -24,3 +24,4 @@ public class NfseApplication extends SpringBootServletInitializer {
         SpringApplication.run(NfseApplication.class, args);
     }
 }
+

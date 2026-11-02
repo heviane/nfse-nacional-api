@@ -56,13 +56,13 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ---
 
-### Épico 3: Engenharia de Requisitos & Especificação Técnica (SDD)
+### Épico 3: Engenharia de Requisitos & Especificação Técnica (SDD) — 🟢 100% Concluído
 
 | Status |    ID     | Prioridade | Item                                                   | Descrição / Critérios de Aceite                                                                                             |
 | :----: | :-------: | :--------: | :----------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
-|   ⚪   | `SPEC-01` |    `P0`    | **SPEC-001: Validação de DPS e Assinatura Digital**    | Elaborar a especificação da Fatia 1 (regras de validação de schemas XSD da DPS e assinatura XML A1).                        |
-|   ⚪   | `SPEC-02` |    `P1`    | **Curadoria de Schemas e Exemplos Oficiais**           | Mapear e armazenar os schemas XSD oficiais do Sefin Nacional e amostras reais de DPS em `docs/schemas/`.                    |
-|   ⚪   | `SPEC-03` |    `P1`    | **Análise de Compatibilidade do `assinador-xml-java`** | Avaliar os métodos da biblioteca atual de assinatura em relação aos requisitos da NFS-e Nacional (RSA-SHA256, DigestValue). |
+|   🟢   | `SPEC-01` |    `P0`    | **SPEC-001: Validação de DPS e Assinatura Digital**    | Elaborar a especificação da Fatia 1 (regras de validação de schemas XSD da DPS e assinatura XML A1).                        |
+|   🟢   | `SPEC-02` |    `P1`    | **Curadoria de Schemas e Exemplos Oficiais**           | Mapear e armazenar os schemas XSD oficiais do Sefin Nacional (v1.00 e v1.01) e amostras reais de DPS em `resources/schemas/`.|
+|   🟢   | `SPEC-03` |    `P1`    | **Análise de Compatibilidade do `assinador-xml-java`** | Avaliar os métodos da biblioteca atual de assinatura em relação aos requisitos da NFS-e Nacional (RSA-SHA256, DigestValue). |
 
 ---
 
@@ -114,6 +114,12 @@ Propostas técnicas para avaliação nas próximas iterações:
 
 ## 📝 Notas & Registro de Pensamentos
 
-Notas para não esquecer, para análise futura:
+Notas para avaliação:
 
-- Verificar o status de "Unverified" no histórico de commit do github.
+- Verificar o status de **"Unverified"** no histórico de commit do github:
+  - Quais as implicações?
+  - Devemos fazer algo?
+- Analise da documentação **"./docs/nfse-nacional/"**:
+  - Os arquivos "migração" e "migração-2" faz sentido após a criação de "./docs/clients/". Devemos analisar eles e unir o que for relevante com o "./docs/clients/".
+  - O conteúdo do arquivo "sefin_vs_adn.md" deveria estar no glossário? Deveriamos criar 2 glossários, um de desenvolvimento e um de negócio sobre a NFS-e?
+  - O arquivo "./docs/nfse-nacional/docs.md" deveria ser o README do diretório, organizando a informação e linkando os outros arquivos.
