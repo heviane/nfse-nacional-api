@@ -107,10 +107,14 @@ Propostas técnicas para avaliação nas próximas iterações:
    - Revisar o template oficial para mantê-lo agnóstico de stack e enriquecê-lo com o template padrão de `BACKLOG.md`.
    - O ideal seria que ao criar um repositório a partir deste template, o readme fosse criado customizado com base nos metadados informados para a criação, e não simplesmente copiar o README do template, pois isso é inútil.
    - Existem arquivos no repositório template que são específicos dele, e não devemos importar para o novo repositório. O que podemos fazer?
+4. **Pipeline de CI/CD Automatizado para Tomcat (BrasilCloud):**
+   Criar workflow no GitHub Actions para automatizar a compilação do `.war` e deploy contínuo via SSH/SFTP no servidor do cliente, reduzindo o trabalho manual após a fase de estabilização.
+5. **Estudo de Modelo de Negócio para Futuros Clientes:**
+   Avaliar a viabilidade de transformar a API em um SaaS centralizado (hospedagem própria com cobrança por volume de notas via REST) versus distribuição self-hosted (instâncias dedicadas por cliente).
 
 ## 📝 Notas & Registro de Pensamentos
 
-Notas para não esquecer, para análise futura
+Notas para não esquecer, para análise futura:
 
-- Analisar a necessidade de criar uma documentação especifica para explicar o contexto, o problema e a solução pensada para o caso do cliente 001.
-- incluir no glossário arquitetura exagonal.
+- [x] Analisar a necessidade de criar uma documentação específica para explicar o contexto, o problema e a solução pensada para o caso do cliente 001. &rarr; *(Concluído em [`docs/clients/cliente-001.md`](./clients/cliente-001.md))*
+- [x] Incluir no glossário arquitetura hexagonal e camada anticorrupção. &rarr; *(Concluído em [`docs/glossario.md`](./glossario.md))*
