@@ -20,6 +20,9 @@ secrets/
 .env
 .env.*
 !.env.example
+*.local.ps1
+run-local.ps1
+run-local.sh
 application-local.properties
 application-local.yml
 application-local.yaml

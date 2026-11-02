@@ -32,6 +32,8 @@ Antes de escrever qualquer código de funcionalidade:
 6. **Segurança Primeiro:** Nunca exponha credenciais, chaves ou senhas. Utilize variáveis de ambiente com suporte a `.env.example`.
 7. **Segurança Fiscal & Isolamento de Certificados:** NUNCA logar, expor ou salvar no disco chaves privadas, senhas de certificados A1 (`.pfx`/`.p12`) ou payloads contendo senhas em texto puro. Certificados devem ser manipulados estritamente em memória (KeyStore) e protegidos por variáveis de ambiente.
 8. **Documentação Viva:** Mantenha especificações (`SPEC.md`), contratos de API e documentação sempre sincronizados com as alterações de código.
+9. **Zero Vazamento de Dados Sensíveis de Clientes (Privacidade & LGPD):** NUNCA enviar, expor ou comitar dados sensíveis ou reais de clientes (Razão Social, Nome Fantasia, CNPJ, Inscrição Municipal, CPF, Endereço, Telefone, E-mail, Chaves de Acesso reais) para o repositório remoto Git. Quaisquer exemplos, testes unitários, payloads ou documentações públicas DEVEM utilizar estritamente dados fictícios/genéricos sanitizados.
+10. **Proibição Estrita de Testes em Produção sem Aprovação Humana Explícita:** Os agentes NUNCA devem executar requisições, testes de emissão, cancelamento ou consultas contra os ambientes de PRODUÇÃO de serviços governamentais (Sefin Nacional, Receita Federal, Prefeituras). Testes em produção exigem obrigatoriamente solicitação prévia formal e aprovação humana explícita (`Human-in-the-Loop`). Todo teste do agente deve ser direcionado exclusivamente ao ambiente de HOMOLOGAÇÃO ou dublês de teste (Mocks).
 
 ---
 

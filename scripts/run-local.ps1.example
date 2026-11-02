@@ -1,0 +1,43 @@
+# ==============================================================================
+# SCRIPT DE EXEMPLO PARA INICIALIZAÇÃO LOCAL (WINDOWS POWERSHELL)
+# ==============================================================================
+# INSTRUÇÕES:
+# 1. Copie este arquivo para run-local.ps1 (que está ignorado pelo Git).
+# 2. Preencha o caminho do seu arquivo .pfx e a respectiva senha.
+# 3. Execute: .\run-local.ps1
+# ==============================================================================
+
+# Caminho do certificado digital A1 (.pfx ou .p12)
+$PfxPath = "C:\caminho\seu_certificado.pfx"
+
+# Senha de proteção do certificado digital
+$PfxPassword = "sua_senha_aqui"
+
+# Ambiente: HOMOLOGACAO ou PRODUCAO (Padrão: HOMOLOGACAO)
+$EnvSefin = "HOMOLOGACAO"
+
+# Porta HTTP do servidor
+$Port = "8080"
+
+# ------------------------------------------------------------------------------
+# Processamento e inicialização (não precisa alterar abaixo)
+# ------------------------------------------------------------------------------
+if (-not (Test-Path $PfxPath)) {
+    Write-Error "Arquivo de certificado não encontrado em: $PfxPath"
+    exit 1
+}
+
+Write-Host "Convertendo certificado A1 para Base64 em memória..." -ForegroundColor Cyan
+$certBytes = [System.IO.File]::ReadAllBytes($PfxPath)
+$env:NFSE_CERT_BASE64 = [Convert]::ToBase64String($certBytes)
+$env:NFSE_CERT_PASSWORD = $PfxPassword
+$env:NFSE_ENVIRONMENT = $EnvSefin
+$env:SERVER_PORT = $Port
+
+Write-Host "Variáveis de ambiente configuradas com sucesso!" -ForegroundColor Green
+Write-Host "Ambiente Sefin: $env:NFSE_ENVIRONMENT" -ForegroundColor Green
+Write-Host "Porta: $env:SERVER_PORT" -ForegroundColor Green
+Write-Host "Iniciando nfse-nacional-api..." -ForegroundColor Yellow
+
+java -jar target/nfse-nacional-api.war
+

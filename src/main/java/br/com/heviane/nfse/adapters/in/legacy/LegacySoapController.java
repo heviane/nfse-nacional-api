@@ -120,8 +120,9 @@ public class LegacySoapController {
         try {
             String xmlDps = extrairXmlDps(envelopeSoap);
             CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
+            AmbienteSefin ambiente = resolverAmbiente();
 
-            RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(xmlDps, AmbienteSefin.HOMOLOGACAO, certificado);
+            RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(xmlDps, ambiente, certificado);
 
             String soapResponse = montarRespostaSoapSucesso(
                     resposta.isSucesso(),
@@ -222,6 +223,18 @@ public class LegacySoapController {
                   </soap:Body>
                 </soap:Envelope>
                 """.stripIndent(), escapeXml(mensagem));
+    }
+
+    private AmbienteSefin resolverAmbiente() {
+        String env = System.getenv("NFSE_ENVIRONMENT");
+        if (env == null || env.isBlank()) {
+            env = System.getProperty("nfse.environment", "HOMOLOGACAO");
+        }
+        try {
+            return AmbienteSefin.valueOf(env.trim().toUpperCase());
+        } catch (Exception e) {
+            return AmbienteSefin.HOMOLOGACAO;
+        }
     }
 
     private String escapeXml(String texto) {

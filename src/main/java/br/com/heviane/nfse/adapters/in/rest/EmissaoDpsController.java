@@ -60,7 +60,7 @@ public class EmissaoDpsController {
         }
 
         CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
-        AmbienteSefin ambiente = request.ambiente() != null ? request.ambiente() : AmbienteSefin.HOMOLOGACAO;
+        AmbienteSefin ambiente = request.ambiente() != null ? request.ambiente() : resolverAmbiente();
 
         RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(request.xmlDps(), ambiente, certificado);
 
@@ -73,6 +73,18 @@ public class EmissaoDpsController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    private AmbienteSefin resolverAmbiente() {
+        String env = System.getenv("NFSE_ENVIRONMENT");
+        if (env == null || env.isBlank()) {
+            env = System.getProperty("nfse.environment", "HOMOLOGACAO");
+        }
+        try {
+            return AmbienteSefin.valueOf(env.trim().toUpperCase());
+        } catch (Exception e) {
+            return AmbienteSefin.HOMOLOGACAO;
+        }
     }
 }
 
