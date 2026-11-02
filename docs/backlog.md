@@ -36,12 +36,12 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ### Épico 1: Arquitetura Técnica & Decisões Fundamentais (ADRs) — 🟢 100% Concluído
 
-| Status |    ID    | Prioridade | Item                                                                  | Descrição / Critérios de Aceite                                                                                                 |
-| :----: | :------: | :--------: | :-------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
-|   🟢   | `ARQ-01` |    `P0`    | **ADR-001: Escolha da Linguagem & Plataforma de Execução (Java 17+)** | Documentar a escolha técnica do Java 17 com base no ambiente do cliente (Tomcat BrasilCloud) e maturidade fiscal/criptográfica. |
-|   🟢   | `ARQ-02` |    `P0`    | **ADR-002: Escolha do Build Tool (Maven vs Gradle)**                  | Formalizar a escolha do gerenciador de build (Maven) considerando compatibilidade com ecossistema fiscal e plugins XSD.         |
-|   🟢   | `ARQ-03` |    `P0`    | **ADR-003: Framework Web & Runtime (Spring Boot / WAR)**              | Definir a stack e modelo de empacotamento (WAR para servlet container Tomcat na BrasilCloud).                                   |
-|   🟢   | `ARQ-04` |    `P1`    | **ADR-004: Padrão Arquitetural (Hexagonal / Ports & Adapters com ACL)**| Estabelecer o isolamento do Core Fiscal e desacoplamento do cliente via Camada Anticorrupção (ACL para SOAP GeneXus).          |
+| Status |    ID    | Prioridade | Item                                                                    | Descrição / Critérios de Aceite                                                                                                 |
+| :----: | :------: | :--------: | :---------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
+|   🟢   | `ARQ-01` |    `P0`    | **ADR-001: Escolha da Linguagem & Plataforma de Execução (Java 17+)**   | Documentar a escolha técnica do Java 17 com base no ambiente do cliente (Tomcat BrasilCloud) e maturidade fiscal/criptográfica. |
+|   🟢   | `ARQ-02` |    `P0`    | **ADR-002: Escolha do Build Tool (Maven vs Gradle)**                    | Formalizar a escolha do gerenciador de build (Maven) considerando compatibilidade com ecossistema fiscal e plugins XSD.         |
+|   🟢   | `ARQ-03` |    `P0`    | **ADR-003: Framework Web & Runtime (Spring Boot / WAR)**                | Definir a stack e modelo de empacotamento (WAR para servlet container Tomcat na BrasilCloud).                                   |
+|   🟢   | `ARQ-04` |    `P1`    | **ADR-004: Padrão Arquitetural (Hexagonal / Ports & Adapters com ACL)** | Estabelecer o isolamento do Core Fiscal e desacoplamento do cliente via Camada Anticorrupção (ACL para SOAP GeneXus).           |
 
 ---
 
@@ -115,6 +115,3 @@ Propostas técnicas para avaliação nas próximas iterações:
 ## 📝 Notas & Registro de Pensamentos
 
 Notas para não esquecer, para análise futura:
-
-- [x] Analisar a necessidade de criar uma documentação específica para explicar o contexto, o problema e a solução pensada para o caso do cliente 001. &rarr; *(Concluído em [`docs/clients/cliente-001.md`](./clients/cliente-001.md))*
-- [x] Incluir no glossário arquitetura hexagonal e camada anticorrupção. &rarr; *(Concluído em [`docs/glossario.md`](./glossario.md))*

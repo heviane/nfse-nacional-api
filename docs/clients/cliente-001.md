@@ -94,3 +94,4 @@ Atendendo à urgência imediata do Cliente 001 e familiaridade operacional:
 - [ ] Obter e armazenar amostra do XML SOAP real enviado pelo ERP para desenhar o mapeamento exato de campos (*De/Para*).
 - [ ] Implementar endpoint de compatibilidade SOAP em `adapters.in.legacy`.
 - [ ] Futuro: Automatizar este processo de deploy via **GitHub Actions (CI/CD)** via SSH/SFTP.
+
