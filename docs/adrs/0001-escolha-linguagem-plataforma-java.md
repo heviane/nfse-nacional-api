@@ -64,3 +64,4 @@ A versão **Java 17** foi escolhida por ser a versão com suporte de longo prazo
 | **Python** | Prototipagem rápida, boa manipulação de dados JSON. | Suporte limitado a manipuladores nativos de certificados A1 em memória para os padrões rígidos da Receita Federal; deploy em container Tomcat impraticável. | Desalinhado com a infraestrutura existente e maior complexidade para garantia de thread-safety na assinatura. |
 | **.NET (C#)** | Excelente suporte a criptografia e APIs REST robustas. | Incompatível com o ambiente Linux/Tomcat contratado na BrasilCloud sem migração completa da infraestrutura. | Rejeitado pela restrição de infraestrutura e custo operacional do cliente. |
 | **Java 8 / Java 11** | Ampla compatibilidade legado. | Versões antigas, sem as melhorias de concorrência, performance e recursos modernos de linguagem do Java 17. | Desnecessário manter versões defasadas, visto que o Tomcat de destino suporta Java 17+. |
+
