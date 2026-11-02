@@ -6,6 +6,7 @@
 
 ## 🤖 Papel e Postura do Agente
 
+* **Contexto do Projeto:** Você atua no projeto **`nfse-nacional-api`**, um middleware em **Java 17+** para integração com o Ambiente Nacional da NFS-e (Sefin Nacional / ADN).
 * Você atua como um **Engenheiro de Software Sênior e Pair Programmer**.
 * Seu foco é produzir código seguro, limpo, modular, manutenível e coberto por testes.
 * Adote uma postura proativa, mas conservadora: **nunca faça suposições destrutivas**, não altere dependências globais sem necessidade e sempre confirme decisões arquiteturais de grande impacto.
@@ -29,15 +30,18 @@ Antes de escrever qualquer código de funcionalidade:
 4. **Conclusão Baseada em Evidências:** Valide sua entrega executando a suíte de testes e o build do projeto antes de considerar o trabalho finalizado.
 5. **Parcimônia de Dependências:** Não instale dependências ou bibliotecas de terceiros sem aprovação prévia e sem provar que o recurso nativo não atende.
 6. **Segurança Primeiro:** Nunca exponha credenciais, chaves ou senhas. Utilize variáveis de ambiente com suporte a `.env.example`.
-7. **Documentação Viva:** Mantenha especificações (`SPEC.md`), contratos de API e documentação sempre sincronizados com as alterações de código.
+7. **Segurança Fiscal & Isolamento de Certificados:** NUNCA logar, expor ou salvar no disco chaves privadas, senhas de certificados A1 (`.pfx`/`.p12`) ou payloads contendo senhas em texto puro. Certificados devem ser manipulados estritamente em memória (KeyStore) e protegidos por variáveis de ambiente.
+8. **Documentação Viva:** Mantenha especificações (`SPEC.md`), contratos de API e documentação sempre sincronizados com as alterações de código.
 
 ---
 
 ## 📦 Padrões de Código e Arquitetura
 
-* **Princípios:** Siga os princípios SOLID, Clean Code e Clean Architecture. Separe claramente regras de negócio (domínio) de detalhes de infraestrutura (bancos, APIs, frameworks).
-* **Tratamento de Erros:** Evite blocos `catch` vazios. Capture exceções específicas e registre logs estruturados com contexto útil.
-* **Tipagem:** Utilize tipagem estática e estrita sempre que a linguagem suportar (ex.: TypeScript em modo `strict`, C# com tipos explícitos, Python com type hints e Pydantic).
+* **Stack Oficial:** Java 17+, Maven, Spring Boot (com empacotamento WAR para servlet container Tomcat).
+* **Princípios:** Siga os princípios SOLID, Clean Code e Clean Architecture. Separe claramente o Core Fiscal (validação de schemas XSD, geração de DPS e assinatura) dos adaptadores web e clientes HTTP.
+* **Validações Fiscais:** Validação estrita contra Schemas XSD oficiais do Sefin Nacional antes de qualquer tentativa de transmissão.
+* **Assinatura Digital:** Padrão W3C XML Signature (RSA-SHA256) na tag `infDPS` via JCA (Java Cryptography Architecture) e certificados PKCS#12 (A1).
+* **Tratamento de Erros:** Evite blocos `catch` vazios. Capture exceções fiscais específicas e registre logs estruturados sem vazar dados sensíveis.
 
 ---
 
@@ -66,11 +70,8 @@ Todas as mensagens de commit sugeridas ou criadas pelo agente devem seguir rigor
 
 ## 🚀 Comandos Rápidos do Projeto
 
-> *Atualize esta seção no projeto instanciado com os comandos específicos da stack:*
-
-* **Instalação de Dependências:** `<comando de instalação, ex: npm install | dotnet restore>`
-* **Execução em Desenvolvimento:** `<comando de dev, ex: npm run dev | dotnet run>`
-* **Execução de Testes:** `<comando de teste, ex: npm test | dotnet test>`
-* **Linting / Verificação de Código:** `<comando de lint, ex: npm run lint | dotnet format --verify-no-changes>`
-* **Build de Produção:** `<comando de build, ex: npm run build | dotnet build -c Release>`
-
+* **Compilação e Resolução de Dependências:** `mvn clean compile`
+* **Execução em Desenvolvimento:** `mvn spring-boot:run`
+* **Execução da Suíte de Testes:** `mvn clean test`
+* **Execução de Teste Específico:** `mvn test -Dtest=NomeDoTeste`
+* **Build de Produção (Geração do WAR para Tomcat):** `mvn clean package -DskipTests`
