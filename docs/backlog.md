@@ -45,14 +45,14 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ---
 
-### Épico 2: Setup do Ambiente Java & Walking Skeleton
+### Épico 2: Setup do Ambiente Java & Walking Skeleton — 🟢 100% Concluído
 
 | Status |    ID    | Prioridade | Item                                                         | Descrição / Critérios de Aceite                                                                                                |
 | :----: | :------: | :--------: | :----------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
-|   ⚪   | `JAV-01` |    `P0`    | **Inicialização do Projeto (Build Tool & Wrapper `mvnw`)**   | Gerar estrutura inicial orientada pelas ADRs com `pom.xml`, wrapper executável e compilação limpa via terminal.                |
-|   ⚪   | `JAV-02` |    `P0`    | **Configuração de Dependências & JVM (Java 17)**             | Configurar plugins de compilação, encoding UTF-8, suíte de testes (JUnit 5, AssertJ) e dependências básicas de runtime.        |
-|   ⚪   | `JAV-03` |    `P1`    | **Walking Skeleton & Health Check Endpoint (`GET /health`)** | Implementar endpoint mínimo funcional para verificação de subida da aplicação e testes automatizados de fumaça (_smoke test_). |
-|   ⚪   | `JAV-04` |    `P2`    | **Perfis de Execução no VS Code (`launch.json` / `tasks`)**  | Configurar perfis de depuração com F5 para Java e tarefas integradas de compilação/execução no editor.                         |
+|   🟢   | `JAV-01` |    `P0`    | **Inicialização do Projeto (Build Tool & Wrapper `mvnw`)**   | Gerar estrutura inicial orientada pelas ADRs com `pom.xml`, wrapper executável e compilação limpa via terminal.                |
+|   🟢   | `JAV-02` |    `P0`    | **Configuração de Dependências & JVM (Java 17)**             | Configurar plugins de compilação, encoding UTF-8, suíte de testes (JUnit 5, AssertJ) e dependências básicas de runtime.        |
+|   🟢   | `JAV-03` |    `P1`    | **Walking Skeleton & Health Check Endpoint (`GET /health`)** | Implementar endpoint mínimo funcional para verificação de subida da aplicação e testes automatizados de fumaça (_smoke test_). |
+|   🟢   | `JAV-04` |    `P2`    | **Perfis de Execução no VS Code (`launch.json` / `tasks`)**  | Configurar perfis de depuração com F5 para Java e tarefas integradas de compilação/execução no editor.                         |
 
 ---
 
@@ -115,3 +115,5 @@ Propostas técnicas para avaliação nas próximas iterações:
 ## 📝 Notas & Registro de Pensamentos
 
 Notas para não esquecer, para análise futura:
+
+- Verificar o status de "Unverified" no histórico de commit do github.

@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "NfseApplication (Debug F5)",
+      "request": "launch",
+      "mainClass": "br.com.heviane.nfse.NfseApplication",
+      "projectName": "nfse-nacional-api"
+    }
+  ]
+}

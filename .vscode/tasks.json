@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Maven: Clean Test",
+      "type": "shell",
+      "command": ".\\mvnw.cmd",
+      "args": ["clean", "test"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Maven: Spring Boot Run",
+      "type": "shell",
+      "command": ".\\mvnw.cmd",
+      "args": ["spring-boot:run"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Maven: Build WAR (Produção)",
+      "type": "shell",
+      "command": ".\\mvnw.cmd",
+      "args": ["clean", "package", "-DskipTests"],
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}
