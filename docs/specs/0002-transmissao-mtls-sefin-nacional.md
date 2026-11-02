@@ -105,3 +105,4 @@ public interface TransmissorSefinPort {
 - [ ] **Teste 3 (Rejeição Fiscal):** Simular retorno HTTP 200 com `codigoStatus = 204` ("Duplicidade de DPS") e garantir que `SefinTransmissaoException` é lançada com os detalhes do erro.
 - [ ] **Teste 4 (Erro HTTP 400/500):** Simular falha de rede ou HTTP 500 do Sefin, garantindo tratamento seguro sem quebra da JVM.
 - [ ] **Teste 5 (Consulta por Chave):** Simular chamada `GET /nfse/{chaveAcesso}` e verificar parse da resposta com descompactação da nota autorizada.
+

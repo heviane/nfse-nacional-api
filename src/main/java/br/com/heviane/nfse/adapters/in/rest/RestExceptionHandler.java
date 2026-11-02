@@ -1,0 +1,94 @@
+package br.com.heviane.nfse.adapters.in.rest;
+
+import br.com.heviane.nfse.adapters.in.rest.dto.ErroResponse;
+import br.com.heviane.nfse.core.domain.AssinaturaDigitalException;
+import br.com.heviane.nfse.core.domain.SefinTransmissaoException;
+import br.com.heviane.nfse.core.domain.ValidacaoFiscalException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.List;
+
+@RestControllerAdvice(basePackages = "br.com.heviane.nfse.adapters.in.rest")
+public class RestExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(RestExceptionHandler.class);
+
+    @ExceptionHandler(ValidacaoFiscalException.class)
+    public ResponseEntity<ErroResponse> handleValidacaoFiscal(ValidacaoFiscalException ex) {
+        log.warn("Erro de validação fiscal: {}", ex.getMessage());
+        ErroResponse erro = new ErroResponse(
+                ex.getMessage(),
+                ex.getErros(),
+                HttpStatus.UNPROCESSABLE_ENTITY.value()
+        );
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(erro);
+    }
+
+    @ExceptionHandler(SefinTransmissaoException.class)
+    public ResponseEntity<ErroResponse> handleSefinTransmissao(SefinTransmissaoException ex) {
+        log.error("Erro na comunicação com Sefin Nacional: HTTP {} - {}", ex.getHttpStatusCode(), ex.getMessage());
+        HttpStatus status = ex.getHttpStatusCode() != null && ex.getHttpStatusCode() >= 400 && ex.getHttpStatusCode() < 500
+                ? HttpStatus.BAD_REQUEST
+                : HttpStatus.BAD_GATEWAY;
+
+        List<String> detalhes = ex.getHttpStatusCode() != null
+                ? List.of("Código retornado pelo Sefin: " + ex.getHttpStatusCode())
+                : List.of();
+
+        ErroResponse erro = new ErroResponse(
+                ex.getMessage(),
+                detalhes,
+                status.value()
+        );
+        return ResponseEntity.status(status).body(erro);
+    }
+
+    @ExceptionHandler(AssinaturaDigitalException.class)
+    public ResponseEntity<ErroResponse> handleAssinaturaDigital(AssinaturaDigitalException ex) {
+        log.error("Erro ao assinar digitalmente XML da DPS: {}", ex.getMessage());
+        ErroResponse erro = new ErroResponse(
+                "Falha na assinatura digital da DPS: " + ex.getMessage(),
+                HttpStatus.BAD_REQUEST.value()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErroResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        log.warn("Parâmetro inválido na requisição: {}", ex.getMessage());
+        ErroResponse erro = new ErroResponse(
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST.value()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErroResponse> handleIllegalState(IllegalStateException ex) {
+        log.warn("Estado ilegal / configuração ausente: {}", ex.getMessage());
+        HttpStatus status = ex.getMessage() != null && ex.getMessage().toLowerCase().contains("certificado")
+                ? HttpStatus.BAD_REQUEST
+                : HttpStatus.INTERNAL_SERVER_ERROR;
+
+        ErroResponse erro = new ErroResponse(
+                ex.getMessage(),
+                status.value()
+        );
+        return ResponseEntity.status(status).body(erro);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErroResponse> handleGeneralException(Exception ex) {
+        log.error("Erro interno não tratado: {}", ex.getMessage(), ex);
+        ErroResponse erro = new ErroResponse(
+                "Erro interno ao processar a requisição: " + ex.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
+    }
+}

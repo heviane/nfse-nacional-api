@@ -33,3 +33,4 @@ class SefinSSLContextFactoryTest {
                 .hasMessageContaining("obrigatório");
     }
 }
+

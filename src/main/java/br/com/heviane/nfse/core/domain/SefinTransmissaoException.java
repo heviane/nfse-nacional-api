@@ -40,3 +40,4 @@ public class SefinTransmissaoException extends RuntimeException {
         return corpoResposta;
     }
 }
+
