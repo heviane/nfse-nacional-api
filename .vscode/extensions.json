@@ -1,9 +1,10 @@
 {
   "recommendations": [
-    "dbaeumer.vscode-eslint",
+    "vscjava.vscode-java-pack",
+    "redhat.vscode-xml",
+    "github.vscode-pull-request-github",
     "esbenp.prettier-vscode",
-    "ritwickdey.liveserver",
-    "ms-vscode.powershell",
-    "github.vscode-pull-request-github"
+    "eamodio.gitlens",
+    "usernamehw.errorlens"
   ]
 }

@@ -1,11 +1,18 @@
 {
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+  "[java]": {
+    "editor.defaultFormatter": "redhat.java"
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "redhat.vscode-xml"
   },
   "files.eol": "\n",
   "files.exclude": {
-    "**/node_modules": true
+    "**/target": true,
+    "**/.gradle": true,
+    "**/.settings": true,
+    "**/.classpath": true,
+    "**/.project": true
   }
 }
