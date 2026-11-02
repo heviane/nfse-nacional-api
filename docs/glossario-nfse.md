@@ -92,3 +92,4 @@ Campos obrigatórios no XML da DPS (`<prest><regTrib>`) para empresas optantes p
 ### Retenções na Fonte (ISSQN e Tributos Federais)
 * `tribISSQN = 1` e `tpRetISSQN = 2` (sem retenção de ISSQN pelo tomador).
 * `tpRetPisCofins = 2` (sem retenção de PIS/COFINS na fonte para optantes do Simples Nacional).
+

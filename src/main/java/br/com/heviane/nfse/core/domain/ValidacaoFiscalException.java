@@ -24,3 +24,4 @@ public class ValidacaoFiscalException extends RuntimeException {
         return erros;
     }
 }
+

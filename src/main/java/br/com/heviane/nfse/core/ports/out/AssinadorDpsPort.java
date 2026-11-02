@@ -33,3 +33,4 @@ public interface AssinadorDpsPort {
      */
     String gerarPayloadGZipB64(String xmlDpsAssinado);
 }
+

@@ -41,3 +41,4 @@ Para inspeção dos contratos de endpoints de emissão síncrona (`POST /nfse`),
 * **[Glossário Fiscal & Domínio da NFS-e](../glossario-nfse.md):** Conceitos tributários, diferença prática entre Sefin e ADN, DPS e chave de 50 dígitos.
 * **[Especificação da DPS e Assinatura A1 (SPEC-001)](../specs/0001-validacao-dps-assinatura-digital.md):** Regras de validação XSD e assinatura digital RSA-SHA256.
 * **[Contexto do Cliente 001](../clients/cliente-001.md):** Especificidades da migração de Vila Velha (SIL Tecnologia) para o Sefin Nacional.
+

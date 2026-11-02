@@ -14,3 +14,4 @@ public class AssinaturaDigitalException extends RuntimeException {
         super(message, cause);
     }
 }
+

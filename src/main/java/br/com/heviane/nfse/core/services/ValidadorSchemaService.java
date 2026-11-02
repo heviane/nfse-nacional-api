@@ -185,3 +185,4 @@ public class ValidadorSchemaService implements ValidadorSchemaPort {
         @Override public void setCertifiedText(boolean certifiedText) {}
     }
 }
+

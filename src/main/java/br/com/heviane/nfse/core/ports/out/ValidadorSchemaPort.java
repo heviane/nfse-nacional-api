@@ -33,3 +33,4 @@ public interface ValidadorSchemaPort {
      */
     void validarDpsOuFalhar(String xmlConteudo);
 }
+

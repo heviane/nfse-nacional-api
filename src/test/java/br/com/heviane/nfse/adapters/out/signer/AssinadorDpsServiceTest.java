@@ -140,3 +140,4 @@ class AssinadorDpsServiceTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }
+

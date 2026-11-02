@@ -75,13 +75,13 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ---
 
-### Épico 5: Transmissão & Comunicação com o Sefin Nacional / ADN (mTLS)
+### Épico 5: Transmissão & Comunicação com o Sefin Nacional / ADN (mTLS) — 🟢 100% Concluído
 
 | Status |    ID    | Prioridade | Item                                            | Descrição / Critérios de Aceite                                                                   |
 | :----: | :------: | :--------: | :---------------------------------------------- | :------------------------------------------------------------------------------------------------ |
-|   ⚪   | `COM-01` |    `P1`    | **Autenticação mTLS com Certificado A1**        | Configurar `SSLContext` com keystore PKCS#12 para handshake TLS mútuo com o Sefin Nacional.       |
-|   ⚪   | `COM-02` |    `P1`    | **Cliente de Transmissão de DPS (Homologação)** | Implementar envio da DPS assinada e tratamento síncrono/assíncrono da resposta do Sefin Nacional. |
-|   ⚪   | `COM-03` |    `P1`    | **Módulo de Consulta e Cancelamento**           | Implementar os serviços de consulta de situação da nota e envio de eventos de cancelamento.       |
+|   🟢   | `COM-01` |    `P1`    | **Autenticação mTLS com Certificado A1**        | Configurar `SSLContext` com keystore PKCS#12 para handshake TLS mútuo com o Sefin Nacional.       |
+|   🟢   | `COM-02` |    `P1`    | **Cliente de Transmissão de DPS (Homologação)** | Implementar envio da DPS assinada e tratamento síncrono/assíncrono da resposta do Sefin Nacional. |
+|   🟢   | `COM-03` |    `P1`    | **Módulo de Consulta e Cancelamento**           | Implementar os serviços de consulta de situação da nota e envio de eventos de cancelamento.       |
 
 ---
 
