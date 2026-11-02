@@ -29,7 +29,7 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 | :----: | :------: | :--------: | :------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
 |   🟢   | `SET-01` |    `P0`    | **Segurança no `.gitignore` & Configuração** | Blindar o `.gitignore` contra certificados A1 (`*.pfx`, `*.p12`, `*.pem`, `*.jks`) e padronizar o `.editorconfig` para Java/XML/XSD. |
 |   🟢   | `SET-02` |    `P0`    | **README Oficial do Projeto**                | Criar [`README.md`](../README.md) com identidade da API, badges, diagrama de arquitetura Mermaid e pré-requisitos técnicos.          |
-|   🟢   | `SET-03` |    `P1`    | **Governança de IA no Workspace**            | Alinhar que as diretrizes de IA são regidas globalmente pelo `AGENTS.md` do workspace, evitando duplicação local.                   |
+|   🟢   | `SET-03` |    `P1`    | **Ajuste do `AGENTS.md` Local**              | Adequar o contrato de IA para a stack Java, padrão de testes e regras de segurança fiscal.                                           |
 |   ⚪   | `SET-04` |    `P1`    | **Walking Skeleton Java**                    | Inicializar a estrutura base do projeto Java (Maven/Gradle) com teste de compilação executável via terminal.                         |
 
 ---
@@ -95,3 +95,8 @@ Propostas técnicas para avaliação nas próximas iterações:
    - Revisar o template oficial para mantê-lo agnóstico de stack e enriquecê-lo com o template padrão de `BACKLOG.md`.
    - O ideal seria que ao criar um repositório a partir deste template, o readme fosse criado customizado com base nos metadados informados para a criação, e não simplesmente copiar o README do template, pois isso é inutil.
    - Existem arquivos no repositório template que são especificos dele, e não devemos importar para o novo repositório. O que podemos fazer?
+
+   ## Notes
+
+   A tarefa SET-04 deve vir após as decisões de arquitetura.
+   O épico zero deve ser sobre um repositório padrão, onde as definições até o momento são apenas "deve ser gerado em java".
