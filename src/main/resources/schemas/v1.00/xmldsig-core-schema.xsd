@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" targetNamespace="http://www.w3.org/2000/09/xmldsig#" elementFormDefault="qualified" attributeFormDefault="unqualified" version="0.1">
 	<element name="Signature" type="ds:SignatureType"/>
 	<complexType name="SignatureType">
@@ -20,12 +20,12 @@
 		<sequence>
 			<element name="CanonicalizationMethod">
 				<complexType>
-					<attribute name="Algorithm" type="anyURI" use="required" fixed="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+					<attribute name="Algorithm" type="anyURI" use="required"/>
 				</complexType>
 			</element>
 			<element name="SignatureMethod">
 				<complexType>
-					<attribute name="Algorithm" type="anyURI" use="required" fixed="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+					<attribute name="Algorithm" type="anyURI" use="required"/>
 				</complexType>
 			</element>
 			<element name="Reference" type="ds:ReferenceType"/>
@@ -43,7 +43,7 @@
 			</element>
 			<element name="DigestMethod">
 				<complexType>
-					<attribute name="Algorithm" type="anyURI" use="required" fixed="http://www.w3.org/2000/09/xmldsig#sha1"/>
+					<attribute name="Algorithm" type="anyURI" use="required"/>
 				</complexType>
 			</element>
 			<element name="DigestValue" type="ds:DigestValueType"/>
@@ -60,14 +60,14 @@
 	</complexType>
 	<complexType name="TransformsType">
 		<sequence>
-			<element name="Transform" type="ds:TransformType" minOccurs="2" maxOccurs="2"/>
+			<element name="Transform" type="ds:TransformType" minOccurs="1" maxOccurs="unbounded"/>
 		</sequence>
 	</complexType>
 	<complexType name="TransformType">
 		<sequence minOccurs="0" maxOccurs="unbounded">
 			<element name="XPath" type="string"/>
 		</sequence>
-		<attribute name="Algorithm" type="ds:TTransformURI" use="required"/>
+		<attribute name="Algorithm" type="anyURI" use="required"/>
 	</complexType>
 	<complexType name="KeyInfoType">
 		<sequence>
@@ -82,11 +82,5 @@
 	</complexType>
 	<simpleType name="DigestValueType">
 		<restriction base="base64Binary"/>
-	</simpleType>
-	<simpleType name="TTransformURI">
-		<restriction base="anyURI">
-			<enumeration value="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
-			<enumeration value="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
-		</restriction>
 	</simpleType>
 </schema>

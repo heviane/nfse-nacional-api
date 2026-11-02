@@ -66,12 +66,12 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ---
 
-### Épico 4: Core Fiscal — Validação e Assinatura Digital (TDD)
+### Épico 4: Core Fiscal — Validação e Assinatura Digital (TDD) — 🟢 100% Concluído
 
 | Status |    ID     | Prioridade | Item                                                | Descrição / Critérios de Aceite                                                                      |
 | :----: | :-------: | :--------: | :-------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
-|   ⚪   | `CORE-01` |    `P0`    | **Suite de Testes Unitários de Validação XSD**      | Criar testes automatizados para validar payloads de DPS válidos e rejeitar estruturas malformadas.   |
-|   ⚪   | `CORE-02` |    `P0`    | **Módulo de Assinatura Digital com Certificado A1** | Implementar o fluxo de assinatura da tag `infDPS` usando chave privada do certificado A1 em memória. |
+|   🟢   | `CORE-01` |    `P0`    | **Suite de Testes Unitários de Validação XSD**      | Criar testes automatizados para validar payloads de DPS válidos e rejeitar estruturas malformadas.   |
+|   🟢   | `CORE-02` |    `P0`    | **Módulo de Assinatura Digital com Certificado A1** | Implementar o fluxo de assinatura da tag `infDPS` usando chave privada do certificado A1 em memória. |
 
 ---
 

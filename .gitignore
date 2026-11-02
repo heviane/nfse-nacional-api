@@ -73,11 +73,11 @@ yarn-error.log*
 *.iml
 *.iws
 *.ipr
-out/
+/out/
 .settings/
 .project
 .classpath
-bin/
+/bin/
 .nb-gradle/
 .vscode/*
 !.vscode/extensions.json
