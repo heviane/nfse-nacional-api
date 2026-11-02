@@ -145,49 +145,118 @@ https://<url-do-tunnel>/prefeitura/notafiscal/nfse.asmx
 
 ---
 
-## 7. 🧪 Teste de Emissão de Ponta a Ponta
+## 7. 🧪 Cenário 1: Teste Direto (Como Novo Cliente / API REST Moderna)
 
-### Teste 1: Emissão via API REST (`curl` / Postman)
+Este cenário valida o comportamento da API para **novos clientes ou sistemas modernos** que se integram via REST/JSON com DTOs limpos, sem precisar conhecer SOAP ou detalhes de criptografia XML.
 
-Submeta uma DPS real de homologação:
+### Opção 1.1: Via Swagger UI (Interativo no Navegador — Sem ferramentas externas)
+1. Com a API rodando, acesse no navegador:  
+   `http://localhost:8080/swagger-ui/index.html`
+2. Localize a seção **`Emissão DPS`** e clique em **`POST /api/v1/dps/emitir`**.
+3. Clique no botão **`Try it out`**.
+4. *(Opcional)* Se não tiver configurado as variáveis de ambiente no servidor, preencha os headers:
+   - `X-Certificado-Base64`: String Base64 do `.pfx`
+   - `X-Certificado-Senha`: Senha do certificado
+5. No corpo da requisição (`Request body`), preencha o JSON com a DPS de homologação:
+   ```json
+   {
+     "ambiente": "HOMOLOGACAO",
+     "xmlDps": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" versao=\"1.00\"><infDPS Id=\"DPS320520023603027800015900001000000000032037\"><tpAmb>2</tpAmb><dhEmi>2026-11-02T16:00:00-03:00</dhEmi><verAplic>LkSistemas_v1.00</verAplic><serie>00001</serie><nDPS>32037</nDPS><dCompet>2026-11-02</dCompet><tpEmit>1</tpEmit><cLocEmi>3205200</cLocEmi><prest><CNPJ>36030278000159</CNPJ><IM>9657</IM><xNome>LK ASSESSORIA LTDA</xNome><fone>2734346700</fone><email>LKVIX@LKVIX.COM.BR</email><regTrib><opSimpNac>1</opSimpNac><regApTribSN>1</regApTribSN><regEspTrib>0</regEspTrib></regTrib></prest><toma><CNPJ>01211121000145</CNPJ><xNome>TOMADOR TESTE LTDA</xNome><end><endNac><cMun>3205309</cMun><CEP>29010364</CEP></endNac><xLgr>AV PRINCESA ISABEL, 574</xLgr><nro>574</nro><xBairro>CENTRO</xBairro></end></toma><serv><locPrest><cLocPrestacao>3205200</cLocPrestacao></locPrest><cServ><cTribNac>010301</cTribNac><cTribMun>700</cTribMun><xDescServ>Servicos de desenvolvimento de sistemas de informacao.</xDescServ></cServ></serv><valores><vServPrest><vServ>100.00</vServ></vServPrest><trib><tribMun><tribISSQN>1</tribISSQN><tpRetISSQN>2</tpRetISSQN><pAliq>2.50</pAliq></tribMun><tribFed><piscofins><CST>07</CST><vBCPisCofins>0.00</vBCPisCofins><pAliqPis>0.00</pAliqPis><pAliqCofins>0.00</pAliqCofins><vPis>0.00</vPis><vCofins>0.00</vCofins><tpRetPisCofins>2</tpRetPisCofins></piscofins></tribFed><totTrib><indTotTrib>0</indTotTrib></totTrib></trib></valores></infDPS></DPS>"
+   }
+   ```
+6. Clique no botão azul **`Execute`**.
+7. **Resultado esperado (HTTP 200):**
+   ```json
+   {
+     "sucesso": true,
+     "codigoStatus": 100,
+     "motivoStatus": "NFS-e gerada com sucesso",
+     "chaveAcesso": "32052001236030278000159000000003203726110114333510",
+     "xmlNfse": "<NFSe versao=\"1.00\">...</NFSe>"
+   }
+   ```
 
+### Opção 1.2: Via Terminal (`curl` / Postman / Insomnia)
 ```bash
 curl -X POST http://localhost:8080/api/v1/dps/emitir \
   -H "Content-Type: application/json" \
   -d '{
     "ambiente": "HOMOLOGACAO",
-    "xmlDps": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" versao=\"1.00\"><infDPS Id=\"DPS320520023603027800015900001000000000032037\"><tpAmb>2</tpAmb><dhEmi>2026-11-02T16:00:00-03:00</dhEmi><verAplic>LkSistemas_v1.00</verAplic><serie>00001</serie><nDPS>32037</nDPS><dCompet>2026-11-02</dCompet><tpEmit>1</tpEmit><cLocEmi>3205200</cLocEmi><prest><CNPJ>36030278000159</CNPJ><IM>9657</IM><xNome>LK ASSESSORIA LTDA</xNome><fone>2734346700</fone><email>LKVIX@LKVIX.COM.BR</email><regTrib><opSimpNac>1</opSimpNac><regApTribSN>1</regApTribSN><regEspTrib>0</regEspTrib></regTrib></prest><toma><CNPJ>01211121000145</CNPJ><xNome>TOMADOR TESTE LTDA</xNome><end><endNac><cMun>3205309</cMun><CEP>29010364</CEP></endNac><xLgr>AV PRINCESA ISABEL, 574</xLgr><nro>574</nro><xBairro>CENTRO</xBairro></end></toma><serv><locPrest><cLocPrestacao>3205200</cLocPrestacao></locPrest><cServ><cTribNac>010301</cTribNac><cTribMun>700</cTribMun><xDescServ>Servicos de desenvolvimento de sistemas de informacao.</xDescServ></cServ></serv><valores><vServPrest><vServ>100.00</vServ></vServPrest><trib><tribMun><tribISSQN>1</tribISSQN><tpRetISSQN>2</tpRetISSQN><pAliq>2.50</pAliq></tribMun><tribFed><piscofins><CST>07</CST><vBCPisCofins>0.00</vBCPisCofins><pAliqPis>0.00</pAliqPis><pAliqCofins>0.00</pAliqCofins><vPis>0.00</vPis><vCofins>0.00</vCofins><tpRetPisCofins>2</tpRetPisCofins></piscofins></tribFed><totTrib><indTotTrib>0</indTotTrib></totTrib></trib></valores></infDPS></DPS>"
+    "xmlDps": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" versao=\"1.00\">...</DPS>"
   }'
 ```
 
-**Retorno de Sucesso (HTTP 200):**
-```json
-{
-  "sucesso": true,
-  "codigoStatus": 100,
-  "motivoStatus": "NFS-e gerada com sucesso",
-  "chaveAcesso": "32052001236030278000159000000003203726110114333510",
-  "xmlNfse": "<NFSe versao=\"1.00\">...</NFSe>"
-}
-```
+---
 
-### Teste 2: Emissão via Camada Anticorrupção SOAP (GeneXus 18)
+## 8. 🔄 Cenário 2: Teste via ERP Legado (Cliente 001 GeneXus 18 / SOAP ACL)
 
-Dispare a rotina de emissão padrão do ERP GeneXus.  
-O ERP enviará a chamada SOAP para `https://<url-do-tunnel>/prefeitura/notafiscal/nfse.asmx`.  
-No terminal da API, você verá os logs:
+Este cenário valida a **Camada Anticorrupção (ACL)**: o ERP GeneXus 18 continua disparando as requisições SOAP no padrão municipal antigo da SIL Tecnologia, e a nossa API atua como um emulador transparente, convertendo tudo para o padrão nacional do Sefin.
+
+### Passo 2.1: Teste de Reconhecimento do WSDL
+Antes de emitir, garanta que o GeneXus ou o navegador consiga ler o WSDL emulado:
+* Abra no navegador: `http://localhost:8080/prefeitura/notafiscal/nfse.asmx?WSDL`
+* Confirme se o XML retornado contém as tags `<wsdl:definitions>`, os métodos `<s:element name="GerarNfse">` e a namespace `http://www.siltecnologia.com.br/`.
+
+### Passo 2.2: Configuração de Apontamento no GeneXus 18
+No ERP GeneXus do Cliente 001, acesse as configurações de parâmetros municipais de emissão da NFS-e:
+* **Se o GeneXus estiver na mesma máquina de desenvolvimento:**
+  Altere a URL do WebService da prefeitura para:
+  ```text
+  http://localhost:8080/prefeitura/notafiscal/nfse.asmx
+  ```
+* **Se o GeneXus estiver em outra máquina ou na rede do cliente:**
+  Abra o túnel seguro na sua máquina (conforme Seção 6):
+  ```powershell
+  cloudflared tunnel --url http://localhost:8080
+  # ou
+  ngrok http 8080
+  ```
+  E configure no GeneXus a URL HTTPS gerada:
+  ```text
+  https://<sua-url-do-tunnel>/prefeitura/notafiscal/nfse.asmx
+  ```
+
+### Passo 2.3: Disparar a Emissão no GeneXus 18
+1. No ERP GeneXus, gere uma nota de serviço de teste normalmente e clique na ação de transmissão/emissão.
+2. O GeneXus empacotará o XML no envelope SOAP tradicional e enviará via HTTP POST para a rota `/prefeitura/notafiscal/nfse.asmx`.
+
+### Passo 2.4: O que você verá no console da API em tempo real
+No terminal onde a API está rodando, você verá o ciclo completo sendo executado:
 ```text
 INFO  [LegacySoapController] Recebida requisição SOAP de emissão legada via GeneXus 18
-INFO  [EmitirDpsService] Validando schema XSD da DPS...
-INFO  [AssinadorDpsService] DPS assinada com sucesso com certificado A1
-INFO  [SefinClientAdapter] Transmitindo DPS via mTLS para o Sefin Nacional (Homologação)...
-INFO  [SefinClientAdapter] Resposta recebida do Sefin: HTTP 200 - Status 100 (NFS-e gerada com sucesso)
+INFO  [LegacySoapController] Tag <DPS> extraída com sucesso do envelope SOAP
+INFO  [EmitirDpsService] Validando schema XSD da DPS contra schema oficial v1.00...
+INFO  [AssinadorDpsService] Assinando tag infDPS via RSA-SHA256 em memória...
+INFO  [SefinClientAdapter] Estabelecendo handshake mTLS com https://sefin.producaorestrita.nfse.gov.br...
+INFO  [SefinClientAdapter] Transmissão concluída com sucesso! HTTP 200 - Status Sefin 100
+INFO  [LegacySoapController] Retorno nacional empacotado em envelope SOAP legado para o GeneXus
 ```
-O GeneXus receberá o retorno XML compatível com a SIL Tecnologia contendo a chave nacional e confirmará a nota emitida.
+
+### Passo 2.5: O que o GeneXus 18 receberá
+O GeneXus receberá um HTTP 200 contendo o envelope SOAP idêntico ao que a prefeitura retornava:
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <GerarNfseResponse xmlns="http://www.siltecnologia.com.br/">
+      <GerarNfseResult>
+        <RetornoEmissao>
+          <Sucesso>true</Sucesso>
+          <CodigoStatus>100</CodigoStatus>
+          <MotivoStatus>NFS-e gerada com sucesso</MotivoStatus>
+          <ChaveAcesso>32052001236030278000159000000003203726110114333510</ChaveAcesso>
+          <XmlNfse>&lt;NFSe...&gt;</XmlNfse>
+        </RetornoEmissao>
+      </GerarNfseResult>
+    </GerarNfseResponse>
+  </soap:Body>
+</soap:Envelope>
+```
+O GeneXus processará o retorno, gravará a chave de acesso e marcará a nota como emitida no banco de dados do ERP.
 
 ---
 
-## 8. 🛠️ Diagnóstico & Resolução de Problemas (Troubleshooting)
+## 9. 🛠️ Diagnóstico & Resolução de Problemas (Troubleshooting)
 
 | Sintoma | Causa Mais Provável | Como Resolver |
 | :--- | :--- | :--- |
@@ -195,3 +264,4 @@ O GeneXus receberá o retorno XML compatível com a SIL Tecnologia contendo a ch
 | `Falha ao carregar certificado: pad block corrupted` | Arquivo Base64 corrompido ou truncado. | Gerar novamente o Base64 garantindo que o comando não quebrou linhas (`-w 0` no Linux ou script PowerShell). |
 | `SefinTransmissaoException: HTTP 403 / 401` | Certificado rejeitado pela Receita Federal. | Verificar se o certificado é um e-CNPJ / e-CPF válido da ICP-Brasil e se não está revogado ou expirado. |
 | `ValidacaoFiscalException: cvc-complex-type...` | Campos obrigatórios ausentes no XML da DPS. | Verificar se o XML possui todos os nós exigidos para o Simples Nacional (`opSimpNac`, `regApTribSN`, etc.). |
+
