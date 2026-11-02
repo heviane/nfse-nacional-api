@@ -64,7 +64,6 @@ Toda a evolução do projeto é gerida via **Docs-as-Code**:
 * **[Backlog do Projeto](./docs/backlog.md):** Épicos, fatias verticais e status das tarefas.
 * **[Especificações Técnicas (`docs/specs/`)](./docs/templates/SPEC.md):** Regras de negócio e contratos de cada fatia antes da codificação.
 * **[Decisões Arquiteturais (`docs/adrs/`)](./docs/templates/ADR.md):** Registros formais de decisões técnicas (ADRs).
-* **[Diretrizes de IA (`AGENTS.md`)](./AGENTS.md):** Regras e restrições operacionais para agentes de pair programming.
 
 ---
 
