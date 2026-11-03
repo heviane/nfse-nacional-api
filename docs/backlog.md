@@ -109,7 +109,7 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 Propostas técnicas para avaliação nas próximas iterações:
 
 1. **Dashboard Administrativo / Web UI:**
-   Painel visual leve (React/Vite ou UI embutida) para que o cliente ou sua equipe contábil visualize notas transmitidas, logs de rejeição da Receita e status dos certificados A1.
+   Painel visual leve (React/Vite ou UI embutida) para que o cliente ou sua equipe contábil visualize notas transmitidas, logs de rejeição da Receita, status dos certificados A1 e feed de comunicados oficiais monitorados pelo agente (Item 9).
 2. **Suporte Multi-Tenant / Multi-Certificados:**
    Capacidade de a mesma API gerenciar certificados A1 de diferentes filiais/empresas roteados por CNPJ.
 3. **Melhorias no Repositório Template (`project-starter-kit`):**
@@ -130,6 +130,11 @@ Propostas técnicas para avaliação nas próximas iterações:
    - Suporte a carregamento de certificados digitais A1 diretamente em memória (`byte[]`, `InputStream` ou Base64), eliminando a obrigatoriedade de salvar arquivos `.pfx` em disco (alinhamento com segurança fiscal e LGPD).
    - Suporte à transformação canônica exclusiva (`CanonicalizationMethod.EXCLUSIVE`) e flexibilização da posição do elemento `<Signature>` (filho da raiz referenciando nó interno ou envelopado).
    - Inclusão de método para validação matemática de integridade da assinatura (`validarAssinatura`) e utilitário de compactação/codificação `GZIP + Base64`.
+9. **Agente Autônomo de Monitoramento de Comunicados Oficiais (NFS-e Nacional / Receita Federal):**
+   Criar um agente ou rotina automatizada especializada em monitorar os canais oficiais do Sefin Nacional e do Portal da NFS-e (Receita Federal):
+   - Rastrear periodicamente a publicação de comunicados, janelas de manutenção dos servidores nacionais, notas técnicas e novas versões de schemas XSD.
+   - Classificar o nível de criticidade dos comunicados (informativo, manutenção programada, alerta de indisponibilidade ou *breaking change* de schema).
+   - Alimentar e exibir esses avisos de forma centralizada no **Dashboard Administrativo / Web UI** (Item 1), permitindo que a equipe contábil e de TI tome ações preventivas antes que instabilidades impactem a emissão.
 
 ## 📝 Notas & Registro de Pensamentos
 
