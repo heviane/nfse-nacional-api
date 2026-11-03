@@ -250,6 +250,7 @@ O leitor XML do GeneXus espera um envelope SOAP com o elemento `<GerarNfseRespon
 ```
 
 #### Campos Retornados no `RetornoEmissao`:
+
 * `<Sucesso>`: Booleano (`true` ou `false`).
 * `<CodigoStatus>`: Código numérico de status (ex: `100` para autorizada no Sefin Nacional, ou `999` para falha).
 * `<MotivoStatus>`: Mensagem descritiva do resultado da transmissão.

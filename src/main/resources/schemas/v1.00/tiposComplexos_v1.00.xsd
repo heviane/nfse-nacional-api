@@ -328,6 +328,9 @@
           <xs:documentation>Emitente da DPS: 1 - Prestador; 2 - Tomador; 3 - Intermediário</xs:documentation>
         </xs:annotation>
       </xs:element>
+      <xs:element minOccurs="0" name="cMotivoEmisTI" type="xs:string"/>
+      <xs:element minOccurs="0" name="finNFSe" type="xs:string"/>
+      <xs:element minOccurs="0" name="chNFSeRej" type="xs:string"/>
       <xs:element name="cLocEmi" type="TSCodMunIBGE">
         <xs:annotation>
           <xs:documentation>
