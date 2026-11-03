@@ -124,6 +124,12 @@ Propostas técnicas para avaliação nas próximas iterações:
    Configurar chave de assinatura (SSH Signing Key ou GPG) no Git local e vincular à conta do GitHub para obter o selo "Verified" em todos os commits, garantindo rastreabilidade e integridade criptográfica.
 7. **Deploy em PaaS Gerenciada com HTTPS Automático (Railway / Render):**
    Avaliar a criação de `Dockerfile` e workflow para provisionamento rápido da API em PaaS moderna (ex: Railway, Render ou Fly.io), fornecendo URL pública HTTPS fixa com certificado SSL automático para testes externos imediatos sem depender de túneis locais (ngrok/Cloudflare).
+8. **Evolução da Biblioteca `assinador-xml-java` (Suporte a SHA-256 e Certificados em Memória):**
+   Atualizar a biblioteca pública [`heviane/assinador-xml-java`](https://github.com/heviane/assinador-xml-java) incorporando os aprimoramentos arquiteturais e criptográficos validados na `nfse-nacional-api`:
+   - Suporte a algoritmos modernos de assinatura (`RSA-SHA256`) e digest (`SHA-256`), mantendo retrocompatibilidade com `RSA-SHA1`/`SHA-1` para municípios legados via configuração/enum.
+   - Suporte a carregamento de certificados digitais A1 diretamente em memória (`byte[]`, `InputStream` ou Base64), eliminando a obrigatoriedade de salvar arquivos `.pfx` em disco (alinhamento com segurança fiscal e LGPD).
+   - Suporte à transformação canônica exclusiva (`CanonicalizationMethod.EXCLUSIVE`) e flexibilização da posição do elemento `<Signature>` (filho da raiz referenciando nó interno ou envelopado).
+   - Inclusão de método para validação matemática de integridade da assinatura (`validarAssinatura`) e utilitário de compactação/codificação `GZIP + Base64`.
 
 ## 📝 Notas & Registro de Pensamentos
 
