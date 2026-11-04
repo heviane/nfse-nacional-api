@@ -85,14 +85,14 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ---
 
-### Épico 6: Exposição da API REST, Camada Anticorrupção & Deploy BrasilCloud — 🟢 100% Concluído
+### Épico 6: Exposição da API REST, Camada Anticorrupção & Deploy BrasilCloud — 🟡 Em Andamento
 
 | Status |    ID    | Prioridade | Item                                                | Descrição / Critérios de Aceite                                                                                                 |
 | :----: | :------: | :--------: | :-------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
 |   🟢   | `API-01` |    `P1`    | **Endpoints REST para o ERP**                       | Criar rotas padronizadas (`POST /api/v1/dps/emitir`, `GET /api/v1/nfse/{chave}`, `POST /api/v1/nfse/cancelar`) com DTOs limpos. |
 |   🟢   | `API-02` |    `P2`    | **Documentação Interativa (Swagger/OpenAPI)**       | Configurar interface Swagger UI e OpenAPI 3 para testes e integração rápida de novos clientes.                                  |
 |   🟢   | `API-03` |    `P1`    | **Build e Empacotamento para Tomcat (BrasilCloud)** | Configurar geração de artefato WAR otimizado para deploy no Apache Tomcat 10+ na BrasilCloud.                                   |
-|   🟢   | `API-04` |    `P0`    | **Camada Anticorrupção (ACL GeneXus 18)**           | Emulação do WebService SOAP SIL Tecnologia (`/prefeitura/notafiscal/nfse.asmx`) para zero alteração no ERP do Cliente 001.      |
+|   🟡   | `API-04` |    `P0`    | **Camada Anticorrupção (ACL GeneXus 18)**           | Emulação do WebService SOAP SIL Tecnologia (`/prefeitura/notafiscal/nfse.asmx`) — em refinamento de parâmetros e estrutura WSDL. |
 
 ---
 
