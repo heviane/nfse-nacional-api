@@ -66,40 +66,44 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ---
 
-### Épico 4: Core Fiscal — Validação e Assinatura Digital (TDD) — 🟢 100% Concluído
+### Épico 4: Core Fiscal — Validação e Assinatura Digital (TDD) — 🟡 Em Andamento
 
-| Status |    ID     | Prioridade | Item                                                | Descrição / Critérios de Aceite                                                                      |
-| :----: | :-------: | :--------: | :-------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
-|   🟢   | `CORE-01` |    `P0`    | **Suite de Testes Unitários de Validação XSD**      | Criar testes automatizados para validar payloads de DPS válidos e rejeitar estruturas malformadas.   |
-|   🟢   | `CORE-02` |    `P0`    | **Módulo de Assinatura Digital com Certificado A1** | Implementar o fluxo de assinatura da tag `infDPS` usando chave privada do certificado A1 em memória. |
+| Status |    ID     | Prioridade | Item                                                            | Descrição / Critérios de Aceite                                                                                                                       |
+| :----: | :-------: | :--------: | :-------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- |
+|   🟢   | `CORE-01` |    `P0`    | **Suite de Testes Unitários de Validação XSD**                  | Criar testes automatizados para validar payloads de DPS válidos e rejeitar estruturas malformadas.                                                    |
+|   🟢   | `CORE-02` |    `P0`    | **Módulo de Assinatura Digital com Certificado A1**             | Implementar o fluxo de assinatura da tag `infDPS` usando chave privada do certificado A1 em memória.                                                  |
+|   ⚪   | `CORE-03` |    `P2`    | **Suporte Dinâmico a Versões de Schema XSD (NT-009 / IBS-CBS)** | Estruturar os schemas XSD para validação dinâmica por versão (v1.00, v1.01), preparando o middleware para as regras de IBS/CBS da Reforma Tributária. |
 
 ---
 
-### Épico 5: Transmissão & Comunicação com o Sefin Nacional / ADN (mTLS) — 🟢 100% Concluído
+### Épico 5: Transmissão & Comunicação com o Sefin Nacional / ADN (mTLS) — 🟡 Em Andamento
 
-| Status |    ID    | Prioridade | Item                                            | Descrição / Critérios de Aceite                                                                   |
-| :----: | :------: | :--------: | :---------------------------------------------- | :------------------------------------------------------------------------------------------------ |
-|   🟢   | `COM-01` |    `P1`    | **Autenticação mTLS com Certificado A1**        | Configurar `SSLContext` com keystore PKCS#12 para handshake TLS mútuo com o Sefin Nacional.       |
-|   🟢   | `COM-02` |    `P1`    | **Cliente de Transmissão de DPS (Homologação)** | Implementar envio da DPS assinada e tratamento síncrono/assíncrono da resposta do Sefin Nacional. |
-|   🟢   | `COM-03` |    `P1`    | **Módulo de Consulta e Cancelamento**           | Implementar os serviços de consulta de situação da nota e envio de eventos de cancelamento.       |
+| Status |    ID    | Prioridade | Item                                                  | Descrição / Critérios de Aceite                                                                                                                         |
+| :----: | :------: | :--------: | :---------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|   🟢   | `COM-01` |    `P1`    | **Autenticação mTLS com Certificado A1**              | Configurar `SSLContext` com keystore PKCS#12 para handshake TLS mútuo com o Sefin Nacional.                                                             |
+|   🟢   | `COM-02` |    `P1`    | **Cliente de Transmissão de DPS (Homologação)**       | Implementar envio da DPS assinada e tratamento síncrono/assíncrono da resposta do Sefin Nacional.                                                       |
+|   🟢   | `COM-03` |    `P1`    | **Módulo de Consulta e Cancelamento**                 | Implementar os serviços de consulta de situação da nota e envio de eventos de cancelamento.                                                             |
+|   ⚪   | `COM-04` |    `P1`    | **Resiliência de Transporte & Retries no Sefin**      | Implementar política de retries com backoff exponencial para falhas transitórias de rede e erros HTTP 502/503/504 no `SefinClientAdapter`.              |
+|   ⚪   | `COM-05` |    `P1`    | **Tratamento de Respostas Assíncronas (Lote / Fila)** | Tratar adequadamente respostas com protocolo de lote e integrar com polling/consulta transparente quando o Sefin Nacional responder em modo assíncrono. |
 
 ---
 
 ### Épico 6: Exposição da API REST, Camada Anticorrupção & Deploy BrasilCloud — 🟡 Em Andamento
 
-| Status |    ID    | Prioridade | Item                                                | Descrição / Critérios de Aceite                                                                                                 |
-| :----: | :------: | :--------: | :-------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
-|   🟢   | `API-01` |    `P1`    | **Endpoints REST para o ERP**                       | Criar rotas padronizadas (`POST /api/v1/dps/emitir`, `GET /api/v1/nfse/{chave}`, `POST /api/v1/nfse/cancelar`) com DTOs limpos. |
-|   🟢   | `API-02` |    `P2`    | **Documentação Interativa (Swagger/OpenAPI)**       | Configurar interface Swagger UI e OpenAPI 3 para testes e integração rápida de novos clientes.                                  |
-|   🟢   | `API-03` |    `P1`    | **Build e Empacotamento para Tomcat (BrasilCloud)** | Configurar geração de artefato WAR otimizado para deploy no Apache Tomcat 10+ na BrasilCloud.                                   |
-|   🟡   | `API-04` |    `P0`    | **Camada Anticorrupção (ACL GeneXus 18)**           | Emulação do WebService SOAP SIL Tecnologia (`/prefeitura/notafiscal/nfse.asmx`) — em refinamento de parâmetros e estrutura WSDL. |
+| Status |    ID    | Prioridade | Item                                                | Descrição / Critérios de Aceite                                                                                                                                                                              |
+| :----: | :------: | :--------: | :-------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|   🟢   | `API-01` |    `P1`    | **Endpoints REST para o ERP**                       | Criar rotas padronizadas (`POST /api/v1/dps/emitir`, `GET /api/v1/nfse/{chave}`, `POST /api/v1/nfse/cancelar`) com DTOs limpos.                                                                              |
+|   🟢   | `API-02` |    `P2`    | **Documentação Interativa (Swagger/OpenAPI)**       | Configurar interface Swagger UI e OpenAPI 3 para testes e integração rápida de novos clientes.                                                                                                               |
+|   🟢   | `API-03` |    `P1`    | **Build e Empacotamento para Tomcat (BrasilCloud)** | Configurar geração de artefato WAR otimizado para deploy no Apache Tomcat 10+ na BrasilCloud.                                                                                                                |
+|   🟡   | `API-04` |    `P0`    | **Camada Anticorrupção (ACL GeneXus 18)**           | Emulação exata do WSDL/namespaces SIL Tecnologia (`http://www.siltecnologia.com.br/`), retorno estruturado de SDT GeneXus e parser tolerante a CDATA/entidades XML (`&lt;`, `&gt;`). Aguardando refinamento. |
+|   🟢   | `API-05` |    `P1`    | **Observabilidade & Correlation-ID (MDC)**          | Implementar filtro HTTP para injetar `X-Correlation-ID` no MDC do SLF4J e no cabeçalho de resposta, rastreando cada requisição nos logs do Tomcat.                                                           |
 
 ---
 
 ### Épico 7: Pós-MVP — Infraestrutura de Homologação Dedicada & Transição para Produção (⚪ A Fazer pós-testes)
 
-| Status |    ID    | Prioridade | Item                                                                                | Descrição / Critérios de Aceite                                                                                                                    |
-| :----: | :------: | :--------: | :---------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status |    ID    | Prioridade | Item                                                                                | Descrição / Critérios de Aceite                                                                                                                                              |
+| :----: | :------: | :--------: | :---------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 |   ⚪   | `OPS-01` |    `P1`    | **Ambiente de Homologação Dedicado em VPS Linux (Tomcat 10 - Espelho BrasilCloud)** | Provisionar e configurar uma VPS Linux (Ubuntu + Tomcat 10 + JDK 17) com `setenv.sh` como réplica 1:1 da BrasilCloud para homologação antes do deploy definitivo no cliente. |
 
 ---
@@ -133,7 +137,7 @@ Propostas técnicas para avaliação nas próximas iterações:
 9. **Agente Autônomo de Monitoramento de Comunicados Oficiais (NFS-e Nacional / Receita Federal):**
    Criar um agente ou rotina automatizada especializada em monitorar os canais oficiais do Sefin Nacional e do Portal da NFS-e (Receita Federal):
    - Rastrear periodicamente a publicação de comunicados, janelas de manutenção dos servidores nacionais, notas técnicas e novas versões de schemas XSD.
-   - Classificar o nível de criticidade dos comunicados (informativo, manutenção programada, alerta de indisponibilidade ou *breaking change* de schema).
+   - Classificar o nível de criticidade dos comunicados (informativo, manutenção programada, alerta de indisponibilidade ou _breaking change_ de schema).
    - Alimentar e exibir esses avisos de forma centralizada no **Dashboard Administrativo / Web UI** (Item 1), permitindo que a equipe contábil e de TI tome ações preventivas antes que instabilidades impactem a emissão.
 
 ## 📝 Notas & Registro de Pensamentos
