@@ -5,11 +5,12 @@ import java.util.List;
 /**
  * Porta de saída para validação sintática e semântica de documentos fiscais
  * contra os esquemas XSD oficiais da NFS-e Nacional.
+ * Suporta múltiplas versões de schema com auto-detecção dinâmica (v1.00 e v1.01 / NT-009).
  */
 public interface ValidadorSchemaPort {
 
     /**
-     * Valida o conteúdo XML de uma DPS contra o schema XSD oficial padrão (v1.00).
+     * Valida o conteúdo XML de uma DPS com auto-detecção dinâmica de versão pelo atributo 'versao' do XML.
      *
      * @param xmlConteudo Conteúdo XML da DPS
      * @return Lista com descrições dos erros encontrados (vazia se o XML for válido)
@@ -26,11 +27,19 @@ public interface ValidadorSchemaPort {
     List<String> validarDps(String xmlConteudo, String versao);
 
     /**
-     * Valida o conteúdo XML de uma DPS ou lança {@link br.com.heviane.nfse.core.domain.ValidacaoFiscalException}
+     * Valida o conteúdo XML de uma DPS (com auto-detecção dinâmica de versão) ou lança {@link br.com.heviane.nfse.core.domain.ValidacaoFiscalException}
      * caso haja qualquer desconformidade.
      *
      * @param xmlConteudo Conteúdo XML da DPS
      */
     void validarDpsOuFalhar(String xmlConteudo);
-}
 
+    /**
+     * Valida o conteúdo XML de uma DPS contra uma versão específica ou lança {@link br.com.heviane.nfse.core.domain.ValidacaoFiscalException}
+     * caso haja qualquer desconformidade.
+     *
+     * @param xmlConteudo Conteúdo XML da DPS
+     * @param versao Versão do schema ("v1.00", "v1.01")
+     */
+    void validarDpsOuFalhar(String xmlConteudo, String versao);
+}

@@ -91,5 +91,64 @@ class ValidadorSchemaServiceTest {
         List<String> errosMalformado = validador.validarDps("<DPS><infDPS>aberto");
         assertThat(errosMalformado).isNotEmpty();
     }
+
+    @Test
+    @DisplayName("CORE-03: Deve auto-detectar dinamicamente a versão v1.01 (NT-009 / Reforma Tributária) e validar com sucesso")
+    void deveAutoDetectarVersaoV101EValidarComSucesso() {
+        String xmlV101 = xmlValido.replace("versao=\"1.00\"", "versao=\"1.01\"");
+
+        List<String> erros = validador.validarDps(xmlV101);
+
+        assertThat(erros)
+                .as("DPS com versao=1.01 deve ser validada dinamicamente contra o schema v1.01 sem erros")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("CORE-03: Deve rejeitar versao 1.01 quando forçada validação contra o schema v1.00")
+    void deveRejeitarVersao101QuandoForcadoContraSchemaV100() {
+        String xmlV101 = xmlValido.replace("versao=\"1.00\"", "versao=\"1.01\"");
+
+        List<String> erros = validador.validarDps(xmlV101, "v1.00");
+
+        assertThat(erros)
+                .as("Schema v1.00 estrito deve rejeitar versao=1.01")
+                .isNotEmpty();
+        assertThat(erros.get(0)).contains("1.01");
+    }
+
+    @Test
+    @DisplayName("CORE-03: Deve validar com sucesso chamando validarDpsOuFalhar com versão v1.01 explícita")
+    void deveValidarDpsOuFalharComVersaoV101Explicita() {
+        String xmlV101 = xmlValido.replace("versao=\"1.00\"", "versao=\"1.01\"");
+        validador.validarDpsOuFalhar(xmlV101, "v1.01");
+    }
+
+    @Test
+    @DisplayName("CORE-03: Deve lançar ValidacaoFiscalException quando forçada versão incompatível em validarDpsOuFalhar")
+    void deveLancarExcecaoQuandoVersaoIncompativelEmValidarDpsOuFalhar() {
+        String xmlV101 = xmlValido.replace("versao=\"1.00\"", "versao=\"1.01\"");
+
+        assertThatThrownBy(() -> validador.validarDpsOuFalhar(xmlV101, "v1.00"))
+                .isInstanceOf(ValidacaoFiscalException.class)
+                .hasMessageContaining("v1.00");
+    }
+
+    @Test
+    @DisplayName("CORE-03: Deve normalizar e extrair formatos de versão corretamente")
+    void deveNormalizarEExtrairFormatosDeVersao() {
+        assertThat(ValidadorSchemaService.normalizarVersao("1.01")).isEqualTo("v1.01");
+        assertThat(ValidadorSchemaService.normalizarVersao("v1.01")).isEqualTo("v1.01");
+        assertThat(ValidadorSchemaService.normalizarVersao("1.00")).isEqualTo("v1.00");
+        assertThat(ValidadorSchemaService.normalizarVersao("v1.00")).isEqualTo("v1.00");
+        assertThat(ValidadorSchemaService.normalizarVersao(null)).isEqualTo("v1.00");
+        assertThat(ValidadorSchemaService.normalizarVersao("   ")).isEqualTo("v1.00");
+
+        assertThat(ValidadorSchemaService.extrairVersao("<DPS versao=\"1.01\">")).isEqualTo("v1.01");
+        assertThat(ValidadorSchemaService.extrairVersao("<DPS versao='1.01'>")).isEqualTo("v1.01");
+        assertThat(ValidadorSchemaService.extrairVersao("<DPS versao=\"1.00\">")).isEqualTo("v1.00");
+        assertThat(ValidadorSchemaService.extrairVersao("<DPS>")).isEqualTo("v1.00");
+        assertThat(ValidadorSchemaService.extrairVersao(null)).isEqualTo("v1.00");
+    }
 }
 

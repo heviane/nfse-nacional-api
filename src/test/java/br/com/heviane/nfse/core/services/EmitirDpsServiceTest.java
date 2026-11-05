@@ -85,8 +85,8 @@ class EmitirDpsServiceTest {
                 .thenReturn(respostaAssincrona);
 
         RespostaConsultaNfse consultaSucesso = new RespostaConsultaNfse(
-                CHAVE_ACESSO_50, 100, "NFS-e autorizada com sucesso", 2,
-                "2026-11-05T12:00:02-03:00", "H4sICAUTORIZADO", null
+                2, "SefinNacional_v1.0", "2026-11-05T12:00:02-03:00",
+                100, "NFS-e autorizada com sucesso", CHAVE_ACESSO_50, "H4sICAUTORIZADO"
         );
 
         when(transmissorSefinPort.consultarPorChave(CHAVE_ACESSO_50, AmbienteSefin.HOMOLOGACAO, certificado))

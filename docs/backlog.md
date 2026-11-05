@@ -66,13 +66,13 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ---
 
-### Épico 4: Core Fiscal — Validação e Assinatura Digital (TDD) — 🟡 Em Andamento
+### Épico 4: Core Fiscal — Validação e Assinatura Digital (TDD) — 🟢 100% Concluído
 
 | Status |    ID     | Prioridade | Item                                                            | Descrição / Critérios de Aceite                                                                                                                       |
 | :----: | :-------: | :--------: | :-------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- |
 |   🟢   | `CORE-01` |    `P0`    | **Suite de Testes Unitários de Validação XSD**                  | Criar testes automatizados para validar payloads de DPS válidos e rejeitar estruturas malformadas.                                                    |
 |   🟢   | `CORE-02` |    `P0`    | **Módulo de Assinatura Digital com Certificado A1**             | Implementar o fluxo de assinatura da tag `infDPS` usando chave privada do certificado A1 em memória.                                                  |
-|   ⚪   | `CORE-03` |    `P2`    | **Suporte Dinâmico a Versões de Schema XSD (NT-009 / IBS-CBS)** | Estruturar os schemas XSD para validação dinâmica por versão (v1.00, v1.01), preparando o middleware para as regras de IBS/CBS da Reforma Tributária. |
+|   🟢   | `CORE-03` |    `P2`    | **Suporte Dinâmico a Versões de Schema XSD (NT-009 / IBS-CBS)** | Estruturar os schemas XSD para validação dinâmica por versão (v1.00, v1.01), preparando o middleware para as regras de IBS/CBS da Reforma Tributária. |
 
 ---
 
