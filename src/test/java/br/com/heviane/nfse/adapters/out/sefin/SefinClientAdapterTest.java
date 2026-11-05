@@ -107,6 +107,43 @@ class SefinClientAdapterTest {
     }
 
     @Test
+    @DisplayName("COM-05: Deve receber e processar resposta assíncrona HTTP 200/202 com status 105 sem lançar exceção")
+    void deveProcessarRespostaAssincronaStatus105SemLancarExcecao() {
+        String jsonRespostaAssincrona = String.format("""
+                {
+                  "tipoAmbiente": 2,
+                  "versaoAplicativo": "SefinNacional_v1.0.0",
+                  "dataHoraProcessamento": "2026-11-05T12:00:00-03:00",
+                  "codigoStatus": 105,
+                  "motivoStatus": "Lote em processamento",
+                  "chaveAcesso": "%s",
+                  "numeroProtocolo": "PROT-20261105-001"
+                }
+                """, CHAVE_ACESSO_50);
+
+        mockServer.createContext("/nfse", exchange -> {
+            byte[] responseBytes = jsonRespostaAssincrona.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, responseBytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(responseBytes);
+            }
+        });
+
+        RequisicaoEnvioDps requisicao = RequisicaoEnvioDps.homologacao("<DPS versao=\"1.00\"><infDPS Id=\"DPS123\"></infDPS></DPS>");
+        RespostaEmissaoSefin resposta = adapter.emitirDps(requisicao, certificado);
+
+        assertThat(resposta).isNotNull();
+        assertThat(resposta.isSucesso()).isFalse();
+        assertThat(resposta.isEmProcessamento()).isTrue();
+        assertThat(resposta.codigoStatus()).isEqualTo(105);
+        assertThat(resposta.chaveAcesso()).isEqualTo(CHAVE_ACESSO_50);
+        assertThat(resposta.numeroProtocolo()).isEqualTo("PROT-20261105-001");
+
+        mockServer.removeContext("/nfse");
+    }
+
+    @Test
     @DisplayName("Deve lançar SefinTransmissaoException quando Sefin rejeitar a DPS (codigoStatus != 100)")
     void deveLancarExcecaoAoReceberRejeicaoDoSefin() {
         String jsonRejeicao = """

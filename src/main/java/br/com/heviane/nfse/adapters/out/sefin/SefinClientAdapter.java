@@ -285,7 +285,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
 
         if (status >= 200 && status < 300) {
             RespostaEmissaoSefin resposta = objectMapper.readValue(body, RespostaEmissaoSefin.class);
-            if (!resposta.isSucesso()) {
+            if (!resposta.isSucesso() && !resposta.isEmProcessamento()) {
                 throw new SefinTransmissaoException(
                         String.format("Rejeição do Sefin Nacional (Status %d): %s", resposta.codigoStatus(), resposta.motivoStatus()),
                         status,

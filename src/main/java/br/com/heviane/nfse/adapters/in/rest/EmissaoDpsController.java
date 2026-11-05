@@ -69,7 +69,8 @@ public class EmissaoDpsController {
                 resposta.codigoStatus(),
                 resposta.motivoStatus(),
                 resposta.chaveAcesso(),
-                resposta.obterNfseXmlDescompactado()
+                resposta.obterNfseXmlDescompactado(),
+                resposta.numeroProtocolo()
         );
 
         return ResponseEntity.ok(response);
