@@ -83,7 +83,7 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 |   🟢   | `COM-01` |    `P1`    | **Autenticação mTLS com Certificado A1**              | Configurar `SSLContext` com keystore PKCS#12 para handshake TLS mútuo com o Sefin Nacional.                                                             |
 |   🟢   | `COM-02` |    `P1`    | **Cliente de Transmissão de DPS (Homologação)**       | Implementar envio da DPS assinada e tratamento síncrono/assíncrono da resposta do Sefin Nacional.                                                       |
 |   🟢   | `COM-03` |    `P1`    | **Módulo de Consulta e Cancelamento**                 | Implementar os serviços de consulta de situação da nota e envio de eventos de cancelamento.                                                             |
-|   ⚪   | `COM-04` |    `P1`    | **Resiliência de Transporte & Retries no Sefin**      | Implementar política de retries com backoff exponencial para falhas transitórias de rede e erros HTTP 502/503/504 no `SefinClientAdapter`.              |
+|   🟢   | `COM-04` |    `P1`    | **Resiliência de Transporte & Retries no Sefin**      | Implementar política de retries com backoff exponencial para falhas transitórias de rede e erros HTTP 502/503/504 no `SefinClientAdapter`.              |
 |   ⚪   | `COM-05` |    `P1`    | **Tratamento de Respostas Assíncronas (Lote / Fila)** | Tratar adequadamente respostas com protocolo de lote e integrar com polling/consulta transparente quando o Sefin Nacional responder em modo assíncrono. |
 
 ---

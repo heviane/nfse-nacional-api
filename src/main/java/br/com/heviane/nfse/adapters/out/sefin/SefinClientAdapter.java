@@ -4,8 +4,11 @@ import br.com.heviane.nfse.core.domain.*;
 import br.com.heviane.nfse.core.ports.out.AssinadorDpsPort;
 import br.com.heviane.nfse.core.ports.out.TransmissorSefinPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -19,24 +22,32 @@ import java.util.Objects;
 /**
  * Adaptador de saída para comunicação HTTP REST com o Sefin Nacional / ADN.
  * Realiza autenticação mTLS via {@link HttpClient} nativo do Java 17 com o {@link CertificadoA1}
- * fornecido em memória.
+ * fornecido em memória e possui resiliência de transporte com política de retentativas (retries).
  */
 public class SefinClientAdapter implements TransmissorSefinPort {
+
+    private static final Logger log = LoggerFactory.getLogger(SefinClientAdapter.class);
 
     private final AssinadorDpsPort assinadorPort;
     private final ObjectMapper objectMapper;
     private final Duration timeout;
     private final String baseUrlOverride;
+    private final SefinRetryConfig retryConfig;
 
     public SefinClientAdapter(AssinadorDpsPort assinadorPort, ObjectMapper objectMapper) {
-        this(assinadorPort, objectMapper, Duration.ofSeconds(30), null);
+        this(assinadorPort, objectMapper, Duration.ofSeconds(30), null, SefinRetryConfig.padrao());
     }
 
     public SefinClientAdapter(AssinadorDpsPort assinadorPort, ObjectMapper objectMapper, Duration timeout, String baseUrlOverride) {
+        this(assinadorPort, objectMapper, timeout, baseUrlOverride, SefinRetryConfig.padrao());
+    }
+
+    public SefinClientAdapter(AssinadorDpsPort assinadorPort, ObjectMapper objectMapper, Duration timeout, String baseUrlOverride, SefinRetryConfig retryConfig) {
         this.assinadorPort = Objects.requireNonNull(assinadorPort, "AssinadorDpsPort não pode ser nulo.");
         this.objectMapper = Objects.requireNonNull(objectMapper, "ObjectMapper não pode ser nulo.");
         this.timeout = timeout != null ? timeout : Duration.ofSeconds(30);
         this.baseUrlOverride = baseUrlOverride;
+        this.retryConfig = retryConfig != null ? retryConfig : SefinRetryConfig.padrao();
     }
 
     @Override
@@ -48,7 +59,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             throw new IllegalArgumentException("Certificado A1 é obrigatório para emissão mTLS.");
         }
 
-        try {
+        return executarComRetry("Emissão de DPS", () -> {
             // 1. Compactar o XML assinado em GZIP e converter para Base64
             String dpsGZipB64 = assinadorPort.gerarPayloadGZipB64(requisicao.dpsXmlAssinado());
 
@@ -74,11 +85,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             return processarRespostaEmissao(response);
-        } catch (SefinTransmissaoException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new SefinTransmissaoException("Erro durante a transmissão da DPS ao Sefin Nacional: " + e.getMessage(), e);
-        }
+        });
     }
 
     @Override
@@ -92,7 +99,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
 
         AmbienteSefin amb = (ambiente != null) ? ambiente : AmbienteSefin.HOMOLOGACAO;
 
-        try {
+        return executarComRetry("Consulta de NFS-e", () -> {
             String baseUrl = (baseUrlOverride != null) ? baseUrlOverride : amb.getBaseUrl();
             String url = baseUrl.replaceAll("/+$", "") + "/nfse/" + chaveAcesso;
 
@@ -108,11 +115,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             return processarRespostaConsulta(response);
-        } catch (SefinTransmissaoException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new SefinTransmissaoException("Erro ao consultar NFS-e no Sefin Nacional: " + e.getMessage(), e);
-        }
+        });
     }
 
     @Override
@@ -124,7 +127,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             throw new IllegalArgumentException("Certificado A1 é obrigatório para cancelamento mTLS.");
         }
 
-        try {
+        return executarComRetry("Cancelamento de NFS-e", () -> {
             String xmlEvento = montarXmlPedidoCancelamento(requisicao);
             String eventoGZipB64 = assinadorPort.gerarPayloadGZipB64(xmlEvento);
 
@@ -148,10 +151,68 @@ public class SefinClientAdapter implements TransmissorSefinPort {
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             return processarRespostaCancelamento(response);
-        } catch (SefinTransmissaoException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new SefinTransmissaoException("Erro ao enviar pedido de cancelamento ao Sefin: " + e.getMessage(), e);
+        });
+    }
+
+    @FunctionalInterface
+    private interface OperacaoSefin<T> {
+        T executar() throws Exception;
+    }
+
+    private <T> T executarComRetry(String operacao, OperacaoSefin<T> acao) {
+        int tentativa = 1;
+        long delayAtualMs = retryConfig.delayInicial().toMillis();
+
+        while (true) {
+            try {
+                return acao.executar();
+            } catch (SefinTransmissaoException e) {
+                if (isStatusRetentavel(e.getHttpStatusCode()) && tentativa < retryConfig.maxTentativas()) {
+                    log.warn("[{}] Falha transitória HTTP {} na tentativa {}/{}. Retentando em {}ms... Motivo: {}",
+                            operacao, e.getHttpStatusCode(), tentativa, retryConfig.maxTentativas(), delayAtualMs, e.getMessage());
+                    aplicarDelay(delayAtualMs);
+                    tentativa++;
+                    delayAtualMs = (long) (delayAtualMs * retryConfig.multiplicador());
+                } else {
+                    throw e;
+                }
+            } catch (IOException e) {
+                if (tentativa < retryConfig.maxTentativas()) {
+                    log.warn("[{}] Falha transitória de I/O na tentativa {}/{}. Retentando em {}ms... Motivo: {}",
+                            operacao, tentativa, retryConfig.maxTentativas(), delayAtualMs, e.getMessage());
+                    aplicarDelay(delayAtualMs);
+                    tentativa++;
+                    delayAtualMs = (long) (delayAtualMs * retryConfig.multiplicador());
+                } else {
+                    throw new SefinTransmissaoException(
+                            String.format("Erro de comunicação com o Sefin Nacional após %d tentativas: %s", tentativa, e.getMessage()),
+                            e
+                    );
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new SefinTransmissaoException("Execução interrompida durante retentativa com o Sefin Nacional.", e);
+            } catch (Exception e) {
+                throw new SefinTransmissaoException(
+                        String.format("Erro durante %s no Sefin Nacional: %s", operacao, e.getMessage()),
+                        e
+                );
+            }
+        }
+    }
+
+    private boolean isStatusRetentavel(Integer status) {
+        return status != null && (status == 502 || status == 503 || status == 504);
+    }
+
+    private void aplicarDelay(long delayMs) {
+        if (delayMs > 0) {
+            try {
+                Thread.sleep(delayMs);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new SefinTransmissaoException("Thread interrompida durante espera de retentativa com o Sefin Nacional.", e);
+            }
         }
     }
 

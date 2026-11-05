@@ -15,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,7 +60,8 @@ class SefinClientAdapterTest {
                 assinador,
                 objectMapper,
                 Duration.ofSeconds(5),
-                mockBaseUrl
+                mockBaseUrl,
+                SefinRetryConfig.semEspera(3)
         );
     }
 
@@ -274,6 +276,216 @@ class SefinClientAdapterTest {
                 AmbienteSefin.HOMOLOGACAO
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("14 dígitos");
+    }
+
+    @Test
+    @DisplayName("COM-04: Deve retentar após falha HTTP 503 e obter sucesso na segunda tentativa na emissão")
+    void deveRetentarAposFalhaHttp503EObterSucessoNaSegundaTentativa() {
+        AtomicInteger tentativas = new AtomicInteger();
+        String xmlNfseMock = "<NFSe versao=\"1.00\"><infNFSe><nNFSe>200</nNFSe></infNFSe></NFSe>";
+        String gzipBase64Mock = compactarGzipBase64(xmlNfseMock);
+
+        String jsonResposta = String.format("""
+                {
+                  "tipoAmbiente": 2,
+                  "versaoAplicativo": "SefinNacional_v1.0.0",
+                  "dataHoraProcessamento": "2026-11-01T22:45:02-03:00",
+                  "codigoStatus": 100,
+                  "motivoStatus": "NFS-e gerada com sucesso",
+                  "chaveAcesso": "%s",
+                  "nfseXmlGZipB64": "%s"
+                }
+                """, CHAVE_ACESSO_50, gzipBase64Mock);
+
+        mockServer.createContext("/nfse", exchange -> {
+            int tentativaAtual = tentativas.incrementAndGet();
+            if (tentativaAtual == 1) {
+                byte[] erroBytes = "Service Unavailable temporário".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(503, erroBytes.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(erroBytes);
+                }
+            } else {
+                byte[] responseBytes = jsonResposta.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, responseBytes.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(responseBytes);
+                }
+            }
+        });
+
+        RequisicaoEnvioDps requisicao = RequisicaoEnvioDps.homologacao("<DPS versao=\"1.00\"><infDPS Id=\"DPS123\"></infDPS></DPS>");
+        RespostaEmissaoSefin resposta = adapter.emitirDps(requisicao, certificado);
+
+        assertThat(resposta).isNotNull();
+        assertThat(resposta.isSucesso()).isTrue();
+        assertThat(tentativas.get()).isEqualTo(2);
+
+        mockServer.removeContext("/nfse");
+    }
+
+    @Test
+    @DisplayName("COM-04: Deve retentar após falha HTTP 502 (Bad Gateway) e obter sucesso na emissão")
+    void deveRetentarAposFalhaHttp502EObterSucessoNaSegundaTentativa() {
+        AtomicInteger tentativas = new AtomicInteger();
+        String xmlNfseMock = "<NFSe versao=\"1.00\"><infNFSe><nNFSe>201</nNFSe></infNFSe></NFSe>";
+        String gzipBase64Mock = compactarGzipBase64(xmlNfseMock);
+
+        String jsonResposta = String.format("""
+                {
+                  "tipoAmbiente": 2,
+                  "versaoAplicativo": "SefinNacional_v1.0.0",
+                  "dataHoraProcessamento": "2026-11-01T22:45:02-03:00",
+                  "codigoStatus": 100,
+                  "motivoStatus": "NFS-e gerada com sucesso",
+                  "chaveAcesso": "%s",
+                  "nfseXmlGZipB64": "%s"
+                }
+                """, CHAVE_ACESSO_50, gzipBase64Mock);
+
+        mockServer.createContext("/nfse", exchange -> {
+            int tentativaAtual = tentativas.incrementAndGet();
+            if (tentativaAtual == 1) {
+                byte[] erroBytes = "Bad Gateway".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(502, erroBytes.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(erroBytes);
+                }
+            } else {
+                byte[] responseBytes = jsonResposta.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, responseBytes.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(responseBytes);
+                }
+            }
+        });
+
+        RequisicaoEnvioDps requisicao = RequisicaoEnvioDps.homologacao("<DPS versao=\"1.00\"><infDPS Id=\"DPS123\"></infDPS></DPS>");
+        RespostaEmissaoSefin resposta = adapter.emitirDps(requisicao, certificado);
+
+        assertThat(resposta).isNotNull();
+        assertThat(resposta.isSucesso()).isTrue();
+        assertThat(tentativas.get()).isEqualTo(2);
+
+        mockServer.removeContext("/nfse");
+    }
+
+    @Test
+    @DisplayName("COM-04: Deve lançar SefinTransmissaoException após esgotar todas as tentativas em HTTP 503")
+    void deveLancarExcecaoAposEsgotarTodasTentativasHttp503() {
+        AtomicInteger tentativas = new AtomicInteger();
+
+        mockServer.createContext("/nfse", exchange -> {
+            tentativas.incrementAndGet();
+            byte[] erroBytes = "Servidor Fora do Ar".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(503, erroBytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(erroBytes);
+            }
+        });
+
+        RequisicaoEnvioDps requisicao = RequisicaoEnvioDps.homologacao("<DPS versao=\"1.00\"></DPS>");
+
+        assertThatThrownBy(() -> adapter.emitirDps(requisicao, certificado))
+                .isInstanceOf(SefinTransmissaoException.class)
+                .hasMessageContaining("HTTP 503");
+
+        // O adaptador foi configurado com 3 tentativas
+        assertThat(tentativas.get()).isEqualTo(3);
+
+        mockServer.removeContext("/nfse");
+    }
+
+    @Test
+    @DisplayName("COM-04: Não deve retentar quando o erro for de cliente (HTTP 400 ou 422)")
+    void naoDeveRetentarEmCasoDeErroHttp400() {
+        AtomicInteger tentativas = new AtomicInteger();
+
+        mockServer.createContext("/nfse", exchange -> {
+            tentativas.incrementAndGet();
+            byte[] erroBytes = "{\"mensagem\":\"Requisição inválida\"}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(400, erroBytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(erroBytes);
+            }
+        });
+
+        RequisicaoEnvioDps requisicao = RequisicaoEnvioDps.homologacao("<DPS versao=\"1.00\"></DPS>");
+
+        assertThatThrownBy(() -> adapter.emitirDps(requisicao, certificado))
+                .isInstanceOf(SefinTransmissaoException.class)
+                .hasMessageContaining("HTTP 400");
+
+        // Falhas 4xx devem falhar imediatamente na 1ª tentativa
+        assertThat(tentativas.get()).isEqualTo(1);
+
+        mockServer.removeContext("/nfse");
+    }
+
+    @Test
+    @DisplayName("COM-04: Deve retentar consulta de NFS-e por chave com sucesso após falha HTTP 504")
+    void deveRetentarConsultaNfseComSucessoAposFalha504() {
+        AtomicInteger tentativas = new AtomicInteger();
+        String jsonResposta = String.format("""
+                {
+                  "chaveAcesso": "%s",
+                  "codigoStatus": 100,
+                  "motivoStatus": "NFS-e autorizada",
+                  "tipoAmbiente": 2,
+                  "dataHoraProcessamento": "2026-11-01T22:45:02-03:00"
+                }
+                """, CHAVE_ACESSO_50);
+
+        mockServer.createContext("/nfse/" + CHAVE_ACESSO_50, exchange -> {
+            int tentativaAtual = tentativas.incrementAndGet();
+            if (tentativaAtual == 1) {
+                byte[] erroBytes = "Gateway Timeout".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(504, erroBytes.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(erroBytes);
+                }
+            } else {
+                byte[] responseBytes = jsonResposta.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, responseBytes.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(responseBytes);
+                }
+            }
+        });
+
+        RespostaConsultaNfse resposta = adapter.consultarPorChave(CHAVE_ACESSO_50, AmbienteSefin.HOMOLOGACAO, certificado);
+
+        assertThat(resposta).isNotNull();
+        assertThat(resposta.isEncontrada()).isTrue();
+        assertThat(tentativas.get()).isEqualTo(2);
+
+        mockServer.removeContext("/nfse/" + CHAVE_ACESSO_50);
+    }
+
+    @Test
+    @DisplayName("COM-04: Deve validar parâmetros de SefinRetryConfig")
+    void deveValidarConfiguracaoDeRetry() {
+        assertThatThrownBy(() -> new SefinRetryConfig(0, Duration.ofSeconds(1), 2.0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("no mínimo 1");
+
+        assertThatThrownBy(() -> new SefinRetryConfig(3, null, 2.0))
+                .isInstanceOf(NullPointerException.class);
+
+        assertThatThrownBy(() -> new SefinRetryConfig(3, Duration.ofSeconds(1), 0.5))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("maior ou igual a 1.0");
+
+        SefinRetryConfig padrao = SefinRetryConfig.padrao();
+        assertThat(padrao.maxTentativas()).isEqualTo(3);
+        assertThat(padrao.delayInicial()).isEqualTo(Duration.ofSeconds(1));
+        assertThat(padrao.multiplicador()).isEqualTo(2.0);
+
+        SefinRetryConfig desabilitado = SefinRetryConfig.desabilitado();
+        assertThat(desabilitado.maxTentativas()).isEqualTo(1);
     }
 
     private String compactarGzipBase64(String texto) {
