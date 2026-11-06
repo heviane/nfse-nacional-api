@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -245,7 +246,7 @@ class SefinClientAdapterTest {
     }
 
     @Test
-    @DisplayName("Deve enviar pedido de cancelamento com sucesso (Evento 101101)")
+    @DisplayName("Deve enviar pedido de cancelamento com sucesso (Evento 101101) assinado e validado contra XSD")
     void deveCancelarNfseComSucesso() {
         String xmlEventoMock = "<evento versao=\"1.00\"><infEvento><tpEvento>101101</tpEvento></infEvento></evento>";
         String gzipBase64Mock = compactarGzipBase64(xmlEventoMock);
@@ -263,7 +264,20 @@ class SefinClientAdapterTest {
                 }
                 """, CHAVE_ACESSO_50, CHAVE_ACESSO_50, gzipBase64Mock);
 
+        java.util.concurrent.atomic.AtomicReference<String> xmlEnviadoCapturado = new java.util.concurrent.atomic.AtomicReference<>();
+
         mockServer.createContext("/eventos", exchange -> {
+            try {
+                byte[] requestBytes = exchange.getRequestBody().readAllBytes();
+                com.fasterxml.jackson.databind.JsonNode reqJson = objectMapper.readTree(requestBytes);
+                String b64 = reqJson.get("pedidoRegistroEventoXmlGZipB64").asText();
+                byte[] gzipped = Base64.getDecoder().decode(b64);
+                try (java.util.zip.GZIPInputStream gzis = new java.util.zip.GZIPInputStream(new ByteArrayInputStream(gzipped))) {
+                    xmlEnviadoCapturado.set(new String(gzis.readAllBytes(), StandardCharsets.UTF_8));
+                }
+            } catch (Exception ignored) {
+            }
+
             byte[] responseBytes = jsonRespostaCancelamento.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, responseBytes.length);
@@ -287,6 +301,13 @@ class SefinClientAdapterTest {
         assertThat(resposta.codigoStatus()).isEqualTo(135);
         assertThat(resposta.chaveAcesso()).isEqualTo(CHAVE_ACESSO_50);
         assertThat(resposta.obterEventoXmlDescompactado()).isEqualTo(xmlEventoMock);
+
+        // Validação estrita do payload capturado enviado ao Sefin
+        String xmlEnviado = xmlEnviadoCapturado.get();
+        assertThat(xmlEnviado).as("XML enviado deve ser capturado").isNotNull();
+        assertThat(xmlEnviado).contains("Id=\"PRE" + CHAVE_ACESSO_50 + "101101\"");
+        assertThat(xmlEnviado).contains("<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">");
+        assertThat(assinador.validarAssinatura(xmlEnviado)).as("XML enviado deve conter assinatura matemática válida").isTrue();
 
         mockServer.removeContext("/eventos");
     }

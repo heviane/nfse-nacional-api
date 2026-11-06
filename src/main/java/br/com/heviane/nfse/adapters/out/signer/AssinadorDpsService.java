@@ -54,96 +54,129 @@ public class AssinadorDpsService implements AssinadorDpsPort {
     }
 
     @Override
-    public String assinar(String xmlDps, CertificadoA1 certificado) {
-        if (xmlDps == null || xmlDps.isBlank()) {
-            throw new IllegalArgumentException("O conteúdo XML da DPS não pode ser nulo ou vazio.");
+    public String assinar(String xml, CertificadoA1 certificado) {
+        if (xml == null || xml.isBlank()) {
+            throw new IllegalArgumentException("O conteúdo XML não pode ser nulo ou vazio.");
         }
         if (certificado == null) {
             throw new IllegalArgumentException("O Certificado A1 não pode ser nulo.");
         }
 
         try {
-            Document doc = parseDocument(xmlDps);
+            Document doc = parseDocument(xml);
+            Element root = doc.getDocumentElement();
+            String rootName = root.getLocalName() != null ? root.getLocalName() : root.getNodeName();
 
-            Element dpsRoot = doc.getDocumentElement();
-            if (!"DPS".equals(dpsRoot.getLocalName()) && !"DPS".equals(dpsRoot.getNodeName())) {
-                throw new AssinaturaDigitalException("Elemento raiz do documento deve ser <DPS>.");
+            String tagAlvo;
+            if ("DPS".equals(rootName)) {
+                tagAlvo = "infDPS";
+            } else if ("pedRegEvento".equals(rootName)) {
+                tagAlvo = "infPedReg";
+            } else if (doc.getElementsByTagNameNS(NFSE_NS, "infDPS").getLength() > 0 || doc.getElementsByTagName("infDPS").getLength() > 0) {
+                tagAlvo = "infDPS";
+            } else if (doc.getElementsByTagNameNS(NFSE_NS, "infPedReg").getLength() > 0 || doc.getElementsByTagName("infPedReg").getLength() > 0) {
+                tagAlvo = "infPedReg";
+            } else {
+                throw new AssinaturaDigitalException("Elemento fiscal a ser assinado não reconhecido na raiz <" + rootName + ">.");
             }
 
-            Element infDps = obterElementoInfDps(doc);
-            String idAttr = infDps.getAttribute("Id");
-            if (idAttr == null || idAttr.isBlank()) {
-                idAttr = infDps.getAttribute("id");
-            }
-            if (idAttr == null || idAttr.isBlank()) {
-                throw new AssinaturaDigitalException("Atributo 'Id' obrigatório não encontrado no elemento <infDPS>.");
-            }
-
-            // Registra formalmente no DOM o atributo Id como identificador único
-            infDps.setIdAttribute("Id", true);
-
-            // 1. Configurar transformações (Enveloped + C14N Exclusive)
-            List<Transform> transforms = new ArrayList<>();
-            transforms.add(signatureFactory.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
-            transforms.add(signatureFactory.newTransform(CanonicalizationMethod.EXCLUSIVE, (TransformParameterSpec) null));
-
-            // 2. Digest Method SHA-256 referenciando a tag infDPS (#Id)
-            DigestMethod digestMethod = signatureFactory.newDigestMethod(DigestMethod.SHA256, null);
-            Reference reference = signatureFactory.newReference(
-                    "#" + idAttr,
-                    digestMethod,
-                    transforms,
-                    null,
-                    null
-            );
-
-            // 3. Signature Method RSA-SHA256 + Canonicalization Method Exclusive C14N
-            CanonicalizationMethod canonicalizationMethod = signatureFactory.newCanonicalizationMethod(
-                    CanonicalizationMethod.EXCLUSIVE,
-                    (C14NMethodParameterSpec) null
-            );
-            SignatureMethod signatureMethod = signatureFactory.newSignatureMethod(SIGNATURE_METHOD_RSA_SHA256, null);
-
-            SignedInfo signedInfo = signatureFactory.newSignedInfo(
-                    canonicalizationMethod,
-                    signatureMethod,
-                    Collections.singletonList(reference)
-            );
-
-            // 4. Construir KeyInfo com o Certificado X.509
-            KeyInfoFactory kif = signatureFactory.getKeyInfoFactory();
-            X509Certificate x509Cert = certificado.getX509Certificate();
-            X509Data x509Data = kif.newX509Data(Collections.singletonList(x509Cert));
-            KeyInfo keyInfo = kif.newKeyInfo(Collections.singletonList(x509Data));
-
-            // 5. Configurar contexto de assinatura: o nó pai da <Signature> é a raiz <DPS>
-            DOMSignContext signContext = new DOMSignContext(certificado.getPrivateKey(), dpsRoot);
-
-            XMLSignature xmlSignature = signatureFactory.newXMLSignature(signedInfo, keyInfo);
-            xmlSignature.sign(signContext);
-
-            // 6. Converter documento DOM assinado para String
-            return serializeDocument(doc);
+            return assinarDocumento(doc, root, tagAlvo, certificado);
         } catch (AssinaturaDigitalException e) {
             throw e;
         } catch (Exception e) {
-            throw new AssinaturaDigitalException("Falha ao assinar digitalmente o XML da DPS: " + e.getMessage(), e);
+            throw new AssinaturaDigitalException("Falha ao assinar digitalmente o XML: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public boolean validarAssinatura(String xmlDpsAssinado) {
-        if (xmlDpsAssinado == null || xmlDpsAssinado.isBlank()) {
+    public String assinar(String xml, String tagElementoAlvo, CertificadoA1 certificado) {
+        if (xml == null || xml.isBlank()) {
+            throw new IllegalArgumentException("O conteúdo XML não pode ser nulo ou vazio.");
+        }
+        if (tagElementoAlvo == null || tagElementoAlvo.isBlank()) {
+            return assinar(xml, certificado);
+        }
+        if (certificado == null) {
+            throw new IllegalArgumentException("O Certificado A1 não pode ser nulo.");
+        }
+
+        try {
+            Document doc = parseDocument(xml);
+            return assinarDocumento(doc, doc.getDocumentElement(), tagElementoAlvo, certificado);
+        } catch (AssinaturaDigitalException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AssinaturaDigitalException("Falha ao assinar digitalmente o XML: " + e.getMessage(), e);
+        }
+    }
+
+    private String assinarDocumento(Document doc, Element rootElement, String tagElementoAlvo, CertificadoA1 certificado) throws Exception {
+        Element targetElement = obterElementoAlvo(doc, tagElementoAlvo);
+        String idAttr = targetElement.getAttribute("Id");
+        if (idAttr == null || idAttr.isBlank()) {
+            idAttr = targetElement.getAttribute("id");
+        }
+        if (idAttr == null || idAttr.isBlank()) {
+            throw new AssinaturaDigitalException("Atributo 'Id' obrigatório não encontrado no elemento <" + tagElementoAlvo + ">.");
+        }
+
+        // Registra formalmente no DOM o atributo Id como identificador único
+        targetElement.setIdAttribute("Id", true);
+
+        // 1. Configurar transformações (Enveloped + C14N Exclusive)
+        List<Transform> transforms = new ArrayList<>();
+        transforms.add(signatureFactory.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
+        transforms.add(signatureFactory.newTransform(CanonicalizationMethod.EXCLUSIVE, (TransformParameterSpec) null));
+
+        // 2. Digest Method SHA-256 referenciando a tag alvo (#Id)
+        DigestMethod digestMethod = signatureFactory.newDigestMethod(DigestMethod.SHA256, null);
+        Reference reference = signatureFactory.newReference(
+                "#" + idAttr,
+                digestMethod,
+                transforms,
+                null,
+                null
+        );
+
+        // 3. Signature Method RSA-SHA256 + Canonicalization Method Exclusive C14N
+        CanonicalizationMethod canonicalizationMethod = signatureFactory.newCanonicalizationMethod(
+                CanonicalizationMethod.EXCLUSIVE,
+                (C14NMethodParameterSpec) null
+        );
+        SignatureMethod signatureMethod = signatureFactory.newSignatureMethod(SIGNATURE_METHOD_RSA_SHA256, null);
+
+        SignedInfo signedInfo = signatureFactory.newSignedInfo(
+                canonicalizationMethod,
+                signatureMethod,
+                Collections.singletonList(reference)
+        );
+
+        // 4. Construir KeyInfo com o Certificado X.509
+        KeyInfoFactory kif = signatureFactory.getKeyInfoFactory();
+        X509Certificate x509Cert = certificado.getX509Certificate();
+        X509Data x509Data = kif.newX509Data(Collections.singletonList(x509Cert));
+        KeyInfo keyInfo = kif.newKeyInfo(Collections.singletonList(x509Data));
+
+        // 5. Configurar contexto de assinatura: o nó pai da <Signature> é o elemento raiz do documento
+        DOMSignContext signContext = new DOMSignContext(certificado.getPrivateKey(), rootElement);
+
+        XMLSignature xmlSignature = signatureFactory.newXMLSignature(signedInfo, keyInfo);
+        xmlSignature.sign(signContext);
+
+        // 6. Converter documento DOM assinado para String
+        return serializeDocument(doc);
+    }
+
+    @Override
+    public boolean validarAssinatura(String xmlAssinado) {
+        if (xmlAssinado == null || xmlAssinado.isBlank()) {
             return false;
         }
 
         try {
-            Document doc = parseDocument(xmlDpsAssinado);
+            Document doc = parseDocument(xmlAssinado);
 
-            Element infDps = obterElementoInfDps(doc);
-            if (infDps.hasAttribute("Id")) {
-                infDps.setIdAttribute("Id", true);
-            }
+            registrarAtributoIdAssinado(doc);
 
             NodeList signatureNodes = doc.getElementsByTagNameNS(XMLDSIG_NS, "Signature");
             if (signatureNodes.getLength() == 0) {
@@ -183,31 +216,55 @@ public class AssinadorDpsService implements AssinadorDpsPort {
     }
 
     @Override
-    public String gerarPayloadGZipB64(String xmlDpsAssinado) {
-        if (xmlDpsAssinado == null || xmlDpsAssinado.isBlank()) {
-            throw new IllegalArgumentException("O conteúdo XML da DPS assinado não pode ser nulo ou vazio.");
+    public String gerarPayloadGZipB64(String xmlAssinado) {
+        if (xmlAssinado == null || xmlAssinado.isBlank()) {
+            throw new IllegalArgumentException("O conteúdo XML assinado não pode ser nulo ou vazio.");
         }
 
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (GZIPOutputStream gzos = new GZIPOutputStream(baos)) {
-                gzos.write(xmlDpsAssinado.getBytes(StandardCharsets.UTF_8));
+                gzos.write(xmlAssinado.getBytes(StandardCharsets.UTF_8));
             }
             return Base64.getEncoder().encodeToString(baos.toByteArray());
         } catch (Exception e) {
-            throw new AssinaturaDigitalException("Falha ao compactar e codificar payload da DPS em GZIP+Base64: " + e.getMessage(), e);
+            throw new AssinaturaDigitalException("Falha ao compactar e codificar payload fiscal em GZIP+Base64: " + e.getMessage(), e);
         }
     }
 
-    private Element obterElementoInfDps(Document doc) {
-        NodeList nodes = doc.getElementsByTagNameNS(NFSE_NS, "infDPS");
+    private Element obterElementoAlvo(Document doc, String tagElementoAlvo) {
+        NodeList nodes = doc.getElementsByTagNameNS(NFSE_NS, tagElementoAlvo);
         if (nodes.getLength() == 0) {
-            nodes = doc.getElementsByTagName("infDPS");
+            nodes = doc.getElementsByTagName(tagElementoAlvo);
         }
         if (nodes.getLength() == 0) {
-            throw new AssinaturaDigitalException("Elemento obrigatório <infDPS> não encontrado no documento XML.");
+            throw new AssinaturaDigitalException("Elemento obrigatório <" + tagElementoAlvo + "> não encontrado no documento XML.");
         }
         return (Element) nodes.item(0);
+    }
+
+    private Element obterElementoInfDps(Document doc) {
+        return obterElementoAlvo(doc, "infDPS");
+    }
+
+    private void registrarAtributoIdAssinado(Document doc) {
+        String[] tags = {"infDPS", "infPedReg", "infEvento", "infNFSe"};
+        for (String tag : tags) {
+            NodeList nodes = doc.getElementsByTagNameNS(NFSE_NS, tag);
+            if (nodes.getLength() == 0) {
+                nodes = doc.getElementsByTagName(tag);
+            }
+            if (nodes.getLength() > 0) {
+                Element el = (Element) nodes.item(0);
+                if (el.hasAttribute("Id")) {
+                    el.setIdAttribute("Id", true);
+                    return;
+                } else if (el.hasAttribute("id")) {
+                    el.setIdAttribute("id", true);
+                    return;
+                }
+            }
+        }
     }
 
     private Document parseDocument(String xml) throws Exception {

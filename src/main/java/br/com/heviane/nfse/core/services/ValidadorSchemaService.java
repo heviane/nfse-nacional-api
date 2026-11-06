@@ -49,12 +49,59 @@ public class ValidadorSchemaService implements ValidadorSchemaPort {
 
     @Override
     public List<String> validarDps(String xmlConteudo, String versao) {
-        if (xmlConteudo == null || xmlConteudo.isBlank()) {
-            return List.of("Conteúdo XML da DPS não pode ser nulo ou vazio.");
-        }
-
         String versaoAlvo = normalizarVersao(versao != null && !versao.isBlank() ? versao : extrairVersao(xmlConteudo));
-        String xsdFile = "DPS_" + versaoAlvo + ".xsd";
+        return validarContraSchema(xmlConteudo, versaoAlvo, "DPS_" + versaoAlvo + ".xsd", "DPS");
+    }
+
+    @Override
+    public void validarDpsOuFalhar(String xmlConteudo) {
+        validarDpsOuFalhar(xmlConteudo, extrairVersao(xmlConteudo));
+    }
+
+    @Override
+    public void validarDpsOuFalhar(String xmlConteudo, String versao) {
+        String versaoAlvo = normalizarVersao(versao != null && !versao.isBlank() ? versao : extrairVersao(xmlConteudo));
+        List<String> erros = validarDps(xmlConteudo, versaoAlvo);
+        if (!erros.isEmpty()) {
+            throw new ValidacaoFiscalException(
+                    "A DPS não atende aos requisitos do schema XSD da NFS-e Nacional (" + versaoAlvo + ")",
+                    erros
+            );
+        }
+    }
+
+    @Override
+    public List<String> validarPedRegEvento(String xmlConteudo) {
+        return validarPedRegEvento(xmlConteudo, extrairVersao(xmlConteudo));
+    }
+
+    @Override
+    public List<String> validarPedRegEvento(String xmlConteudo, String versao) {
+        String versaoAlvo = normalizarVersao(versao != null && !versao.isBlank() ? versao : extrairVersao(xmlConteudo));
+        return validarContraSchema(xmlConteudo, versaoAlvo, "pedRegEvento_" + versaoAlvo + ".xsd", "Pedido de Registro de Evento");
+    }
+
+    @Override
+    public void validarPedRegEventoOuFalhar(String xmlConteudo) {
+        validarPedRegEventoOuFalhar(xmlConteudo, extrairVersao(xmlConteudo));
+    }
+
+    @Override
+    public void validarPedRegEventoOuFalhar(String xmlConteudo, String versao) {
+        String versaoAlvo = normalizarVersao(versao != null && !versao.isBlank() ? versao : extrairVersao(xmlConteudo));
+        List<String> erros = validarPedRegEvento(xmlConteudo, versaoAlvo);
+        if (!erros.isEmpty()) {
+            throw new ValidacaoFiscalException(
+                    "O Pedido de Registro de Evento não atende aos requisitos do schema XSD da NFS-e Nacional (" + versaoAlvo + ")",
+                    erros
+            );
+        }
+    }
+
+    private List<String> validarContraSchema(String xmlConteudo, String versaoAlvo, String xsdFile, String tipoDocumento) {
+        if (xmlConteudo == null || xmlConteudo.isBlank()) {
+            return List.of("Conteúdo XML do documento (" + tipoDocumento + ") não pode ser nulo ou vazio.");
+        }
 
         try {
             Schema schema = obterSchema(versaoAlvo, xsdFile);
@@ -86,23 +133,6 @@ public class ValidadorSchemaService implements ValidadorSchemaPort {
             return List.of("Falha sintática no XML: " + e.getMessage());
         } catch (Exception e) {
             return List.of("Erro inesperado durante a validação XSD: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public void validarDpsOuFalhar(String xmlConteudo) {
-        validarDpsOuFalhar(xmlConteudo, extrairVersao(xmlConteudo));
-    }
-
-    @Override
-    public void validarDpsOuFalhar(String xmlConteudo, String versao) {
-        String versaoAlvo = normalizarVersao(versao != null && !versao.isBlank() ? versao : extrairVersao(xmlConteudo));
-        List<String> erros = validarDps(xmlConteudo, versaoAlvo);
-        if (!erros.isEmpty()) {
-            throw new ValidacaoFiscalException(
-                    "A DPS não atende aos requisitos do schema XSD da NFS-e Nacional (" + versaoAlvo + ")",
-                    erros
-            );
         }
     }
 

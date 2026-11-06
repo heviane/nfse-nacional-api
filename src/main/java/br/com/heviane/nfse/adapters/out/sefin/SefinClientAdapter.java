@@ -3,6 +3,7 @@ package br.com.heviane.nfse.adapters.out.sefin;
 import br.com.heviane.nfse.core.domain.*;
 import br.com.heviane.nfse.core.ports.out.AssinadorDpsPort;
 import br.com.heviane.nfse.core.ports.out.TransmissorSefinPort;
+import br.com.heviane.nfse.core.ports.out.ValidadorSchemaPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,21 +30,31 @@ public class SefinClientAdapter implements TransmissorSefinPort {
     private static final Logger log = LoggerFactory.getLogger(SefinClientAdapter.class);
 
     private final AssinadorDpsPort assinadorPort;
+    private final ValidadorSchemaPort validadorSchemaPort;
     private final ObjectMapper objectMapper;
     private final Duration timeout;
     private final String baseUrlOverride;
     private final SefinRetryConfig retryConfig;
 
     public SefinClientAdapter(AssinadorDpsPort assinadorPort, ObjectMapper objectMapper) {
-        this(assinadorPort, objectMapper, Duration.ofSeconds(30), null, SefinRetryConfig.padrao());
+        this(assinadorPort, new br.com.heviane.nfse.core.services.ValidadorSchemaService(), objectMapper, Duration.ofSeconds(30), null, SefinRetryConfig.padrao());
+    }
+
+    public SefinClientAdapter(AssinadorDpsPort assinadorPort, ValidadorSchemaPort validadorSchemaPort, ObjectMapper objectMapper) {
+        this(assinadorPort, validadorSchemaPort, objectMapper, Duration.ofSeconds(30), null, SefinRetryConfig.padrao());
     }
 
     public SefinClientAdapter(AssinadorDpsPort assinadorPort, ObjectMapper objectMapper, Duration timeout, String baseUrlOverride) {
-        this(assinadorPort, objectMapper, timeout, baseUrlOverride, SefinRetryConfig.padrao());
+        this(assinadorPort, new br.com.heviane.nfse.core.services.ValidadorSchemaService(), objectMapper, timeout, baseUrlOverride, SefinRetryConfig.padrao());
     }
 
     public SefinClientAdapter(AssinadorDpsPort assinadorPort, ObjectMapper objectMapper, Duration timeout, String baseUrlOverride, SefinRetryConfig retryConfig) {
+        this(assinadorPort, new br.com.heviane.nfse.core.services.ValidadorSchemaService(), objectMapper, timeout, baseUrlOverride, retryConfig);
+    }
+
+    public SefinClientAdapter(AssinadorDpsPort assinadorPort, ValidadorSchemaPort validadorSchemaPort, ObjectMapper objectMapper, Duration timeout, String baseUrlOverride, SefinRetryConfig retryConfig) {
         this.assinadorPort = Objects.requireNonNull(assinadorPort, "AssinadorDpsPort não pode ser nulo.");
+        this.validadorSchemaPort = Objects.requireNonNull(validadorSchemaPort, "ValidadorSchemaPort não pode ser nulo.");
         this.objectMapper = Objects.requireNonNull(objectMapper, "ObjectMapper não pode ser nulo.");
         this.timeout = timeout != null ? timeout : Duration.ofSeconds(30);
         this.baseUrlOverride = baseUrlOverride;
@@ -129,7 +140,15 @@ public class SefinClientAdapter implements TransmissorSefinPort {
 
         return executarComRetry("Cancelamento de NFS-e", () -> {
             String xmlEvento = montarXmlPedidoCancelamento(requisicao);
-            String eventoGZipB64 = assinadorPort.gerarPayloadGZipB64(xmlEvento);
+
+            // 1. Validação estrita do schema XSD do pedido antes do envio
+            validadorSchemaPort.validarPedRegEventoOuFalhar(xmlEvento);
+
+            // 2. Assinatura digital ICP-Brasil sobre infPedReg com o certificado A1 em memória
+            String xmlEventoAssinado = assinadorPort.assinar(xmlEvento, "infPedReg", certificado);
+
+            // 3. Compactação GZIP e codificação Base64
+            String eventoGZipB64 = assinadorPort.gerarPayloadGZipB64(xmlEventoAssinado);
 
             Map<String, String> payloadMap = new HashMap<>();
             payloadMap.put("pedidoRegistroEventoXmlGZipB64", eventoGZipB64);
@@ -218,11 +237,14 @@ public class SefinClientAdapter implements TransmissorSefinPort {
 
     private String montarXmlPedidoCancelamento(RequisicaoCancelamentoDps req) {
         String dataHoraAtual = java.time.ZonedDateTime.now(java.time.ZoneId.of("America/Sao_Paulo"))
-                .format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                .truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"));
+        String idPedido = PedRegEventoIdHelper.gerarIdCancelamento(req.chaveAcesso());
+
         return String.format("""
                 <?xml version="1.0" encoding="UTF-8"?>
                 <pedRegEvento xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
-                    <infPedReg Id="EVT%s101101001">
+                    <infPedReg Id="%s">
                         <tpAmb>%d</tpAmb>
                         <verAplic>NfseApi_v1.0</verAplic>
                         <dhEvento>%s</dhEvento>
@@ -236,7 +258,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
                     </infPedReg>
                 </pedRegEvento>
                 """,
-                req.chaveAcesso(),
+                idPedido,
                 req.ambiente().getCodigo(),
                 dataHoraAtual,
                 req.cnpjAutor(),

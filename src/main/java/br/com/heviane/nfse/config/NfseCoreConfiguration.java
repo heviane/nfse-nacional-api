@@ -35,8 +35,10 @@ public class NfseCoreConfiguration {
     }
 
     @Bean
-    public TransmissorSefinPort transmissorSefinPort(AssinadorDpsPort assinadorDpsPort, ObjectMapper objectMapper) {
-        return new SefinClientAdapter(assinadorDpsPort, objectMapper);
+    public TransmissorSefinPort transmissorSefinPort(AssinadorDpsPort assinadorDpsPort,
+                                                     ValidadorSchemaPort validadorSchemaPort,
+                                                     ObjectMapper objectMapper) {
+        return new SefinClientAdapter(assinadorDpsPort, validadorSchemaPort, objectMapper);
     }
 
     @Bean

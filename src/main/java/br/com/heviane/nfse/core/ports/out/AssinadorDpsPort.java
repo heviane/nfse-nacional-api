@@ -9,13 +9,24 @@ import br.com.heviane.nfse.core.domain.CertificadoA1;
 public interface AssinadorDpsPort {
 
     /**
-     * Assina digitalmente o XML da DPS com o certificado digital A1 fornecido.
+     * Assina digitalmente o XML fiscal com o certificado digital A1 fornecido.
+     * Auto-detecta a tag alvo a ser assinada (ex: infDPS para <DPS>, infPedReg para <pedRegEvento>).
      *
-     * @param xmlDps Conteúdo XML da DPS com a tag infDPS e atributo Id
+     * @param xml Conteúdo XML do documento fiscal com elemento identificável por atributo Id
      * @param certificado Certificado A1 contendo chave privada e certificado público em memória
-     * @return XML da DPS assinado contendo o bloco Signature como filho direto da raiz DPS
+     * @return XML assinado contendo o bloco Signature
      */
-    String assinar(String xmlDps, CertificadoA1 certificado);
+    String assinar(String xml, CertificadoA1 certificado);
+
+    /**
+     * Assina digitalmente o XML fiscal especificando explicitamente o nome da tag do elemento alvo a ser assinado.
+     *
+     * @param xml Conteúdo XML do documento fiscal com elemento identificável por atributo Id
+     * @param tagElementoAlvo Nome da tag alvo a ser assinada (ex: "infDPS", "infPedReg")
+     * @param certificado Certificado A1 contendo chave privada e certificado público em memória
+     * @return XML assinado contendo o bloco Signature
+     */
+    String assinar(String xml, String tagElementoAlvo, CertificadoA1 certificado);
 
     /**
      * Valida matematicamente a assinatura digital contida em um XML de DPS assinado.

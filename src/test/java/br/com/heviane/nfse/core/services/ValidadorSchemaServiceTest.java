@@ -190,5 +190,90 @@ class ValidadorSchemaServiceTest {
                     .isEmpty();
         }
     }
+
+    @Test
+    @DisplayName("Deve validar com sucesso um pedRegEvento de cancelamento 100% conforme com o XSD oficial")
+    void deveValidarComSucessoPedidoRegistroEventoContraXsdV100() {
+        String chave50 = "32052002601000000000019100001000000000000001123456";
+        String idPedido = "PRE" + chave50 + "101101";
+        String xmlEvento = String.format("""
+                <?xml version="1.0" encoding="UTF-8"?>
+                <pedRegEvento xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+                    <infPedReg Id="%s">
+                        <tpAmb>2</tpAmb>
+                        <verAplic>NfseApi_v1.0</verAplic>
+                        <dhEvento>2026-11-06T16:00:00-03:00</dhEvento>
+                        <CNPJAutor>00000000000191</CNPJAutor>
+                        <chNFSe>%s</chNFSe>
+                        <e101101>
+                            <xDesc>Cancelamento de NFS-e</xDesc>
+                            <cMotivo>1</cMotivo>
+                            <xMotivo>Cancelamento de teste com mais de 15 caracteres</xMotivo>
+                        </e101101>
+                    </infPedReg>
+                </pedRegEvento>
+                """, idPedido, chave50);
+
+        List<String> erros = validador.validarPedRegEvento(xmlEvento);
+        assertThat(erros).isEmpty();
+
+        // Não deve lançar exceção ao chamar o método ou falhar
+        validador.validarPedRegEventoOuFalhar(xmlEvento);
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar pedRegEvento com Id inválido (com 62 posições ou prefixo EVT)")
+    void deveRejeitarPedidoRegistroEventoComIdInvalido() {
+        String chave50 = "32052002601000000000019100001000000000000001123456";
+        String idInvalido = "PRE" + chave50 + "101101001"; // 62 posições
+        String xmlEvento = String.format("""
+                <?xml version="1.0" encoding="UTF-8"?>
+                <pedRegEvento xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+                    <infPedReg Id="%s">
+                        <tpAmb>2</tpAmb>
+                        <verAplic>NfseApi_v1.0</verAplic>
+                        <dhEvento>2026-11-06T16:00:00-03:00</dhEvento>
+                        <CNPJAutor>00000000000191</CNPJAutor>
+                        <chNFSe>%s</chNFSe>
+                        <e101101>
+                            <xDesc>Cancelamento de NFS-e</xDesc>
+                            <cMotivo>1</cMotivo>
+                            <xMotivo>Cancelamento de teste com mais de 15 caracteres</xMotivo>
+                        </e101101>
+                    </infPedReg>
+                </pedRegEvento>
+                """, idInvalido, chave50);
+
+        assertThatThrownBy(() -> validador.validarPedRegEventoOuFalhar(xmlEvento))
+                .isInstanceOf(ValidacaoFiscalException.class)
+                .hasMessageContaining("Pedido de Registro de Evento");
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar pedRegEvento com justificativa xMotivo menor que 15 caracteres")
+    void deveRejeitarPedidoRegistroEventoComMotivoCurto() {
+        String chave50 = "32052002601000000000019100001000000000000001123456";
+        String idPedido = "PRE" + chave50 + "101101";
+        String xmlEvento = String.format("""
+                <?xml version="1.0" encoding="UTF-8"?>
+                <pedRegEvento xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+                    <infPedReg Id="%s">
+                        <tpAmb>2</tpAmb>
+                        <verAplic>NfseApi_v1.0</verAplic>
+                        <dhEvento>2026-11-06T16:00:00-03:00</dhEvento>
+                        <CNPJAutor>00000000000191</CNPJAutor>
+                        <chNFSe>%s</chNFSe>
+                        <e101101>
+                            <xDesc>Cancelamento de NFS-e</xDesc>
+                            <cMotivo>1</cMotivo>
+                            <xMotivo>Curto</xMotivo>
+                        </e101101>
+                    </infPedReg>
+                </pedRegEvento>
+                """, idPedido, chave50);
+
+        List<String> erros = validador.validarPedRegEvento(xmlEvento);
+        assertThat(erros).isNotEmpty();
+    }
 }
 

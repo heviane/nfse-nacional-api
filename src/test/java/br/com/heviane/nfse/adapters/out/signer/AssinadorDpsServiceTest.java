@@ -125,6 +125,45 @@ class AssinadorDpsServiceTest {
     }
 
     @Test
+    @DisplayName("Deve assinar pedRegEvento (cancelamento) em memória e posicionar Signature sob raiz pedRegEvento")
+    void deveAssinarPedRegEventoComSucessoEValidarMatematicamente() {
+        String chave50 = "32052002601000000000019100001000000000000001123456";
+        String idPedido = "PRE" + chave50 + "101101";
+        String xmlEvento = String.format("""
+                <?xml version="1.0" encoding="UTF-8"?>
+                <pedRegEvento xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+                    <infPedReg Id="%s">
+                        <tpAmb>2</tpAmb>
+                        <verAplic>NfseApi_v1.0</verAplic>
+                        <dhEvento>2026-11-06T16:00:00-03:00</dhEvento>
+                        <CNPJAutor>00000000000191</CNPJAutor>
+                        <chNFSe>%s</chNFSe>
+                        <e101101>
+                            <xDesc>Cancelamento de NFS-e</xDesc>
+                            <cMotivo>1</cMotivo>
+                            <xMotivo>Cancelamento de teste com mais de 15 caracteres</xMotivo>
+                        </e101101>
+                    </infPedReg>
+                </pedRegEvento>
+                """, idPedido, chave50);
+
+        String xmlAssinado = assinador.assinar(xmlEvento, certificado);
+
+        assertThat(xmlAssinado).isNotBlank();
+        assertThat(xmlAssinado).contains("<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">");
+        assertThat(xmlAssinado).contains("URI=\"#" + idPedido + "\"");
+        assertThat(xmlAssinado).contains("Algorithm=\"http://www.w3.org/2001/04/xmldsig-more#rsa-sha256\"");
+
+        // Validação matemática
+        boolean valida = assinador.validarAssinatura(xmlAssinado);
+        assertThat(valida).as("A assinatura digital do pedRegEvento deve ser matematicamente válida").isTrue();
+
+        // Validação contra o schema XSD oficial
+        List<String> erros = validador.validarPedRegEvento(xmlAssinado);
+        assertThat(erros).as("pedRegEvento assinado deve ser 100% válido contra o XSD oficial").isEmpty();
+    }
+
+    @Test
     @DisplayName("Deve lançar IllegalArgumentException para entradas nulas ou vazias")
     void deveRejeitarParametrosNulos() {
         assertThatThrownBy(() -> assinador.assinar(null, certificado))
