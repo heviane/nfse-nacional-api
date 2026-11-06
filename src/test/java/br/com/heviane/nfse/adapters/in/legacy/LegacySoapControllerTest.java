@@ -197,5 +197,59 @@ class LegacySoapControllerTest {
         assertThatThrownBy(() -> controller.extrairXmlDps("<soap><Body>SemDps</Body></soap>"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    @DisplayName("NÃO deve vazar mensagem de erro interna ou stack trace para o ERP quando ocorrer erro inesperado")
+    void deveRetornarMensagemControladaComCorrelationIdQuandoOcorrerErroInternoInesperado() throws Exception {
+        when(certificadoProvider.obterCertificado(any(), any())).thenReturn(certificadoA1);
+        when(emitirDpsUseCase.emitir(any(), any(), any()))
+                .thenThrow(new RuntimeException("SQLConnectionException: Host 192.168.1.50 connection failed, user=admin, pass=secret"));
+
+        String soapRequest = """
+                <?xml version="1.0" encoding="utf-8"?>
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Body>
+                    <DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00"></DPS>
+                  </soapenv:Body>
+                </soapenv:Envelope>
+                """.stripIndent();
+
+        mockMvc.perform(post("/prefeitura/notafiscal/nfse.asmx")
+                        .header("X-Correlation-ID", "corr-test-12345")
+                        .contentType(MediaType.TEXT_XML)
+                        .content(soapRequest))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;Sucesso&gt;false&lt;/Sucesso&gt;")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;CodigoStatus&gt;999&lt;/CodigoStatus&gt;")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("corr-test-12345")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("SQLConnectionException"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("secret"))));
+    }
+
+    @Test
+    @DisplayName("NÃO deve vazar detalhes do provedor PKCS#12 ou keystore quando falhar a assinatura digital")
+    void deveRetornarMensagemControladaQuandoFalharAssinaturaDigital() throws Exception {
+        when(certificadoProvider.obterCertificado(any(), any())).thenReturn(certificadoA1);
+        when(emitirDpsUseCase.emitir(any(), any(), any()))
+                .thenThrow(new br.com.heviane.nfse.core.domain.AssinaturaDigitalException("keystore password was incorrect for key alias"));
+
+        String soapRequest = """
+                <?xml version="1.0" encoding="utf-8"?>
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Body>
+                    <DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00"></DPS>
+                  </soapenv:Body>
+                </soapenv:Envelope>
+                """.stripIndent();
+
+        mockMvc.perform(post("/prefeitura/notafiscal/nfse.asmx")
+                        .contentType(MediaType.TEXT_XML)
+                        .content(soapRequest))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;Sucesso&gt;false&lt;/Sucesso&gt;")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;CodigoStatus&gt;999&lt;/CodigoStatus&gt;")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Falha na assinatura digital da DPS")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("keystore password was incorrect"))));
+    }
 }
 

@@ -50,9 +50,9 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(AssinaturaDigitalException.class)
     public ResponseEntity<ErroResponse> handleAssinaturaDigital(AssinaturaDigitalException ex) {
-        log.error("Erro ao assinar digitalmente XML da DPS: {}", ex.getMessage());
+        log.error("Erro na assinatura digital do documento fiscal: {}", ex.getMessage());
         ErroResponse erro = new ErroResponse(
-                "Falha na assinatura digital da DPS: " + ex.getMessage(),
+                "Falha na assinatura digital do documento fiscal. Verifique a validade do certificado digital A1 e da senha informada.",
                 HttpStatus.BAD_REQUEST.value()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
@@ -84,9 +84,10 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErroResponse> handleGeneralException(Exception ex) {
-        log.error("Erro interno não tratado: {}", ex.getMessage(), ex);
+        String correlationId = org.slf4j.MDC.get(CorrelationIdFilter.CORRELATION_ID_KEY);
+        log.error("Erro interno não tratado [CorrelationId: {}]: {}", correlationId, ex.getMessage(), ex);
         ErroResponse erro = new ErroResponse(
-                "Erro interno ao processar a requisição: " + ex.getMessage(),
+                "Erro interno ao processar a requisição no middleware. Identificador de rastreamento: " + (correlationId != null ? correlationId : "N/A"),
                 HttpStatus.INTERNAL_SERVER_ERROR.value()
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);

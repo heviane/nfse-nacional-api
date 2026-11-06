@@ -19,8 +19,10 @@ public class CertificadoProvider {
                 byte[] bytes = Base64.getDecoder().decode(headerBase64.replaceAll("\\s+", ""));
                 String senha = (headerSenha != null) ? headerSenha : "";
                 return new CertificadoA1(bytes, senha);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Falha ao processar o certificado digital fornecido no cabeçalho X-Certificado-Base64: formato Base64 inválido.");
             } catch (Exception e) {
-                throw new IllegalArgumentException("Falha ao decodificar o certificado fornecido no cabeçalho X-Certificado-Base64: " + e.getMessage(), e);
+                throw new IllegalArgumentException("Falha ao inicializar o certificado digital fornecido no cabeçalho X-Certificado-Base64.");
             }
         }
 
@@ -38,8 +40,10 @@ public class CertificadoProvider {
                     senha = System.getProperty("nfse.cert.password", "");
                 }
                 return new CertificadoA1(bytes, senha);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalStateException("Falha ao carregar certificado digital configurado nas variáveis de ambiente: formato Base64 inválido.");
             } catch (Exception e) {
-                throw new IllegalStateException("Falha ao carregar certificado digital configurado nas variáveis de ambiente: " + e.getMessage(), e);
+                throw new IllegalStateException("Falha ao inicializar certificado digital configurado nas variáveis de ambiente.");
             }
         }
 

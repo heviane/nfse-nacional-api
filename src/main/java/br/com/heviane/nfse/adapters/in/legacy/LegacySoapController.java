@@ -1,15 +1,17 @@
 package br.com.heviane.nfse.adapters.in.legacy;
 
-import br.com.heviane.nfse.core.domain.AmbienteSefin;
-import br.com.heviane.nfse.core.domain.CertificadoA1;
-import br.com.heviane.nfse.core.domain.RespostaEmissaoSefin;
+import br.com.heviane.nfse.adapters.in.rest.CorrelationIdFilter;
+import br.com.heviane.nfse.core.domain.*;
 import br.com.heviane.nfse.core.ports.in.EmitirDpsUseCase;
 import br.com.heviane.nfse.core.services.CertificadoProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 /**
  * Camada Anticorrupção (ACL): Controlador SOAP legado que emula o WebService
@@ -137,12 +139,53 @@ public class LegacySoapController {
                     .body(soapResponse);
 
         } catch (Exception e) {
-            log.error("Erro ao processar envelope SOAP legado do GeneXus: {}", e.getMessage(), e);
-            String soapErrorResponse = montarRespostaSoapErro(e.getMessage());
+            String correlationId = MDC.get(CorrelationIdFilter.CORRELATION_ID_KEY);
+            if (correlationId == null || correlationId.isBlank()) {
+                correlationId = UUID.randomUUID().toString();
+            }
+
+            if (e instanceof ValidacaoFiscalException || e instanceof IllegalArgumentException) {
+                log.warn("Falha de validação na requisição SOAP [CorrelationId: {}]: {}", correlationId, e.getMessage());
+            } else if (e instanceof AssinaturaDigitalException) {
+                log.error("Falha na assinatura digital da requisição SOAP [CorrelationId: {}]: {}", correlationId, e.getMessage());
+            } else {
+                log.error("Erro interno ao processar envelope SOAP legado do GeneXus [CorrelationId: {}]", correlationId, e);
+            }
+
+            String mensagemControlada = mapearMensagemErro(e, correlationId);
+            String soapErrorResponse = montarRespostaSoapErro(mensagemControlada);
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_XML)
                     .body(soapErrorResponse);
         }
+    }
+
+    private String mapearMensagemErro(Exception e, String correlationId) {
+        if (e instanceof ValidacaoFiscalException valEx) {
+            String errosDetalhados = (valEx.getErros() != null && !valEx.getErros().isEmpty())
+                    ? " Detalhes: " + String.join(" | ", valEx.getErros())
+                    : "";
+            return "Falha de validação fiscal: " + valEx.getMessage() + errosDetalhados;
+        }
+
+        if (e instanceof IllegalArgumentException argEx) {
+            return "Requisição SOAP inválida: " + argEx.getMessage();
+        }
+
+        if (e instanceof AssinaturaDigitalException) {
+            return "Falha na assinatura digital da DPS. Verifique a validade do certificado digital A1 e da senha informada.";
+        }
+
+        if (e instanceof SefinTransmissaoException sefinEx) {
+            String detalheHttp = sefinEx.getHttpStatusCode() != null ? " (HTTP " + sefinEx.getHttpStatusCode() + ")" : "";
+            return "Falha na comunicação com o Sefin Nacional" + detalheHttp + ". Tente novamente em instantes.";
+        }
+
+        if (e instanceof IllegalStateException stateEx && stateEx.getMessage() != null && stateEx.getMessage().toLowerCase().contains("certificado")) {
+            return "Certificado digital A1 não configurado no servidor ou não fornecido na requisição.";
+        }
+
+        return "Erro interno ao processar a emissão da NFS-e. Identificador de rastreamento: " + correlationId;
     }
 
     /**

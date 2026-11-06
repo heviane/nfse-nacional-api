@@ -42,7 +42,7 @@ public class CertificadoA1 {
             }
             return ks;
         } catch (Exception e) {
-            throw new AssinaturaDigitalException("Falha ao carregar certificado PKCS#12 em memória: " + e.getMessage(), e);
+            throw new AssinaturaDigitalException("Falha ao carregar certificado digital A1 (PKCS#12) em memória. Verifique se o arquivo e a senha informada estão corretos.");
         }
     }
 
