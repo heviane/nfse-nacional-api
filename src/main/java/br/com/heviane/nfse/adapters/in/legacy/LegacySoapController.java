@@ -168,6 +168,10 @@ public class LegacySoapController {
             return "Falha de validação fiscal: " + valEx.getMessage() + errosDetalhados;
         }
 
+        if (e instanceof SecurityException secEx) {
+            return secEx.getMessage();
+        }
+
         if (e instanceof IllegalArgumentException argEx) {
             return "Requisição SOAP inválida: " + argEx.getMessage();
         }

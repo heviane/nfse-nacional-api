@@ -83,12 +83,14 @@ Para garantir que nenhuma credencial ou caminho absoluto fique chumbado no códi
 | Variável | Descrição | Exemplo de Valor |
 | :--- | :--- | :--- |
 | `NFSE_ENVIRONMENT` | Ambiente de emissão | `HOMOLOGACAO` ou `PRODUCAO` |
-| `NFSE_CERT_PATH` | Caminho seguro do arquivo do certificado A1 no servidor | `/opt/certs/certificado_cliente001.pfx` |
+| `NFSE_CERT_BASE64` | Conteúdo do certificado digital A1 codificado em Base64 | `MIIK...` |
 | `NFSE_CERT_PASSWORD` | Senha de proteção do certificado A1 | *(configurada diretamente no servidor)* |
+| `NFSE_API_KEY` | Chave secreta de autenticação do middleware (opcional se isolado por firewall) | `chave-secreta-erp-cliente001` |
+| `NFSE_ALLOW_CERT_HEADERS` | Permite envio de certificados via headers HTTP (padrão `false` por segurança) | `false` |
 | `NFSE_LOG_LEVEL` | Nível de detalhamento de logs da aplicação | `INFO` ou `DEBUG` |
 
 > [!CAUTION]
-> **Segurança:** O arquivo real do certificado digital (`*.pfx` ou `*.p12`) e sua senha **NUNCA** devem ser comitados no repositório Git. Eles devem ser inseridos manualmente no servidor de produção pelo administrador/desenvolvedora.
+> **Segurança:** O arquivo real do certificado digital (`*.pfx` ou `*.p12`) e sua senha **NUNCA** devem ser comitados no repositório Git. Eles devem ser inseridos manualmente no servidor de produção pelo administrador/desenvolvedora via `setenv.sh`.
 
 ---
 
@@ -98,7 +100,7 @@ Atendendo à urgência imediata do Cliente 001 e familiaridade operacional:
 
 1. **Geração do Artefato:**
    ```bash
-   ./mvnw clean package -DskipTests
+   mvn clean package -DskipTests
    ```
    *O Maven gerará o arquivo `target/nfse-nacional-api.war`.*
 2. **Acesso à BrasilCloud:** Conectar ao servidor do cliente via painel de controle da BrasilCloud ou cliente SFTP seguro com as credenciais fornecidas pelo cliente.
@@ -106,12 +108,27 @@ Atendendo à urgência imediata do Cliente 001 e familiaridade operacional:
    - Parar temporariamente o contexto da aplicação no Tomcat Manager ou substituir o arquivo em `webapps/nfse-nacional-api.war`.
    - Garantir que o Tomcat descompacte o novo WAR.
 4. **Verificação de Saúde (*Smoke Test*):**
-   - Acessar a rota de integridade: `http(s)://<dominio-brasilcloud>/nfse-nacional-api/health`
+   - Acessar a rota de integridade: `http(s)://<dominio-brasilcloud>/nfse-nacional-api/actuator/health`
    - Confirmar se o status retornado é `UP`.
 5. **Teste de Emissão de DPS:**
    - Disparar uma emissão de teste no ambiente de homologação a partir do ERP para validar a ponta a ponta.
 
 ---
+
+## 7. 🛡️ Diretrizes Mandatórias de Segurança na Nuvem (BrasilCloud)
+
+Para garantir proteção fiscal integral sem depender exclusivamente da aplicação:
+
+1. **Firewall / Whitelist de IP (Perímetro da BrasilCloud):**
+   - No painel de controle ou firewall da BrasilCloud, configurar regras de entrada liberando as portas `80` e `443` **exclusivamente para o endereço IP fixo de saída do servidor onde roda o ERP GeneXus do Cliente 001**.
+   - Bloquear todo tráfego público e conexões de origens não autorizadas.
+2. **HTTPS / TLS 1.2+ Obrigatório:**
+   - O Apache Tomcat deve operar atrás de um Reverse Proxy (Nginx, Apache HTTP Server ou WAF) com certificado SSL/TLS válido.
+   - Redirecionar todo tráfego HTTP em texto claro para HTTPS.
+3. **Chave de Autenticação (`NFSE_API_KEY`):**
+   - Caso o ERP GeneXus envie o cabeçalho `X-API-Key` ou `Authorization: Basic / Bearer`, configurar a variável `NFSE_API_KEY` no `setenv.sh`. O middleware rejeitará com HTTP 401 qualquer chamada não autorizada.
+4. **Isolamento de Certificados:**
+   - Manter `NFSE_ALLOW_CERT_HEADERS=false` (padrão) para evitar que certificados e senhas trafeguem pela rede ou sejam capturados em logs de proxy reverso.
 
 ## 7. 🔮 Próximos Passos para o Cliente 001
 

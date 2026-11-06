@@ -58,6 +58,16 @@ public class RestExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
     }
 
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ErroResponse> handleSecurity(SecurityException ex) {
+        log.warn("Bloqueio de segurança na requisição: {}", ex.getMessage());
+        ErroResponse erro = new ErroResponse(
+                ex.getMessage(),
+                HttpStatus.FORBIDDEN.value()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(erro);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErroResponse> handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Parâmetro inválido na requisição: {}", ex.getMessage());
