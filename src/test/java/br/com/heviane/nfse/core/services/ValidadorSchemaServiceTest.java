@@ -150,5 +150,45 @@ class ValidadorSchemaServiceTest {
         assertThat(ValidadorSchemaService.extrairVersao("<DPS>")).isEqualTo("v1.00");
         assertThat(ValidadorSchemaService.extrairVersao(null)).isEqualTo("v1.00");
     }
+
+    @Test
+    @DisplayName("Garante que todos os arquivos de amostra (samples) de DPS do projeto são 100% válidos contra o XSD oficial")
+    void deveValidarComSucessoTodosOsSamplesOficiaisDoProjetoContraXsd() throws Exception {
+        // 1. Amostra XML canônica v1.00
+        try (InputStream is = getClass().getResourceAsStream("/samples/dps-exemplo-valido.xml")) {
+            assertThat(is).isNotNull();
+            String xml = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            List<String> erros = validador.validarDps(xml);
+            assertThat(erros)
+                    .as("dps-exemplo-valido.xml deve ser 100% válido contra o XSD")
+                    .isEmpty();
+        }
+
+        // 2. Amostra de payload REST (payload-emissao-rest.json)
+        try (InputStream is = getClass().getResourceAsStream("/samples/payload-emissao-rest.json")) {
+            assertThat(is).isNotNull();
+            String json = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            com.fasterxml.jackson.databind.JsonNode node = new com.fasterxml.jackson.databind.ObjectMapper().readTree(json);
+            String xmlDps = node.get("xmlDps").asText();
+            List<String> erros = validador.validarDps(xmlDps);
+            assertThat(erros)
+                    .as("O XML contido em payload-emissao-rest.json deve ser 100% válido contra o XSD")
+                    .isEmpty();
+        }
+
+        // 3. Amostra de envelope SOAP GeneXus (envelope-soap-genexus.xml)
+        try (InputStream is = getClass().getResourceAsStream("/samples/envelope-soap-genexus.xml")) {
+            assertThat(is).isNotNull();
+            String soap = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            int start = soap.indexOf("<DPS");
+            int end = soap.indexOf("</DPS>") + 6;
+            assertThat(start).isGreaterThanOrEqualTo(0);
+            String xmlDps = soap.substring(start, end);
+            List<String> erros = validador.validarDps(xmlDps);
+            assertThat(erros)
+                    .as("O XML contido em envelope-soap-genexus.xml deve ser 100% válido contra o XSD")
+                    .isEmpty();
+        }
+    }
 }
 

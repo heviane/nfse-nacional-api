@@ -30,7 +30,7 @@ A necessidade de migração decorre da **Resolução CGSN nº 191/2026**, formal
 | :--- | :--- | :--- | :--- |
 | **Protocolo** | SOAP / XML (`/prefeitura/notafiscal/nfse.asmx`) | REST / JSON com mTLS | Camada Anticorrupção (ACL) recebe SOAP e envia REST. |
 | **Envelope de Envio** | Montava casca completa `<NFSe><infNFSe>...<DPS>` | Envio **estritamente da `<DPS>`** assinada | O Core Fiscal assina apenas a `<DPS>`, sem gerar `<NFSe>`. |
-| **Id da DPS** | `infDPS Id="DPS..."` (46 posições) | Mantido: `infDPS Id="DPS..."` (46 posições) | Compatibilidade direta na identificação da declaração. |
+| **Id da DPS** | `infDPS Id="DPS..."` (45 posições) | Mantido: `infDPS Id="DPS..."` (45 posições: literal `DPS` + 42 dígitos numéricos) | Compatibilidade direta na identificação da declaração (XSD `TSIdDPS`). |
 | **Chave da Nota** | Formato local de 53 posições iniciado por `NFS...` | **Chave de Acesso Nacional de 50 dígitos numéricos** | Retorno nacional convertido para o formato esperado pelo ERP. |
 | **Cancelamento** | Referência interna municipal | Evento `101101` com `<chNFSe>` de 50 dígitos | Eventos exigem a chave nacional retornada na emissão. |
 
