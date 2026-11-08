@@ -1,6 +1,7 @@
 package br.com.heviane.nfse.adapters.in.rest;
 
 import br.com.heviane.nfse.adapters.in.rest.dto.EmissaoDpsRequest;
+import br.com.heviane.nfse.config.NfseProperties;
 import br.com.heviane.nfse.core.domain.*;
 import br.com.heviane.nfse.core.ports.in.EmitirDpsUseCase;
 import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
@@ -43,6 +44,9 @@ class EmissaoDpsControllerTest {
     @MockBean
     private CertificadoProvider certificadoProvider;
 
+    @MockBean
+    private NfseProperties nfseProperties;
+
     private CertificadoA1 certificadoA1;
     private String certBase64;
 
@@ -51,6 +55,7 @@ class EmissaoDpsControllerTest {
         certificadoA1 = CertificadoTesteHelper.obterCertificadoTeste();
         byte[] pfxBytes = certificadoA1.getInputStream().readAllBytes();
         certBase64 = Base64.getEncoder().encodeToString(pfxBytes);
+        when(nfseProperties.resolverAmbiente()).thenReturn(AmbienteSefin.HOMOLOGACAO);
     }
 
     private String compactarGZipBase64(String conteudo) throws Exception {

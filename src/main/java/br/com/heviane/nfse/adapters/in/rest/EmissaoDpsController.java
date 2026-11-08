@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +30,7 @@ public class EmissaoDpsController {
     private final CertificadoProvider certificadoProvider;
     private final NfseProperties nfseProperties;
 
+    @Autowired
     public EmissaoDpsController(EmitirDpsUseCase emitirDpsUseCase,
                                 CertificadoProvider certificadoProvider,
                                 NfseProperties nfseProperties) {

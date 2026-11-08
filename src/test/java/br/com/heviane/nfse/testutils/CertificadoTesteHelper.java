@@ -29,9 +29,10 @@ public final class CertificadoTesteHelper {
 
             String password = "testpassword123";
             String alias = "teste_a1";
+            String keytoolExec = resolverKeytoolExecutable();
 
             ProcessBuilder pb = new ProcessBuilder(
-                    "keytool",
+                    keytoolExec,
                     "-genkeypair",
                     "-alias", alias,
                     "-keyalg", "RSA",
@@ -60,5 +61,18 @@ public final class CertificadoTesteHelper {
         } catch (Exception e) {
             throw new RuntimeException("Erro ao inicializar certificado de teste em memória: " + e.getMessage(), e);
         }
+    }
+
+    private static String resolverKeytoolExecutable() {
+        String javaHome = System.getProperty("java.home");
+        if (javaHome != null && !javaHome.isBlank()) {
+            boolean isWindows = System.getProperty("os.name", "").toLowerCase().contains("win");
+            String execName = isWindows ? "keytool.exe" : "keytool";
+            java.nio.file.Path keytoolPath = java.nio.file.Path.of(javaHome, "bin", execName);
+            if (java.nio.file.Files.exists(keytoolPath)) {
+                return keytoolPath.toAbsolutePath().toString();
+            }
+        }
+        return "keytool";
     }
 }

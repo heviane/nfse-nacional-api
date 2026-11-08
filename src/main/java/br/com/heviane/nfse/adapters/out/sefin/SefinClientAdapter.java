@@ -295,8 +295,17 @@ public class SefinClientAdapter implements TransmissorSefinPort {
                 req.cnpjAutor(),
                 req.chaveAcesso(),
                 req.codigoMotivo(),
-                req.motivo().trim()
+                escapeXml(req.motivo().trim())
         );
+    }
+
+    private String escapeXml(String texto) {
+        if (texto == null) return "";
+        return texto.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
     }
 
     private RespostaEventoCancelamento processarRespostaCancelamento(HttpResponse<String> response) throws Exception {

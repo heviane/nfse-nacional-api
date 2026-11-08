@@ -255,17 +255,19 @@ public class LegacySoapController {
         }
 
         // Tenta extrair a tag <DPS...>...</DPS>
-        int inicioDps = decodificado.indexOf("<DPS");
+        java.util.regex.Matcher matcherDps = java.util.regex.Pattern.compile("<DPS[\\s>]").matcher(decodificado);
+        int inicioDps = matcherDps.find() ? matcherDps.start() : -1;
         int fimDps = decodificado.indexOf("</DPS>");
-        if (inicioDps != -1 && fimDps != -1) {
+        if (inicioDps != -1 && fimDps != -1 && fimDps > inicioDps) {
             String dps = decodificado.substring(inicioDps, fimDps + "</DPS>".length()).trim();
             return normalizarXmlDps(dps, decodificado);
         }
 
         // Tenta extrair <infDPS...>...</infDPS> e envelopar na raiz <DPS>
-        int inicioInfDps = decodificado.indexOf("<infDPS");
+        java.util.regex.Matcher matcherInfDps = java.util.regex.Pattern.compile("<infDPS[\\s>]").matcher(decodificado);
+        int inicioInfDps = matcherInfDps.find() ? matcherInfDps.start() : -1;
         int fimInfDps = decodificado.indexOf("</infDPS>");
-        if (inicioInfDps != -1 && fimInfDps != -1) {
+        if (inicioInfDps != -1 && fimInfDps != -1 && fimInfDps > inicioInfDps) {
             String infDps = decodificado.substring(inicioInfDps, fimInfDps + "</infDPS>".length()).trim();
             String versao = (infDps.contains("<IBSCBS") || decodificado.contains("versao=\"1.01\"") || decodificado.contains("versao='1.01'")) ? "1.01" : "1.00";
             return String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?><DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" versao=\"%s\">%s</DPS>", versao, infDps);
@@ -333,7 +335,7 @@ public class LegacySoapController {
                     </GerarNfseResponse>
                   </soap:Body>
                 </soap:Envelope>
-                """.stripIndent(), sucesso, status, escapeXml(motivo), chave, xmlEscape);
+                """, sucesso, status, escapeXml(motivo), chave, xmlEscape);
     }
 
     private String montarRespostaSoapErro(String mensagem) {
@@ -352,7 +354,7 @@ public class LegacySoapController {
                     </GerarNfseResponse>
                   </soap:Body>
                 </soap:Envelope>
-                """.stripIndent(), escapeXml(mensagem));
+                """, escapeXml(mensagem));
     }
 
     private String escapeXml(String texto) {

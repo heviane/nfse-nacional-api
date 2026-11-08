@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestControllerAdvice(basePackages = "br.com.heviane.nfse.adapters.in.rest")
@@ -31,14 +32,33 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(SefinTransmissaoException.class)
     public ResponseEntity<ErroResponse> handleSefinTransmissao(SefinTransmissaoException ex) {
-        log.error("Erro na comunicação com Sefin Nacional: HTTP {} - {}", ex.getHttpStatusCode(), ex.getMessage());
-        HttpStatus status = ex.getHttpStatusCode() != null && ex.getHttpStatusCode() >= 400 && ex.getHttpStatusCode() < 500
-                ? HttpStatus.BAD_REQUEST
-                : HttpStatus.BAD_GATEWAY;
+        log.error("Erro na comunicação com Sefin Nacional: HTTP {} - Status Sefin {} - {}",
+                ex.getHttpStatusCode(), ex.getCodigoStatusSefin(), ex.getMessage());
 
-        List<String> detalhes = ex.getHttpStatusCode() != null
-                ? List.of("Código retornado pelo Sefin: " + ex.getHttpStatusCode())
-                : List.of();
+        HttpStatus status;
+        if (ex.getHttpStatusCode() != null) {
+            if (ex.getHttpStatusCode() == 504) {
+                status = HttpStatus.GATEWAY_TIMEOUT;
+            } else if (ex.getHttpStatusCode() == 409 || (ex.getCodigoStatusSefin() != null && ex.getCodigoStatusSefin() == 204)) {
+                status = HttpStatus.CONFLICT;
+            } else if (ex.getHttpStatusCode() >= 400 && ex.getHttpStatusCode() < 500) {
+                status = HttpStatus.BAD_REQUEST;
+            } else {
+                status = HttpStatus.BAD_GATEWAY;
+            }
+        } else if (ex.getCodigoStatusSefin() != null && ex.getCodigoStatusSefin() == 204) {
+            status = HttpStatus.CONFLICT;
+        } else {
+            status = HttpStatus.BAD_GATEWAY;
+        }
+
+        List<String> detalhes = new ArrayList<>();
+        if (ex.getHttpStatusCode() != null) {
+            detalhes.add("Código retornado pelo Sefin: " + ex.getHttpStatusCode());
+        }
+        if (ex.getCodigoStatusSefin() != null) {
+            detalhes.add("Status fiscal Sefin: " + ex.getCodigoStatusSefin());
+        }
 
         ErroResponse erro = new ErroResponse(
                 ex.getMessage(),

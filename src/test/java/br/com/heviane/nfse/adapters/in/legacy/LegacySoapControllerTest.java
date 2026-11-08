@@ -1,5 +1,6 @@
 package br.com.heviane.nfse.adapters.in.legacy;
 
+import br.com.heviane.nfse.config.NfseProperties;
 import br.com.heviane.nfse.core.domain.AmbienteSefin;
 import br.com.heviane.nfse.core.domain.CertificadoA1;
 import br.com.heviane.nfse.core.domain.RespostaEmissaoSefin;
@@ -45,11 +46,15 @@ class LegacySoapControllerTest {
     @MockBean
     private CertificadoProvider certificadoProvider;
 
+    @MockBean
+    private NfseProperties nfseProperties;
+
     private CertificadoA1 certificadoA1;
 
     @BeforeEach
     void setUp() throws Exception {
         certificadoA1 = CertificadoTesteHelper.obterCertificadoTeste();
+        when(nfseProperties.resolverAmbiente()).thenReturn(AmbienteSefin.HOMOLOGACAO);
     }
 
     private String compactarGZipBase64(String conteudo) throws Exception {

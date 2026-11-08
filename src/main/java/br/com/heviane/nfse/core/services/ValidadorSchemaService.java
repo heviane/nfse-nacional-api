@@ -106,6 +106,11 @@ public class ValidadorSchemaService implements ValidadorSchemaPort {
         try {
             Schema schema = obterSchema(versaoAlvo, xsdFile);
             Validator validator = schema.newValidator();
+            try {
+                validator.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+                validator.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            } catch (Exception ignored) {
+            }
 
             List<String> erros = new ArrayList<>();
             validator.setErrorHandler(new ErrorHandler() {
