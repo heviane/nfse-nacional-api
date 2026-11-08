@@ -62,8 +62,8 @@ public class NfseCoreConfiguration {
     }
 
     @Bean
-    public CertificadoProvider certificadoProvider() {
-        return new CertificadoProvider();
+    public CertificadoProvider certificadoProvider(NfseProperties nfseProperties) {
+        return new CertificadoProvider(nfseProperties);
     }
 
     @Bean

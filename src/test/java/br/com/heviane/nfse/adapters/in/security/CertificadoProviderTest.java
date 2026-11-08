@@ -1,5 +1,6 @@
 package br.com.heviane.nfse.adapters.in.security;
 
+import br.com.heviane.nfse.config.NfseProperties;
 import br.com.heviane.nfse.core.domain.CertificadoA1;
 import br.com.heviane.nfse.testutils.CertificadoTesteHelper;
 import org.junit.jupiter.api.DisplayName;
@@ -109,6 +110,40 @@ class CertificadoProviderTest {
         assertThatThrownBy(() -> provider.obterCertificado(null, null))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Nenhum Certificado Digital A1 foi configurado");
+    }
+
+    @Test
+    @DisplayName("Deve carregar certificado configurado via NfseProperties sem depender de System.getenv")
+    void deveCarregarCertificadoViaNfseProperties() throws Exception {
+        CertificadoA1 certMock = CertificadoTesteHelper.obterCertificadoTeste();
+        byte[] certBytes = certMock.getInputStream().readAllBytes();
+        String certB64 = Base64.getEncoder().encodeToString(certBytes);
+
+        NfseProperties properties = new NfseProperties();
+        properties.setCert(new NfseProperties.CertificadoProperties(false, null, certB64, "123456"));
+
+        CertificadoProvider provider = new CertificadoProvider(properties);
+        CertificadoA1 resolvido = provider.obterCertificado(null, null);
+
+        assertThat(resolvido).isNotNull();
+        assertThat(resolvido.getSenha()).isEqualTo("123456".toCharArray());
+    }
+
+    @Test
+    @DisplayName("Deve respeitar allowHeaders configurado via NfseProperties")
+    void deveRespeitarAllowHeadersViaNfseProperties() throws Exception {
+        CertificadoA1 certMock = CertificadoTesteHelper.obterCertificadoTeste();
+        byte[] certBytes = certMock.getInputStream().readAllBytes();
+        String certB64 = Base64.getEncoder().encodeToString(certBytes);
+
+        NfseProperties properties = new NfseProperties();
+        properties.getCert().setAllowHeaders(true);
+
+        CertificadoProvider provider = new CertificadoProvider(properties);
+        CertificadoA1 resolvido = provider.obterCertificado(certB64, "123456");
+
+        assertThat(resolvido).isNotNull();
+        assertThat(resolvido.getSenha()).isEqualTo("123456".toCharArray());
     }
 }
 

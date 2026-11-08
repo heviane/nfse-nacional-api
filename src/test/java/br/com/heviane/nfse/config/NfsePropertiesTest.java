@@ -35,5 +35,32 @@ class NfsePropertiesTest {
 
         assertThat(properties.resolverAmbiente()).isEqualTo(AmbienteSefin.HOMOLOGACAO);
     }
+
+    @Test
+    @DisplayName("Deve inicializar certProperties com valores padrão seguros")
+    void deveInicializarCertPropertiesComValoresPadrao() {
+        NfseProperties properties = new NfseProperties();
+
+        assertThat(properties.getCert()).isNotNull();
+        assertThat(properties.getCert().isAllowHeaders()).isFalse();
+        assertThat(properties.getCert().getPath()).isNull();
+        assertThat(properties.getCert().getBase64()).isNull();
+        assertThat(properties.getCert().getPassword()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Deve permitir configurar e recuperar certProperties")
+    void deveConfigurarERecuperarCertProperties() {
+        NfseProperties properties = new NfseProperties();
+        NfseProperties.CertificadoProperties cert = new NfseProperties.CertificadoProperties(
+                true, "/tmp/cert.pfx", "MII...", "secret"
+        );
+        properties.setCert(cert);
+
+        assertThat(properties.getCert().isAllowHeaders()).isTrue();
+        assertThat(properties.getCert().getPath()).isEqualTo("/tmp/cert.pfx");
+        assertThat(properties.getCert().getBase64()).isEqualTo("MII...");
+        assertThat(properties.getCert().getPassword()).isEqualTo("secret");
+    }
 }
 

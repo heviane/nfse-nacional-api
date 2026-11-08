@@ -1,5 +1,6 @@
 package br.com.heviane.nfse.adapters.in.security;
 
+import br.com.heviane.nfse.config.NfseProperties;
 import br.com.heviane.nfse.core.domain.CertificadoA1;
 
 import java.util.Base64;
@@ -12,14 +13,24 @@ import java.util.Base64;
  */
 public class CertificadoProvider {
 
-    private final boolean allowCertHeaders;
+    private final NfseProperties.CertificadoProperties certProperties;
 
     public CertificadoProvider() {
-        this(resolverAllowCertHeadersDefault());
+        this(new NfseProperties.CertificadoProperties(resolverAllowCertHeadersDefault(), null, null, null));
     }
 
     public CertificadoProvider(boolean allowCertHeaders) {
-        this.allowCertHeaders = allowCertHeaders;
+        this(new NfseProperties.CertificadoProperties(allowCertHeaders, null, null, null));
+    }
+
+    public CertificadoProvider(NfseProperties.CertificadoProperties certProperties) {
+        this.certProperties = (certProperties != null) ? certProperties : new NfseProperties.CertificadoProperties();
+    }
+
+    public CertificadoProvider(NfseProperties nfseProperties) {
+        this((nfseProperties != null && nfseProperties.getCert() != null)
+                ? nfseProperties.getCert()
+                : new NfseProperties.CertificadoProperties());
     }
 
     private static boolean resolverAllowCertHeadersDefault() {
@@ -31,13 +42,13 @@ public class CertificadoProvider {
     }
 
     public boolean isAllowCertHeaders() {
-        return allowCertHeaders;
+        return certProperties.isAllowHeaders() || resolverAllowCertHeadersDefault();
     }
 
     public CertificadoA1 obterCertificado(String headerBase64, String headerSenha) {
         // 1. Prioridade: cabeçalhos informados na requisição (se expressamente autorizados)
         if (headerBase64 != null && !headerBase64.isBlank()) {
-            if (!allowCertHeaders) {
+            if (!isAllowCertHeaders()) {
                 throw new SecurityException(
                         "O envio de certificado digital via cabeçalhos HTTP está desabilitado neste servidor por diretriz de segurança fiscal (NFSE_ALLOW_CERT_HEADERS=false). Utilize o certificado digital configurado no ambiente do servidor."
                 );
@@ -54,9 +65,9 @@ public class CertificadoProvider {
         }
 
         // 2. Prioridade: arquivo em disco configurado no servidor (NFSE_CERT_PATH / setenv.sh - recomendado para Linux/Tomcat)
-        String certPath = System.getenv("NFSE_CERT_PATH");
+        String certPath = certProperties.getPath();
         if (certPath == null || certPath.isBlank()) {
-            certPath = System.getProperty("nfse.cert.path");
+            certPath = resolverCertPathFallback();
         }
 
         if (certPath != null && !certPath.isBlank()) {
@@ -74,9 +85,9 @@ public class CertificadoProvider {
         }
 
         // 3. Prioridade: string Base64 configurada no servidor (NFSE_CERT_BASE64 - recomendado para containers/K8s)
-        String envBase64 = System.getenv("NFSE_CERT_BASE64");
+        String envBase64 = certProperties.getBase64();
         if (envBase64 == null || envBase64.isBlank()) {
-            envBase64 = System.getProperty("nfse.cert.base64");
+            envBase64 = resolverCertBase64Fallback();
         }
 
         if (envBase64 != null && !envBase64.isBlank()) {
@@ -97,11 +108,30 @@ public class CertificadoProvider {
     }
 
     private String resolverSenhaServidor() {
-        String senha = System.getenv("NFSE_CERT_PASSWORD");
-        if (senha == null) {
-            senha = System.getProperty("nfse.cert.password", "");
+        String senha = certProperties.getPassword();
+        if (senha == null || senha.isBlank()) {
+            senha = System.getenv("NFSE_CERT_PASSWORD");
+            if (senha == null) {
+                senha = System.getProperty("nfse.cert.password", "");
+            }
         }
-        return senha;
+        return (senha != null) ? senha : "";
+    }
+
+    private static String resolverCertPathFallback() {
+        String certPath = System.getenv("NFSE_CERT_PATH");
+        if (certPath == null || certPath.isBlank()) {
+            certPath = System.getProperty("nfse.cert.path");
+        }
+        return certPath;
+    }
+
+    private static String resolverCertBase64Fallback() {
+        String envBase64 = System.getenv("NFSE_CERT_BASE64");
+        if (envBase64 == null || envBase64.isBlank()) {
+            envBase64 = System.getProperty("nfse.cert.base64");
+        }
+        return envBase64;
     }
 }
 
