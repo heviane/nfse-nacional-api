@@ -226,7 +226,8 @@ public class LegacySoapController {
 
     /**
      * Extrai o XML da DPS contido dentro do payload SOAP.
-     * Suporta XML em texto claro, CDATA ou escapado em entidades HTML (&lt;DPS...&gt;).
+     * Suporta XML em texto claro, CDATA, escapado em entidades HTML (&lt;DPS...&gt;)
+     * ou encapsulado em casca de NFS-e (<NFSe><infNFSe>...<DPS>...</infNFSe></NFSe>).
      */
     String extrairXmlDps(String payload) {
         if (payload == null || payload.isBlank()) {
@@ -234,7 +235,7 @@ public class LegacySoapController {
         }
 
         String decodificado = payload;
-        if (decodificado.contains("&lt;DPS") || decodificado.contains("&lt;infDPS")) {
+        if (decodificado.contains("&lt;")) {
             decodificado = decodificado
                     .replace("&lt;", "<")
                     .replace("&gt;", ">")
@@ -247,7 +248,8 @@ public class LegacySoapController {
         int inicioDps = decodificado.indexOf("<DPS");
         int fimDps = decodificado.indexOf("</DPS>");
         if (inicioDps != -1 && fimDps != -1) {
-            return decodificado.substring(inicioDps, fimDps + "</DPS>".length()).trim();
+            String dps = decodificado.substring(inicioDps, fimDps + "</DPS>".length()).trim();
+            return normalizarXmlDps(dps, decodificado);
         }
 
         // Tenta extrair <infDPS...>...</infDPS> e envelopar na raiz <DPS>
@@ -255,10 +257,49 @@ public class LegacySoapController {
         int fimInfDps = decodificado.indexOf("</infDPS>");
         if (inicioInfDps != -1 && fimInfDps != -1) {
             String infDps = decodificado.substring(inicioInfDps, fimInfDps + "</infDPS>".length()).trim();
-            return String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?><DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" versao=\"1.00\">%s</DPS>", infDps);
+            String versao = (infDps.contains("<IBSCBS") || decodificado.contains("versao=\"1.01\"") || decodificado.contains("versao='1.01'")) ? "1.01" : "1.00";
+            return String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?><DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" versao=\"%s\">%s</DPS>", versao, infDps);
+        }
+
+        if (decodificado.contains("<GerarNfseEnvio") || decodificado.contains("<Rps") || decodificado.contains("<PrestadorServico") || decodificado.contains("<IdentificacaoRps")) {
+            throw new IllegalArgumentException("O XML recebido no envelope SOAP está no formato municipal legado da SIL Tecnologia (<Rps> / <GerarNfseEnvio>) e não no padrão da NFS-e Nacional (<DPS> / <infDPS>). Registre o payload correspondente para mapeamento De/Para.");
         }
 
         throw new IllegalArgumentException("Não foi possível localizar o elemento <DPS> ou <infDPS> no envelope SOAP.");
+    }
+
+    private String normalizarXmlDps(String dps, String contextoEnvelope) {
+        String resultado = dps;
+
+        // 1. Garante a declaração do namespace oficial da NFS-e Nacional se ausente na tag <DPS>
+        if (!resultado.contains("xmlns=")) {
+            if (resultado.startsWith("<DPS ")) {
+                resultado = "<DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" " + resultado.substring(5);
+            } else if (resultado.startsWith("<DPS>")) {
+                resultado = "<DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\">" + resultado.substring(5);
+            }
+        }
+
+        // 2. Garante compatibilidade de versão: se contiver IBS/CBS ou vier de documento 1.01, deve usar versao="1.01"
+        boolean temIbsCbs = resultado.contains("<IBSCBS") || (contextoEnvelope != null && contextoEnvelope.contains("versao=\"1.01\""));
+        if (temIbsCbs) {
+            if (resultado.contains("versao=\"1.00\"")) {
+                resultado = resultado.replace("versao=\"1.00\"", "versao=\"1.01\"");
+            } else if (resultado.contains("versao='1.00'")) {
+                resultado = resultado.replace("versao='1.00'", "versao='1.01'");
+            } else if (!resultado.contains("versao=")) {
+                resultado = resultado.replace("<DPS ", "<DPS versao=\"1.01\" ");
+            }
+        } else if (!resultado.contains("versao=")) {
+            resultado = resultado.replace("<DPS ", "<DPS versao=\"1.00\" ");
+        }
+
+        // 3. Garante o prólogo XML se ausente
+        if (!resultado.startsWith("<?xml")) {
+            resultado = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + resultado;
+        }
+
+        return resultado.trim();
     }
 
     private String montarRespostaSoapSucesso(boolean sucesso, int status, String motivo, String chaveAcesso, String xmlNfse) {

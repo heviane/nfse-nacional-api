@@ -275,5 +275,14 @@ class ValidadorSchemaServiceTest {
         List<String> erros = validador.validarPedRegEvento(xmlEvento);
         assertThat(erros).isNotEmpty();
     }
+
+    @Test
+    @DisplayName("Deve detectar automaticamente versão v1.01 quando XML contiver bloco <IBSCBS>")
+    void deveDetectarVersao101QuandoXmlContiverIbsCbs() {
+        String xmlComIbsCbs = "<DPS versao=\"1.00\"><infDPS Id=\"DPS1\"><IBSCBS></IBSCBS></infDPS></DPS>";
+        String versaoDetectada = ValidadorSchemaService.extrairVersao(xmlComIbsCbs);
+
+        assertThat(versaoDetectada).isEqualTo(ValidadorSchemaService.VERSAO_1_01);
+    }
 }
 

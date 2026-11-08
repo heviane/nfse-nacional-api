@@ -146,6 +146,7 @@ Para garantir proteção fiscal integral sem depender exclusivamente da aplicaç
 
 ## 8. 🔮 Próximos Passos para o Cliente 001
 
-- [ ] Obter e armazenar amostra do XML SOAP real enviado pelo ERP para desenhar o mapeamento exato de campos (*De/Para*).
-- [ ] Implementar endpoint de compatibilidade SOAP em `adapters.in.legacy`.
+- [x] Obter e analisar amostra do XML SOAP real enviado pelo ERP: **concluído** — constatado que o ERP já gera árvore nacional completa (`<NFSe><infNFSe>...<DPS>` com `IBSCBS`), dispensando mapeamento De/Para municipal.
+- [x] Implementar endpoint de compatibilidade SOAP em `adapters.in.legacy`: **concluído** — `LegacySoapController` com suporte a extração com injeção de namespace, auto-detecção de `v1.01` e harmonização de `tpAmb`.
+- [ ] Teste ponta a ponta com o ERP GeneXus apontando para o endpoint `/prefeitura/notafiscal/nfse.asmx` no ambiente de homologação.
 - [ ] Futuro: Automatizar este processo de deploy via **GitHub Actions (CI/CD)** via SSH/SFTP.

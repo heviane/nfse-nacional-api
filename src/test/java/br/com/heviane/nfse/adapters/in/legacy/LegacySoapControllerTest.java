@@ -218,7 +218,10 @@ class LegacySoapControllerTest {
         LegacySoapController controller = new LegacySoapController(emitirDpsUseCase, certificadoProvider);
 
         String envelopeRaw = "<soap><Body><DPS versao=\"1.00\"><infDPS Id=\"1\"></infDPS></DPS></Body></soap>";
-        assertThat(controller.extrairXmlDps(envelopeRaw)).isEqualTo("<DPS versao=\"1.00\"><infDPS Id=\"1\"></infDPS></DPS>");
+        assertThat(controller.extrairXmlDps(envelopeRaw))
+                .contains("xmlns=\"http://www.sped.fazenda.gov.br/nfse\"")
+                .contains("versao=\"1.00\"")
+                .contains("<infDPS Id=\"1\"></infDPS>");
 
         String envelopeInfDps = "<soap><Body><infDPS Id=\"DPS123\"><tpAmb>2</tpAmb></infDPS></Body></soap>";
         assertThat(controller.extrairXmlDps(envelopeInfDps)).contains("<DPS").contains("DPS123");
@@ -253,6 +256,89 @@ class LegacySoapControllerTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("corr-test-12345")))
                 .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("SQLConnectionException"))))
                 .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("secret"))));
+    }
+
+    @Test
+    @DisplayName("Deve extrair DPS aninhada em casca de <NFSe><infNFSe> injetando namespace e normalizando versão 1.01")
+    void deveExtrairDpsAninhadaEmCascaDeNFSeComInjecaoDeNamespaceEVersao101() throws Exception {
+        String chave = "32052002601000000000019100001000000000000001123456";
+        String xmlNfse = "<NFSe versao=\"1.01\"><infNFSe Id=\"NFS" + chave + "\"></infNFSe></NFSe>";
+        String gzipB64 = compactarGZipBase64(xmlNfse);
+
+        RespostaEmissaoSefin respostaSefin = new RespostaEmissaoSefin(
+                2, "Sefin_v1.01", "2026-11-02T16:00:00-03:00", 100,
+                "NFS-e gerada com sucesso", chave, gzipB64
+        );
+
+        when(certificadoProvider.obterCertificado(any(), any())).thenReturn(certificadoA1);
+        when(emitirDpsUseCase.emitir(org.mockito.ArgumentMatchers.argThat(xml ->
+                xml != null &&
+                xml.contains("xmlns=\"http://www.sped.fazenda.gov.br/nfse\"") &&
+                xml.contains("versao=\"1.01\"") &&
+                xml.contains("<IBSCBS>")
+        ), eq(AmbienteSefin.HOMOLOGACAO), any(CertificadoA1.class))).thenReturn(respostaSefin);
+
+        String soapRequest = """
+                <?xml version="1.0" encoding="utf-8"?>
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sil="http://www.siltecnologia.com.br/">
+                  <soapenv:Body>
+                    <sil:GerarNfse>
+                      <sil:xmlEnvio>
+                        <NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">
+                          <infNFSe Id="NFS32052001200000000001910000000000003126084157913535">
+                            <DPS versao="1.00">
+                              <infDPS Id="DPS320520020000000000019100001000000000000031">
+                                <tpAmb>2</tpAmb>
+                                <IBSCBS><totCIBS><vTotNF>100.00</vTotNF></IBSCBS>
+                              </infDPS>
+                            </DPS>
+                          </infNFSe>
+                        </NFSe>
+                      </sil:xmlEnvio>
+                    </sil:GerarNfse>
+                  </soapenv:Body>
+                </soapenv:Envelope>
+                """.stripIndent();
+
+        mockMvc.perform(post("/prefeitura/notafiscal/nfse.asmx")
+                        .contentType(MediaType.TEXT_XML)
+                        .content(soapRequest))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;Sucesso&gt;true&lt;/Sucesso&gt;")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(chave)));
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar com mensagem explicativa quando receber XML municipal legado da SIL Tecnologia sem DPS")
+    void deveRejeitarComMensagemExplicativaQuandoReceberXmlLegadoMunicipalSemDps() throws Exception {
+        String soapRequest = """
+                <?xml version="1.0" encoding="utf-8"?>
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sil="http://www.siltecnologia.com.br/">
+                  <soapenv:Body>
+                    <sil:GerarNfse>
+                      <sil:xmlEnvio>
+                        <GerarNfseEnvio xmlns="http://www.abrasf.org.br/nfse.xsd">
+                          <Rps>
+                            <IdentificacaoRps>
+                              <Numero>1</Numero>
+                              <Serie>1</Serie>
+                              <Tipo>1</Tipo>
+                            </IdentificacaoRps>
+                          </Rps>
+                        </GerarNfseEnvio>
+                      </sil:xmlEnvio>
+                    </sil:GerarNfse>
+                  </soapenv:Body>
+                </soapenv:Envelope>
+                """.stripIndent();
+
+        mockMvc.perform(post("/prefeitura/notafiscal/nfse.asmx")
+                        .contentType(MediaType.TEXT_XML)
+                        .content(soapRequest))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;Sucesso&gt;false&lt;/Sucesso&gt;")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("SIL Tecnologia (&lt;Rps&gt; / &lt;GerarNfseEnvio&gt;)")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("mapeamento De/Para")));
     }
 
     @Test

@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Orquestrador do fluxo central de emissão da DPS:
@@ -57,11 +59,14 @@ public class EmitirDpsService implements EmitirDpsUseCase {
 
         AmbienteSefin amb = (ambiente != null) ? ambiente : AmbienteSefin.HOMOLOGACAO;
 
+        // Harmoniza <tpAmb> para coincidir rigorosamente com o ambiente configurado no servidor
+        String xmlProcessado = harmonizarTipoAmbiente(xmlDps, amb);
+
         // 1. Validação estrita do schema XSD
-        validadorSchemaPort.validarDpsOuFalhar(xmlDps);
+        validadorSchemaPort.validarDpsOuFalhar(xmlProcessado);
 
         // 2. Assinatura digital ICP-Brasil A1 (RSA-SHA256)
-        String xmlDpsAssinado = assinadorDpsPort.assinar(xmlDps, certificado);
+        String xmlDpsAssinado = assinadorDpsPort.assinar(xmlProcessado, certificado);
 
         // 3. Transmissão com handshake mTLS
         RequisicaoEnvioDps requisicaoEnvio = new RequisicaoEnvioDps(xmlDpsAssinado, amb);
@@ -122,5 +127,19 @@ public class EmitirDpsService implements EmitirDpsUseCase {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    private String harmonizarTipoAmbiente(String xmlDps, AmbienteSefin amb) {
+        Pattern pattern = Pattern.compile("<tpAmb>(\\d+)</tpAmb>");
+        Matcher matcher = pattern.matcher(xmlDps);
+        if (matcher.find()) {
+            int tpAmbXml = Integer.parseInt(matcher.group(1));
+            if (tpAmbXml != amb.getCodigo()) {
+                log.info("Harmonizando tag <tpAmb> da DPS de {} para {} para coincidir com o ambiente do servidor ({})",
+                        tpAmbXml, amb.getCodigo(), amb);
+                return matcher.replaceFirst("<tpAmb>" + amb.getCodigo() + "</tpAmb>");
+            }
+        }
+        return xmlDps;
     }
 }

@@ -284,11 +284,14 @@ Se houver uma rejeição de schema (XSD), erro de certificado ou falha de comuni
 
 ## 5. 🔍 Estratégias do Parser Inteligente na Camada Anticorrupção
 
-Na prática, diferentes geradores GeneXus e bibliotecas HTTP podem enviar o XML da DPS de formas sutis distintas. Por isso, o método `extrairXmlDps(String payload)` do nosso controlador implementa três mecanismos de tolerância a falhas:
+Na prática, diferentes geradores GeneXus e bibliotecas HTTP podem enviar o XML da DPS de formas sutis distintas. Por isso, o método `extrairXmlDps(String payload)` do nosso controlador implementa mecanismos avançados de tolerância a falhas:
 
-1. **Decodificação Prévia de Entidades:** Identifica se o XML foi enviado escapado com `&lt;DPS...` e normaliza para `<DPS...`.
-2. **Extração da Raiz `<DPS>`:** Localiza o início em `<DPS` e o fechamento em `</DPS>`, extraindo a árvore completa mesmo se o envelope contiver nós irmãos ou atributos XML extras.
-3. **Suporte a Envio Apenas da `<infDPS>`:** Se o GeneXus legar apenas o nó `<infDPS>` sem o nó pai `<DPS>`, o parser detecta `<infDPS...` e injeta automaticamente a casca raiz `<DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">`, garantindo validação perfeita no schema XSD oficial.
+1. **Decodificação Prévia de Entidades:** Identifica se o XML foi enviado escapado com entidades HTML (`&lt;...&gt;`) e normaliza para caracteres XML válidos (`<...>`).
+2. **Extração de `<DPS>` Aninhada em Casca `<NFSe><infNFSe>`:** Como o ERP GeneXus do Cliente 001 envelopa a DPS dentro de `<NFSe><infNFSe>`, o parser localiza a árvore `<DPS>...</DPS>` e injeta automaticamente a declaração `xmlns="http://www.sped.fazenda.gov.br/nfse"`, que ficava restrita ao elemento raiz `<NFSe>`.
+3. **Auto-Detecção do Schema v1.01 (IBS/CBS):** Se a `<infDPS>` contiver nós da Reforma Tributária (`<IBSCBS>`), o middleware garante a validação contra o schema `v1.01` (mesmo se o gerador do ERP declarou `versao="1.00"` no nó `<DPS>`).
+4. **Harmonização de Ambiente (`<tpAmb>`):** Se o ERP enviar `<tpAmb>` discordante do ambiente ativo no servidor (`NFSE_ENVIRONMENT`), o middleware ajusta preventivamente o código do ambiente antes da assinatura digital, evitando rejeições da Receita Federal.
+5. **Suporte a Envio Apenas da `<infDPS>`:** Se o GeneXus legar apenas o nó `<infDPS>` sem o nó pai `<DPS>`, o parser detecta `<infDPS...` e injeta automaticamente a casca raiz `<DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="...">`, garantindo validação perfeita no schema XSD oficial.
+6. **Diagnóstico Amigável para Layouts Legados Desconhecidos:** Se o envelope contiver formatos municipais antigos não-nacionais (ex.: `<Rps>` ou `<GerarNfseEnvio>`), devolve uma mensagem clara de negócio em vez de falha sintática genérica.
 
 ---
 

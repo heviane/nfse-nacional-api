@@ -146,6 +146,10 @@ public class ValidadorSchemaService implements ValidadorSchemaPort {
         if (xmlConteudo == null) {
             return VERSAO_PADRAO;
         }
+        // Se contiver nós de IBS/CBS, obrigatoriamente pertence ao schema v1.01 (Reforma Tributária)
+        if (xmlConteudo.contains("<IBSCBS") || xmlConteudo.contains(":IBSCBS")) {
+            return VERSAO_1_01;
+        }
         Matcher matcher = VERSAO_PATTERN.matcher(xmlConteudo);
         if (matcher.find()) {
             return normalizarVersao(matcher.group(1));

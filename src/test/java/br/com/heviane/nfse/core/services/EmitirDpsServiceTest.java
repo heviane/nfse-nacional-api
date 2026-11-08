@@ -165,6 +165,29 @@ class EmitirDpsServiceTest {
     }
 
     @Test
+    @DisplayName("Deve harmonizar tag <tpAmb> do XML para coincidir com o ambiente do servidor antes de assinar")
+    void deveHarmonizarTipoAmbienteParaCoincidirComServidor() {
+        String xmlComHomologacao = "<DPS versao=\"1.00\"><infDPS Id=\"DPS1\"><tpAmb>2</tpAmb></infDPS></DPS>";
+        String xmlHarmonizadoProducao = "<DPS versao=\"1.00\"><infDPS Id=\"DPS1\"><tpAmb>1</tpAmb></infDPS></DPS>";
+
+        when(assinadorDpsPort.assinar(eq(xmlHarmonizadoProducao), eq(certificado)))
+                .thenReturn(xmlHarmonizadoProducao + "<Signature/>");
+
+        RespostaEmissaoSefin respostaMock = new RespostaEmissaoSefin(
+                1, "Sefin_1.0", "2026-11-05T12:00:00-03:00",
+                100, "Autorizado", CHAVE_ACESSO_50, "GZIP"
+        );
+        when(transmissorSefinPort.emitirDps(any(RequisicaoEnvioDps.class), eq(certificado)))
+                .thenReturn(respostaMock);
+
+        RespostaEmissaoSefin resultado = service.emitir(xmlComHomologacao, AmbienteSefin.PRODUCAO, certificado);
+
+        assertThat(resultado).isNotNull();
+        assertThat(resultado.isSucesso()).isTrue();
+        verify(assinadorDpsPort).assinar(eq(xmlHarmonizadoProducao), eq(certificado));
+    }
+
+    @Test
     @DisplayName("Deve validar que Certificado A1 é obrigatório")
     void deveValidarCertificadoObrigatorio() {
         assertThatThrownBy(() -> service.emitir(XML_DPS, AmbienteSefin.HOMOLOGACAO, null))
