@@ -524,6 +524,75 @@ class SefinClientAdapterTest {
     }
 
     @Test
+    @DisplayName("COM-06: Deve consultar DPS por Id com sucesso via GET /dps/{idDps}")
+    void deveConsultarDpsPorIdComSucesso() {
+        String jsonConsultaDps = String.format("""
+                {
+                  "idDps": "DPS123",
+                  "chaveAcesso": "%s",
+                  "dataHoraProcessamento": "2026-11-05T12:00:00-03:00",
+                  "tipoAmbiente": 2
+                }
+                """, CHAVE_ACESSO_50);
+
+        String contextPath = "/dps/DPS123";
+        mockServer.createContext(contextPath, exchange -> {
+            byte[] responseBytes = jsonConsultaDps.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, responseBytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(responseBytes);
+            }
+        });
+
+        RespostaConsultaDps resposta = adapter.consultarPorIdDps("DPS123", AmbienteSefin.HOMOLOGACAO, certificado);
+
+        assertThat(resposta).isNotNull();
+        assertThat(resposta.isSucesso()).isTrue();
+        assertThat(resposta.idDps()).isEqualTo("DPS123");
+        assertThat(resposta.chaveAcesso()).isEqualTo(CHAVE_ACESSO_50);
+        assertThat(resposta.tipoAmbiente()).isEqualTo(2);
+
+        mockServer.removeContext(contextPath);
+    }
+
+    @Test
+    @DisplayName("COM-06: Deve retornar null quando DPS não for encontrada (HTTP 404)")
+    void deveRetornarNullQuandoDpsNaoEncontradaHttp404() {
+        String contextPath = "/dps/DPS404";
+        mockServer.createContext(contextPath, exchange -> {
+            byte[] responseBytes = "{\"erros\":[{\"codigo\":\"E01\",\"descricao\":\"DPS não encontrada\"}]}".getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(404, responseBytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(responseBytes);
+            }
+        });
+
+        RespostaConsultaDps resposta = adapter.consultarPorIdDps("DPS404", AmbienteSefin.HOMOLOGACAO, certificado);
+
+        assertThat(resposta).isNull();
+
+        mockServer.removeContext(contextPath);
+    }
+
+    @Test
+    @DisplayName("COM-06: Deve validar parâmetros obrigatórios na consulta de DPS por Id")
+    void deveValidarParametrosConsultaPorIdDps() {
+        assertThatThrownBy(() -> adapter.consultarPorIdDps(null, AmbienteSefin.HOMOLOGACAO, certificado))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Id da DPS é obrigatório");
+
+        assertThatThrownBy(() -> adapter.consultarPorIdDps("   ", AmbienteSefin.HOMOLOGACAO, certificado))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Id da DPS é obrigatório");
+
+        assertThatThrownBy(() -> adapter.consultarPorIdDps("DPS123", AmbienteSefin.HOMOLOGACAO, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Certificado A1 é obrigatório");
+    }
+
+    @Test
     @DisplayName("COM-04: Deve validar parâmetros de SefinRetryConfig")
     void deveValidarConfiguracaoDeRetry() {
         assertThatThrownBy(() -> new SefinRetryConfig(0, Duration.ofSeconds(1), 2.0))

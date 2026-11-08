@@ -214,6 +214,84 @@ class EmitirDpsServiceTest {
     }
 
     @Test
+    @DisplayName("COM-06: Deve reconciliar e autorizar DPS após timeout de rede HTTP 504")
+    void deveReconciliarEAutorizarDpsAposTimeoutHttp504() {
+        when(assinadorDpsPort.assinar(XML_DPS, certificado)).thenReturn(XML_ASSINADO);
+
+        when(transmissorSefinPort.emitirDps(any(RequisicaoEnvioDps.class), eq(certificado)))
+                .thenThrow(new SefinTransmissaoException("Gateway Timeout no Sefin", 504, null, "timeout"));
+
+        RespostaConsultaDps consultaDps = new RespostaConsultaDps("DPS123", CHAVE_ACESSO_50, "2026-11-05T12:00:00-03:00", 2);
+        when(transmissorSefinPort.consultarPorIdDps("DPS123", AmbienteSefin.HOMOLOGACAO, certificado))
+                .thenReturn(consultaDps);
+
+        RespostaConsultaNfse consultaNfse = new RespostaConsultaNfse(
+                2, "SefinNacional_v1.0", "2026-11-05T12:00:01-03:00",
+                100, "NFS-e gerada com sucesso", CHAVE_ACESSO_50, "H4sICRECONCILIADO"
+        );
+        when(transmissorSefinPort.consultarPorChave(CHAVE_ACESSO_50, AmbienteSefin.HOMOLOGACAO, certificado))
+                .thenReturn(consultaNfse);
+
+        RespostaEmissaoSefin resultado = service.emitir(XML_DPS, AmbienteSefin.HOMOLOGACAO, certificado);
+
+        assertThat(resultado).isNotNull();
+        assertThat(resultado.isSucesso()).isTrue();
+        assertThat(resultado.codigoStatus()).isEqualTo(100);
+        assertThat(resultado.chaveAcesso()).isEqualTo(CHAVE_ACESSO_50);
+        assertThat(resultado.nfseXmlGZipB64()).isEqualTo("H4sICRECONCILIADO");
+
+        verify(transmissorSefinPort).consultarPorIdDps("DPS123", AmbienteSefin.HOMOLOGACAO, certificado);
+        verify(transmissorSefinPort).consultarPorChave(CHAVE_ACESSO_50, AmbienteSefin.HOMOLOGACAO, certificado);
+    }
+
+    @Test
+    @DisplayName("COM-06: Deve garantir idempotência reconciliando DPS após status 204 (Duplicidade)")
+    void deveGarantirIdempotenciaAposStatus204Duplicidade() {
+        when(assinadorDpsPort.assinar(XML_DPS, certificado)).thenReturn(XML_ASSINADO);
+
+        when(transmissorSefinPort.emitirDps(any(RequisicaoEnvioDps.class), eq(certificado)))
+                .thenThrow(new SefinTransmissaoException("Rejeição: Duplicidade de DPS", 200, 204, "{\"codigoStatus\":204}"));
+
+        RespostaConsultaDps consultaDps = new RespostaConsultaDps("DPS123", CHAVE_ACESSO_50, "2026-11-05T12:00:00-03:00", 2);
+        when(transmissorSefinPort.consultarPorIdDps("DPS123", AmbienteSefin.HOMOLOGACAO, certificado))
+                .thenReturn(consultaDps);
+
+        RespostaConsultaNfse consultaNfse = new RespostaConsultaNfse(
+                2, "SefinNacional_v1.0", "2026-11-05T12:00:01-03:00",
+                100, "NFS-e gerada com sucesso", CHAVE_ACESSO_50, "H4sICDUPLICIDADE"
+        );
+        when(transmissorSefinPort.consultarPorChave(CHAVE_ACESSO_50, AmbienteSefin.HOMOLOGACAO, certificado))
+                .thenReturn(consultaNfse);
+
+        RespostaEmissaoSefin resultado = service.emitir(XML_DPS, AmbienteSefin.HOMOLOGACAO, certificado);
+
+        assertThat(resultado).isNotNull();
+        assertThat(resultado.isSucesso()).isTrue();
+        assertThat(resultado.codigoStatus()).isEqualTo(100);
+        assertThat(resultado.chaveAcesso()).isEqualTo(CHAVE_ACESSO_50);
+        assertThat(resultado.nfseXmlGZipB64()).isEqualTo("H4sICDUPLICIDADE");
+    }
+
+    @Test
+    @DisplayName("COM-06: Deve propagar erro original de transmissão quando reconciliação não localizar a DPS")
+    void devePropagarErroOriginalQuandoReconciliacaoNaoLocalizarDps() {
+        when(assinadorDpsPort.assinar(XML_DPS, certificado)).thenReturn(XML_ASSINADO);
+
+        when(transmissorSefinPort.emitirDps(any(RequisicaoEnvioDps.class), eq(certificado)))
+                .thenThrow(new SefinTransmissaoException("Gateway Timeout no Sefin", 504, null, "timeout"));
+
+        when(transmissorSefinPort.consultarPorIdDps("DPS123", AmbienteSefin.HOMOLOGACAO, certificado))
+                .thenReturn(null);
+
+        assertThatThrownBy(() -> service.emitir(XML_DPS, AmbienteSefin.HOMOLOGACAO, certificado))
+                .isInstanceOf(SefinTransmissaoException.class)
+                .hasMessageContaining("Gateway Timeout no Sefin");
+
+        verify(transmissorSefinPort).consultarPorIdDps("DPS123", AmbienteSefin.HOMOLOGACAO, certificado);
+        verify(transmissorSefinPort, never()).consultarPorChave(anyString(), any(), any());
+    }
+
+    @Test
     @DisplayName("Deve validar que Certificado A1 é obrigatório")
     void deveValidarCertificadoObrigatorio() {
         assertThatThrownBy(() -> service.emitir(XML_DPS, AmbienteSefin.HOMOLOGACAO, null))

@@ -33,7 +33,10 @@ Esta especificação define os contratos de transporte, modelos de dados, tratam
 2. **Consulta de NFS-e por Chave:** `GET /nfse/{chaveAcesso}`
    - **Headers:** `Accept: application/json`
    - **Parâmetro:** `{chaveAcesso}` com 50 dígitos numéricos.
-3. **Registro de Eventos (Cancelamento):** `POST /eventos`
+3. **Consulta de Chave por Id da DPS (Reconciliação e Idempotência):** `GET /dps/{idDps}`
+   - **Headers:** `Accept: application/json`
+   - **Parâmetro:** `{idDps}` Identificador único da DPS (ex: `DPS3205200...`).
+4. **Registro de Eventos (Cancelamento):** `POST /eventos`
    - **Headers:** `Content-Type: application/json; charset=utf-8`, `Accept: application/json`
    - **Payload:** `{"pedidoRegistroEventoXmlGZipB64": "<base64 do XML pedRegEvento compactado>"}`
 
@@ -48,7 +51,7 @@ Esta especificação define os contratos de transporte, modelos de dados, tratam
 | **RF-03** | **Tratamento de Sucesso (HTTP 200 / Status 100)** | `P0` | **Dado** retorno HTTP 200 com `codigoStatus = 100`,<br>**Quando** processar o payload de resposta,<br>**Então** deve extrair a `chaveAcesso` (50 dígitos), descompactar o `nfseXmlGZipB64` e retornar o objeto de domínio `RespostaEmissaoSefin`. |
 | **RF-04** | **Tratamento de Rejeições e Falhas Fiscais** | `P0` | **Dado** retorno do Sefin com código de erro ou status != 100,<br>**Quando** analisar a resposta,<br>**Então** deve lançar `SefinTransmissaoException` contendo o código de status e descrição detalhada da inconsistência. |
 | **RF-05** | **Consulta por Chave de Acesso (50 dígitos)** | `P1` | **Dado** uma chave de acesso válida de 50 dígitos,<br>**Quando** consultar via `GET /nfse/{chaveAcesso}`,<br>**Então** deve retornar a situação da nota e o XML da NFS-e autorizada. |
-| **RF-06** | **Tratamento de Resiliência e Timeouts** | `P1` | **Dado** lentidão ou indisponibilidade temporária do Sefin Nacional,<br>**Quando** atingir o timeout configurado (padrão 30s),<br>**Então** deve capturar a falha e informar erro de timeout tratável pelo ERP. |
+| **RF-06** | **Tratamento de Resiliência, Timeouts e Idempotência** | `P1` | **Dado** timeout de rede (HTTP 504) ou retorno de duplicidade (Status 204),<br>**Quando** a transmissão falhar,<br>**Então** deve reconciliar consultando `GET /dps/{id}` e resgatar a chave e o XML autorizado da nota sem duplicar emissões. |
 
 ---
 
@@ -93,6 +96,16 @@ public interface TransmissorSefinPort {
      * Consulta a situação de uma NFS-e a partir de sua Chave de Acesso de 50 dígitos.
      */
     RespostaConsultaNfse consultarPorChave(String chaveAcesso, AmbienteSefin ambiente, CertificadoA1 certificado);
+
+    /**
+     * Consulta a chave de acesso da NFS-e a partir do Id da DPS para reconciliação e idempotência.
+     */
+    RespostaConsultaDps consultarPorIdDps(String idDps, AmbienteSefin ambiente, CertificadoA1 certificado);
+
+    /**
+     * Envia o pedido de cancelamento de uma NFS-e (Evento 101101) ao Sefin Nacional.
+     */
+    RespostaEventoCancelamento cancelar(RequisicaoCancelamentoDps requisicao, CertificadoA1 certificado);
 }
 ```
 
@@ -100,9 +113,10 @@ public interface TransmissorSefinPort {
 
 ## 5. 🧪 Estratégia de Testes Automatizados (TDD para o Épico 5)
 
-- [ ] **Teste 1 (Handshake & Criação do SSLContext):** Validar que `SSLContextFactory` instancia o contexto TLS com a chave privada e certificado público do `CertificadoA1`.
-- [ ] **Teste 2 (Emissão Autorizada — Status 100):** Simular resposta HTTP 200 com JSON contendo `codigoStatus = 100`, `chaveAcesso` de 50 dígitos e `nfseXmlGZipB64`, validando a descompactação correta do XML da NFS-e.
-- [ ] **Teste 3 (Rejeição Fiscal):** Simular retorno HTTP 200 com `codigoStatus = 204` ("Duplicidade de DPS") e garantir que `SefinTransmissaoException` é lançada com os detalhes do erro.
-- [ ] **Teste 4 (Erro HTTP 400/500):** Simular falha de rede ou HTTP 500 do Sefin, garantindo tratamento seguro sem quebra da JVM.
-- [ ] **Teste 5 (Consulta por Chave):** Simular chamada `GET /nfse/{chaveAcesso}` e verificar parse da resposta com descompactação da nota autorizada.
+- [x] **Teste 1 (Handshake & Criação do SSLContext):** Validar que `SSLContextFactory` instancia o contexto TLS com a chave privada e certificado público do `CertificadoA1`.
+- [x] **Teste 2 (Emissão Autorizada — Status 100):** Simular resposta HTTP 200 com JSON contendo `codigoStatus = 100`, `chaveAcesso` de 50 dígitos e `nfseXmlGZipB64`, validando a descompactação correta do XML da NFS-e.
+- [x] **Teste 3 (Rejeição Fiscal):** Simular retorno HTTP 200 com `codigoStatus = 204` ("Duplicidade de DPS") e garantir que `SefinTransmissaoException` é lançada com os detalhes do erro.
+- [x] **Teste 4 (Erro HTTP 400/500):** Simular falha de rede ou HTTP 500 do Sefin, garantindo tratamento seguro sem quebra da JVM.
+- [x] **Teste 5 (Consulta por Chave):** Simular chamada `GET /nfse/{chaveAcesso}` e verificar parse da resposta com descompactação da nota autorizada.
+- [x] **Teste 6 (Reconciliação e Idempotência via GET /dps/{id}):** Simular timeout de rede (HTTP 504) ou status 204 e validar recuperação da NFS-e autorizada sem duplicidade.
 

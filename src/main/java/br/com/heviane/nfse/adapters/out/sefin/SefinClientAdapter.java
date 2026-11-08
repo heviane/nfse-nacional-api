@@ -130,6 +130,36 @@ public class SefinClientAdapter implements TransmissorSefinPort {
     }
 
     @Override
+    public RespostaConsultaDps consultarPorIdDps(String idDps, AmbienteSefin ambiente, CertificadoA1 certificado) {
+        if (idDps == null || idDps.isBlank()) {
+            throw new IllegalArgumentException("Id da DPS é obrigatório para consulta.");
+        }
+        if (certificado == null) {
+            throw new IllegalArgumentException("Certificado A1 é obrigatório para consulta mTLS.");
+        }
+
+        AmbienteSefin amb = (ambiente != null) ? ambiente : AmbienteSefin.HOMOLOGACAO;
+
+        return executarComRetry("Consulta de DPS por Id", () -> {
+            String baseUrl = (baseUrlOverride != null) ? baseUrlOverride : amb.getBaseUrl();
+            String url = baseUrl.replaceAll("/+$", "") + "/dps/" + idDps.trim();
+
+            SSLContext sslContext = SefinSSLContextFactory.criarSslContext(certificado);
+            HttpClient client = criarHttpClient(sslContext);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(timeout)
+                    .header("Accept", "application/json")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            return processarRespostaConsultaDps(response, idDps);
+        });
+    }
+
+    @Override
     public RespostaEventoCancelamento cancelar(RequisicaoCancelamentoDps requisicao, CertificadoA1 certificado) {
         if (requisicao == null) {
             throw new IllegalArgumentException("Requisição de cancelamento não pode ser nula.");
@@ -345,6 +375,27 @@ public class SefinClientAdapter implements TransmissorSefinPort {
 
         throw new SefinTransmissaoException(
                 String.format("Erro HTTP %d ao consultar NFS-e no Sefin: %s", status, body),
+                status,
+                null,
+                body
+        );
+    }
+
+    private RespostaConsultaDps processarRespostaConsultaDps(HttpResponse<String> response, String idDps) throws Exception {
+        int status = response.statusCode();
+        String body = response.body();
+
+        if (status == 404) {
+            log.info("DPS {} não localizada no Sefin Nacional (HTTP 404). Documento não gerado ou pendente de processamento.", idDps);
+            return null;
+        }
+
+        if (status >= 200 && status < 300) {
+            return objectMapper.readValue(body, RespostaConsultaDps.class);
+        }
+
+        throw new SefinTransmissaoException(
+                String.format("Erro HTTP %d ao consultar DPS por Id no Sefin: %s", status, body),
                 status,
                 null,
                 body
