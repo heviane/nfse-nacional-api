@@ -5,6 +5,7 @@ import br.com.heviane.nfse.core.domain.CertificadoA1;
 import br.com.heviane.nfse.core.domain.RequisicaoEnvioDps;
 import br.com.heviane.nfse.core.domain.RespostaConsultaNfse;
 import br.com.heviane.nfse.core.domain.RespostaEmissaoSefin;
+import br.com.heviane.nfse.core.domain.ValidacaoFiscalException;
 import br.com.heviane.nfse.core.ports.in.EmitirDpsUseCase;
 import br.com.heviane.nfse.core.ports.out.AssinadorDpsPort;
 import br.com.heviane.nfse.core.ports.out.TransmissorSefinPort;
@@ -135,11 +136,25 @@ public class EmitirDpsService implements EmitirDpsUseCase {
         if (matcher.find()) {
             int tpAmbXml = Integer.parseInt(matcher.group(1));
             if (tpAmbXml != amb.getCodigo()) {
+                if (isStrictAmbienteValidation()) {
+                    throw new ValidacaoFiscalException(
+                            String.format("Inconsistência de ambiente fiscal: O XML da DPS declara <tpAmb>%d</tpAmb>, mas o serviço está configurado para operar em %s (código %d).",
+                                    tpAmbXml, amb, amb.getCodigo())
+                    );
+                }
                 log.info("Harmonizando tag <tpAmb> da DPS de {} para {} para coincidir com o ambiente do servidor ({})",
                         tpAmbXml, amb.getCodigo(), amb);
                 return matcher.replaceFirst("<tpAmb>" + amb.getCodigo() + "</tpAmb>");
             }
         }
         return xmlDps;
+    }
+
+    private boolean isStrictAmbienteValidation() {
+        String env = System.getenv("NFSE_STRICT_AMB");
+        if (env == null || env.isBlank()) {
+            env = System.getProperty("nfse.ambiente.strict", "false");
+        }
+        return Boolean.parseBoolean(env.trim());
     }
 }

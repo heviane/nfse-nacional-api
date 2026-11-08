@@ -188,6 +188,21 @@ class EmitirDpsServiceTest {
     }
 
     @Test
+    @DisplayName("Deve rejeitar emissão com ValidacaoFiscalException quando modo estrito ativo e tpAmb divergir")
+    void deveLancarExcecaoQuandoModoEstritoAtivoEAmbienteDivergir() {
+        String xmlComHomologacao = "<DPS versao=\"1.00\"><infDPS Id=\"DPS1\"><tpAmb>2</tpAmb></infDPS></DPS>";
+        System.setProperty("nfse.ambiente.strict", "true");
+
+        try {
+            assertThatThrownBy(() -> service.emitir(xmlComHomologacao, AmbienteSefin.PRODUCAO, certificado))
+                    .isInstanceOf(ValidacaoFiscalException.class)
+                    .hasMessageContaining("Inconsistência de ambiente fiscal: O XML da DPS declara <tpAmb>2</tpAmb>, mas o serviço está configurado para operar em PRODUCAO (código 1).");
+        } finally {
+            System.clearProperty("nfse.ambiente.strict");
+        }
+    }
+
+    @Test
     @DisplayName("Deve validar que Certificado A1 é obrigatório")
     void deveValidarCertificadoObrigatorio() {
         assertThatThrownBy(() -> service.emitir(XML_DPS, AmbienteSefin.HOMOLOGACAO, null))
