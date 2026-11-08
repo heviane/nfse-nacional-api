@@ -4,12 +4,14 @@ import br.com.heviane.nfse.adapters.in.rest.CorrelationIdFilter;
 import br.com.heviane.nfse.core.domain.*;
 import br.com.heviane.nfse.core.ports.in.EmitirDpsUseCase;
 import br.com.heviane.nfse.core.services.CertificadoProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.UUID;
 
@@ -36,11 +38,45 @@ public class LegacySoapController {
 
     /**
      * Retorna a definição WSDL para que o GeneXus 18 e ferramentas SOAP identifiquem os métodos do serviço.
+     * O endereço soap:address location é resolvido dinamicamente a partir da requisição HTTP (suportando
+     * proxy reverso/HTTPS da BrasilCloud) ou de configuração explícita (NFSE_SOAP_ADDRESS_LOCATION).
      */
     @GetMapping(produces = {MediaType.TEXT_XML_VALUE, MediaType.APPLICATION_XML_VALUE})
-    public ResponseEntity<String> obterWsdl() {
+    public ResponseEntity<String> obterWsdl(HttpServletRequest request) {
         log.info("Recebida requisição GET de WSDL para o WebService legado GeneXus");
-        String wsdl = """
+        String soapAddress = resolverSoapAddress(request);
+        String wsdl = gerarWsdl(soapAddress);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_XML)
+                .body(wsdl);
+    }
+
+    private String resolverSoapAddress(HttpServletRequest request) {
+        String customLocation = System.getenv("NFSE_SOAP_ADDRESS_LOCATION");
+        if (customLocation == null || customLocation.isBlank()) {
+            customLocation = System.getProperty("nfse.soap.address-location");
+        }
+        if (customLocation != null && !customLocation.isBlank()) {
+            return customLocation.trim();
+        }
+
+        if (request != null) {
+            try {
+                return ServletUriComponentsBuilder
+                        .fromRequestUri(request)
+                        .replaceQuery(null)
+                        .build()
+                        .toUriString();
+            } catch (Exception e) {
+                log.warn("Falha ao resolver dinamicamente o soap:address location a partir da requisição: {}", e.getMessage());
+            }
+        }
+        return "http://localhost:8080/prefeitura/notafiscal/nfse.asmx";
+    }
+
+    private String gerarWsdl(String soapAddress) {
+        return """
                 <?xml version="1.0" encoding="utf-8"?>
                 <wsdl:definitions xmlns:s="http://www.w3.org/2001/XMLSchema"
                                   xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
@@ -94,15 +130,11 @@ public class LegacySoapController {
                   </wsdl:binding>
                   <wsdl:service name="Nfse">
                     <wsdl:port name="NfseSoap" binding="tns:NfseSoap">
-                      <soap:address location="http://localhost:8080/prefeitura/notafiscal/nfse.asmx" />
+                      <soap:address location="%s" />
                     </wsdl:port>
                   </wsdl:service>
                 </wsdl:definitions>
-                """.stripIndent();
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.TEXT_XML)
-                .body(wsdl);
+                """.formatted(soapAddress).stripIndent();
     }
 
     /**

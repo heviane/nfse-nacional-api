@@ -68,7 +68,36 @@ class LegacySoapControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_XML))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("wsdl:definitions")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("targetNamespace=\"http://www.siltecnologia.com.br/\"")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"GerarNfse\"")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"GerarNfse\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("<soap:address location=\"http://localhost/prefeitura/notafiscal/nfse.asmx\" />")));
+    }
+
+    @Test
+    @DisplayName("Deve gerar soap:address location dinamicamente a partir do esquema, host e contexto da requisição")
+    void deveGerarSoapAddressLocationDinamicamenteAPartirDaRequisicao() throws Exception {
+        mockMvc.perform(get("https://fiscal.cliente001.com.br:8443/custom-context/prefeitura/notafiscal/nfse.asmx?WSDL")
+                        .contextPath("/custom-context"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "<soap:address location=\"https://fiscal.cliente001.com.br:8443/custom-context/prefeitura/notafiscal/nfse.asmx\" />"
+                )));
+    }
+
+    @Test
+    @DisplayName("Deve permitir sobrescrever soap:address location via propriedade de sistema")
+    void deveSobrescreverSoapAddressLocationViaPropriedadeDeSistema() throws Exception {
+        String overrideUrl = "https://proxy-externo.cliente001.com.br/prefeitura/notafiscal/nfse.asmx";
+        System.setProperty("nfse.soap.address-location", overrideUrl);
+
+        try {
+            mockMvc.perform(get("/prefeitura/notafiscal/nfse.asmx?WSDL"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                            "<soap:address location=\"" + overrideUrl + "\" />"
+                    )));
+        } finally {
+            System.clearProperty("nfse.soap.address-location");
+        }
     }
 
     @Test

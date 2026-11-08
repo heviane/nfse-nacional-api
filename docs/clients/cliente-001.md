@@ -88,6 +88,8 @@ Para garantir que nenhuma credencial ou caminho absoluto fique chumbado no códi
 | `NFSE_CERT_BASE64` | *(Alternativa para containers)* Conteúdo do certificado digital A1 em Base64 | `MIIK...` |
 | `NFSE_API_KEY` | Chave secreta de autenticação do middleware (opcional se isolado por firewall) | `chave-secreta-erp-cliente001` |
 | `NFSE_ALLOW_CERT_HEADERS` | Permite envio de certificados via headers HTTP (padrão `false` por segurança) | `false` |
+| `NFSE_SOAP_ADDRESS_LOCATION` | URL pública do endpoint SOAP no WSDL (opcional, gerada dinamicamente por padrão) | `https://fiscal.cliente001.com.br/prefeitura/notafiscal/nfse.asmx` |
+| `SERVER_SERVLET_CONTEXT_PATH` | Prefixo de contexto do servlet (opcional; padrão vazio para atender na raiz `/`) | `/` ou `/nfse-nacional-api` |
 | `NFSE_LOG_LEVEL` | Nível de detalhamento de logs da aplicação | `INFO` ou `DEBUG` |
 
 > [!TIP]
@@ -115,11 +117,12 @@ Atendendo à urgência imediata do Cliente 001 e familiaridade operacional:
    ```
    *O Maven gerará o arquivo `target/nfse-nacional-api.war`.*
 2. **Acesso à BrasilCloud:** Conectar ao servidor do cliente via painel de controle da BrasilCloud ou cliente SFTP seguro com as credenciais fornecidas pelo cliente.
-3. **Publicação no Tomcat:**
-   - Parar temporariamente o contexto da aplicação no Tomcat Manager ou substituir o arquivo em `webapps/nfse-nacional-api.war`.
-   - Garantir que o Tomcat descompacte o novo WAR.
+3. **Publicação no Tomcat (Context Path & Contrato GeneXus):**
+   - O ERP GeneXus consome o serviço na rota tradicional `/prefeitura/notafiscal/nfse.asmx`. Para manter compatibilidade transparente:
+     - **Opção A (Recomendada - Raiz Tomcat):** Publicar o arquivo renomeado para `webapps/ROOT.war`. Dessa forma o contexto do Tomcat será `/`, e o endpoint responderá diretamente em `http(s)://<dominio-brasilcloud>/prefeitura/notafiscal/nfse.asmx`, idêntico ao ambiente local.
+     - **Opção B (Contexto Nomeado com Proxy Reverso):** Manter o arquivo como `webapps/nfse-nacional-api.war` e configurar o Nginx / Apache para encaminhar requisições de `/prefeitura/**` para `/nfse-nacional-api/prefeitura/**`.
 4. **Verificação de Saúde (*Smoke Test*):**
-   - Acessar a rota de integridade: `http(s)://<dominio-brasilcloud>/nfse-nacional-api/actuator/health`
+   - Acessar a rota de integridade: `http(s)://<dominio-brasilcloud>/actuator/health` (se ROOT.war) ou `/nfse-nacional-api/actuator/health`.
    - Confirmar se o status retornado é `UP`.
 5. **Teste de Emissão de DPS:**
    - Disparar uma emissão de teste no ambiente de homologação a partir do ERP para validar a ponta a ponta.
