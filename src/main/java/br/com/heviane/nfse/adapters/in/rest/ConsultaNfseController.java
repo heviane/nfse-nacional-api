@@ -2,11 +2,9 @@ package br.com.heviane.nfse.adapters.in.rest;
 
 import br.com.heviane.nfse.adapters.in.rest.dto.ConsultaNfseResponse;
 import br.com.heviane.nfse.adapters.in.rest.dto.ErroResponse;
-import br.com.heviane.nfse.core.domain.AmbienteSefin;
-import br.com.heviane.nfse.core.domain.CertificadoA1;
-import br.com.heviane.nfse.core.domain.RespostaConsultaNfse;
+import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
+import br.com.heviane.nfse.core.domain.*;
 import br.com.heviane.nfse.core.ports.in.ConsultarNfseUseCase;
-import br.com.heviane.nfse.core.services.CertificadoProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;

@@ -6,7 +6,7 @@ import br.com.heviane.nfse.core.domain.CertificadoA1;
 import br.com.heviane.nfse.core.domain.RespostaEventoCancelamento;
 import br.com.heviane.nfse.core.domain.SefinTransmissaoException;
 import br.com.heviane.nfse.core.ports.in.CancelarNfseUseCase;
-import br.com.heviane.nfse.core.services.CertificadoProvider;
+import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
 import br.com.heviane.nfse.testutils.CertificadoTesteHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;

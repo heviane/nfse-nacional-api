@@ -5,7 +5,7 @@ import br.com.heviane.nfse.core.domain.CertificadoA1;
 import br.com.heviane.nfse.core.domain.RespostaConsultaNfse;
 import br.com.heviane.nfse.core.domain.SefinTransmissaoException;
 import br.com.heviane.nfse.core.ports.in.ConsultarNfseUseCase;
-import br.com.heviane.nfse.core.services.CertificadoProvider;
+import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
 import br.com.heviane.nfse.testutils.CertificadoTesteHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

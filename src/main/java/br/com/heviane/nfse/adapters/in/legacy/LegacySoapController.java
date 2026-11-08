@@ -1,9 +1,10 @@
 package br.com.heviane.nfse.adapters.in.legacy;
 
 import br.com.heviane.nfse.adapters.in.rest.CorrelationIdFilter;
+import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
+import br.com.heviane.nfse.config.NfseProperties;
 import br.com.heviane.nfse.core.domain.*;
 import br.com.heviane.nfse.core.ports.in.EmitirDpsUseCase;
-import br.com.heviane.nfse.core.services.CertificadoProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,10 +31,19 @@ public class LegacySoapController {
 
     private final EmitirDpsUseCase emitirDpsUseCase;
     private final CertificadoProvider certificadoProvider;
+    private final NfseProperties nfseProperties;
 
-    public LegacySoapController(EmitirDpsUseCase emitirDpsUseCase, CertificadoProvider certificadoProvider) {
+    @org.springframework.beans.factory.annotation.Autowired
+    public LegacySoapController(EmitirDpsUseCase emitirDpsUseCase,
+                                CertificadoProvider certificadoProvider,
+                                NfseProperties nfseProperties) {
         this.emitirDpsUseCase = emitirDpsUseCase;
         this.certificadoProvider = certificadoProvider;
+        this.nfseProperties = (nfseProperties != null) ? nfseProperties : new NfseProperties();
+    }
+
+    public LegacySoapController(EmitirDpsUseCase emitirDpsUseCase, CertificadoProvider certificadoProvider) {
+        this(emitirDpsUseCase, certificadoProvider, new NfseProperties());
     }
 
     /**
@@ -154,7 +164,7 @@ public class LegacySoapController {
         try {
             String xmlDps = extrairXmlDps(envelopeSoap);
             CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
-            AmbienteSefin ambiente = resolverAmbiente();
+            AmbienteSefin ambiente = nfseProperties.resolverAmbiente();
 
             RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(xmlDps, ambiente, certificado);
 
@@ -343,18 +353,6 @@ public class LegacySoapController {
                   </soap:Body>
                 </soap:Envelope>
                 """.stripIndent(), escapeXml(mensagem));
-    }
-
-    private AmbienteSefin resolverAmbiente() {
-        String env = System.getenv("NFSE_ENVIRONMENT");
-        if (env == null || env.isBlank()) {
-            env = System.getProperty("nfse.environment", "HOMOLOGACAO");
-        }
-        try {
-            return AmbienteSefin.valueOf(env.trim().toUpperCase());
-        } catch (Exception e) {
-            return AmbienteSefin.HOMOLOGACAO;
-        }
     }
 
     private String escapeXml(String texto) {

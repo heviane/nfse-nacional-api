@@ -1,5 +1,6 @@
 package br.com.heviane.nfse.config;
 
+import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
 import br.com.heviane.nfse.adapters.out.sefin.SefinClientAdapter;
 import br.com.heviane.nfse.adapters.out.signer.AssinadorDpsService;
 import br.com.heviane.nfse.core.ports.in.CancelarNfseUseCase;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,6 +24,7 @@ import org.springframework.context.annotation.Configuration;
  * Instancia os adaptadores e casos de uso mantendo o desacoplamento do Core.
  */
 @Configuration
+@EnableConfigurationProperties(NfseProperties.class)
 public class NfseCoreConfiguration {
 
     @Bean

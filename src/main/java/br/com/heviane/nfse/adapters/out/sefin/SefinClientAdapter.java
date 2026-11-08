@@ -1,5 +1,6 @@
 package br.com.heviane.nfse.adapters.out.sefin;
 
+import br.com.heviane.nfse.adapters.out.sefin.dto.*;
 import br.com.heviane.nfse.core.domain.*;
 import br.com.heviane.nfse.core.ports.out.AssinadorDpsPort;
 import br.com.heviane.nfse.core.ports.out.TransmissorSefinPort;
@@ -303,7 +304,8 @@ public class SefinClientAdapter implements TransmissorSefinPort {
         String body = response.body();
 
         if (status >= 200 && status < 300) {
-            RespostaEventoCancelamento resposta = objectMapper.readValue(body, RespostaEventoCancelamento.class);
+            SefinEventoCancelamentoResponseDto dto = objectMapper.readValue(body, SefinEventoCancelamentoResponseDto.class);
+            RespostaEventoCancelamento resposta = dto.paraDominio();
             if (!resposta.isSucesso()) {
                 throw new SefinTransmissaoException(
                         String.format("Rejeição de cancelamento pelo Sefin (Status %d): %s", resposta.codigoStatus(), resposta.motivoStatus()),
@@ -336,7 +338,8 @@ public class SefinClientAdapter implements TransmissorSefinPort {
         String body = response.body();
 
         if (status >= 200 && status < 300) {
-            RespostaEmissaoSefin resposta = objectMapper.readValue(body, RespostaEmissaoSefin.class);
+            SefinEmissaoResponseDto dto = objectMapper.readValue(body, SefinEmissaoResponseDto.class);
+            RespostaEmissaoSefin resposta = dto.paraDominio();
             if (!resposta.isSucesso() && !resposta.isEmProcessamento()) {
                 throw new SefinTransmissaoException(
                         String.format("Rejeição do Sefin Nacional (Status %d): %s", resposta.codigoStatus(), resposta.motivoStatus()),
@@ -361,7 +364,8 @@ public class SefinClientAdapter implements TransmissorSefinPort {
         String body = response.body();
 
         if (status >= 200 && status < 300) {
-            RespostaConsultaNfse resposta = objectMapper.readValue(body, RespostaConsultaNfse.class);
+            SefinConsultaNfseResponseDto dto = objectMapper.readValue(body, SefinConsultaNfseResponseDto.class);
+            RespostaConsultaNfse resposta = dto.paraDominio();
             if (!resposta.isEncontrada()) {
                 throw new SefinTransmissaoException(
                         String.format("Consulta retornou status não autorizado (%d): %s", resposta.codigoStatus(), resposta.motivoStatus()),
@@ -391,7 +395,8 @@ public class SefinClientAdapter implements TransmissorSefinPort {
         }
 
         if (status >= 200 && status < 300) {
-            return objectMapper.readValue(body, RespostaConsultaDps.class);
+            SefinConsultaDpsResponseDto dto = objectMapper.readValue(body, SefinConsultaDpsResponseDto.class);
+            return dto.paraDominio();
         }
 
         throw new SefinTransmissaoException(

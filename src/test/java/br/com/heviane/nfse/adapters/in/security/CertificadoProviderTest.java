@@ -1,4 +1,4 @@
-package br.com.heviane.nfse.core.services;
+package br.com.heviane.nfse.adapters.in.security;
 
 import br.com.heviane.nfse.core.domain.CertificadoA1;
 import br.com.heviane.nfse.testutils.CertificadoTesteHelper;
@@ -102,12 +102,8 @@ class CertificadoProviderTest {
     }
 
     @Test
-    @DisplayName("Deve lançar IllegalStateException quando nenhum certificado for configurado")
-    void deveLancarExcecaoQuandoNenhumCertificadoConfigurado() {
-        System.clearProperty("nfse.cert.path");
-        System.clearProperty("nfse.cert.base64");
-        System.clearProperty("nfse.cert.password");
-
+    @DisplayName("Deve lançar IllegalStateException quando nenhuma fonte de certificado estiver configurada")
+    void deveLancarExcecaoQuandoNenhumaFonteConfigurada() {
         CertificadoProvider provider = new CertificadoProvider(false);
 
         assertThatThrownBy(() -> provider.obterCertificado(null, null))

@@ -3,11 +3,12 @@ package br.com.heviane.nfse.adapters.in.rest;
 import br.com.heviane.nfse.adapters.in.rest.dto.EmissaoDpsRequest;
 import br.com.heviane.nfse.adapters.in.rest.dto.EmissaoDpsResponse;
 import br.com.heviane.nfse.adapters.in.rest.dto.ErroResponse;
+import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
+import br.com.heviane.nfse.config.NfseProperties;
 import br.com.heviane.nfse.core.domain.AmbienteSefin;
 import br.com.heviane.nfse.core.domain.CertificadoA1;
 import br.com.heviane.nfse.core.domain.RespostaEmissaoSefin;
 import br.com.heviane.nfse.core.ports.in.EmitirDpsUseCase;
-import br.com.heviane.nfse.core.services.CertificadoProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -26,10 +27,18 @@ public class EmissaoDpsController {
 
     private final EmitirDpsUseCase emitirDpsUseCase;
     private final CertificadoProvider certificadoProvider;
+    private final NfseProperties nfseProperties;
 
-    public EmissaoDpsController(EmitirDpsUseCase emitirDpsUseCase, CertificadoProvider certificadoProvider) {
+    public EmissaoDpsController(EmitirDpsUseCase emitirDpsUseCase,
+                                CertificadoProvider certificadoProvider,
+                                NfseProperties nfseProperties) {
         this.emitirDpsUseCase = emitirDpsUseCase;
         this.certificadoProvider = certificadoProvider;
+        this.nfseProperties = (nfseProperties != null) ? nfseProperties : new NfseProperties();
+    }
+
+    public EmissaoDpsController(EmitirDpsUseCase emitirDpsUseCase, CertificadoProvider certificadoProvider) {
+        this(emitirDpsUseCase, certificadoProvider, new NfseProperties());
     }
 
     @PostMapping(value = "/emitir", consumes = "application/json", produces = "application/json")
@@ -60,7 +69,7 @@ public class EmissaoDpsController {
         }
 
         CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
-        AmbienteSefin ambiente = request.ambiente() != null ? request.ambiente() : resolverAmbiente();
+        AmbienteSefin ambiente = request.ambiente() != null ? request.ambiente() : nfseProperties.resolverAmbiente();
 
         RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(request.xmlDps(), ambiente, certificado);
 
@@ -74,18 +83,6 @@ public class EmissaoDpsController {
         );
 
         return ResponseEntity.ok(response);
-    }
-
-    private AmbienteSefin resolverAmbiente() {
-        String env = System.getenv("NFSE_ENVIRONMENT");
-        if (env == null || env.isBlank()) {
-            env = System.getProperty("nfse.environment", "HOMOLOGACAO");
-        }
-        try {
-            return AmbienteSefin.valueOf(env.trim().toUpperCase());
-        } catch (Exception e) {
-            return AmbienteSefin.HOMOLOGACAO;
-        }
     }
 }
 

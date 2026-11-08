@@ -5,7 +5,7 @@ import br.com.heviane.nfse.core.domain.CertificadoA1;
 import br.com.heviane.nfse.core.domain.RespostaEmissaoSefin;
 import br.com.heviane.nfse.core.domain.ValidacaoFiscalException;
 import br.com.heviane.nfse.core.ports.in.EmitirDpsUseCase;
-import br.com.heviane.nfse.core.services.CertificadoProvider;
+import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
 import br.com.heviane.nfse.testutils.CertificadoTesteHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

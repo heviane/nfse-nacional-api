@@ -3,7 +3,7 @@ package br.com.heviane.nfse.adapters.in.rest;
 import br.com.heviane.nfse.adapters.in.rest.dto.EmissaoDpsRequest;
 import br.com.heviane.nfse.core.domain.*;
 import br.com.heviane.nfse.core.ports.in.EmitirDpsUseCase;
-import br.com.heviane.nfse.core.services.CertificadoProvider;
+import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
 import br.com.heviane.nfse.testutils.CertificadoTesteHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;

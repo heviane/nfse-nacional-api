@@ -1,16 +1,14 @@
-package br.com.heviane.nfse.core.services;
+package br.com.heviane.nfse.adapters.in.security;
 
 import br.com.heviane.nfse.core.domain.CertificadoA1;
 
 import java.util.Base64;
 
 /**
- * Provedor responsável por resolver a instância de {@link CertificadoA1} em memória.
+ * Provedor responsável por resolver a instância de {@link CertificadoA1} em memória a partir
+ * de cabeçalhos HTTP (se autorizados) ou de variáveis/arquivos do servidor Tomcat (setenv.sh).
  * <p>
- * Por padrão de segurança fiscal (Cliente 001 / BrasilCloud), o carregamento de certificados
- * diretamente via cabeçalhos HTTP (X-Certificado-Base64 / X-Certificado-Senha) é <b>desabilitado</b>
- * para impedir vazamento de chaves em logs de proxies reversos e WAFs.
- * O certificado deve ser configurado diretamente no ambiente do servidor Tomcat (setenv.sh).
+ * Pertence à camada de adaptadores de entrada / infraestrutura de segurança para isolar o Core Fiscal.
  */
 public class CertificadoProvider {
 
