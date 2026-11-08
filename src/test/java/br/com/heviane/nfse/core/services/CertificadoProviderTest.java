@@ -61,8 +61,50 @@ class CertificadoProviderTest {
     }
 
     @Test
+    @DisplayName("Deve carregar certificado a partir de arquivo em disco configurado em nfse.cert.path")
+    void deveCarregarCertificadoAPartirDeArquivoEmDiscoViaCertPath() throws Exception {
+        CertificadoA1 certMock = CertificadoTesteHelper.obterCertificadoTeste();
+        byte[] certBytes = certMock.getInputStream().readAllBytes();
+
+        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("cert-teste-", ".pfx");
+        java.nio.file.Files.write(tempFile, certBytes);
+
+        System.setProperty("nfse.cert.path", tempFile.toAbsolutePath().toString());
+        System.setProperty("nfse.cert.password", "123456");
+
+        try {
+            CertificadoProvider provider = new CertificadoProvider(false);
+            CertificadoA1 resolvido = provider.obterCertificado(null, null);
+
+            assertThat(resolvido).isNotNull();
+            assertThat(resolvido.getSenha()).isEqualTo("123456".toCharArray());
+        } finally {
+            System.clearProperty("nfse.cert.path");
+            System.clearProperty("nfse.cert.password");
+            java.nio.file.Files.deleteIfExists(tempFile);
+        }
+    }
+
+    @Test
+    @DisplayName("Deve lançar IllegalStateException quando arquivo configurado em nfse.cert.path não existir")
+    void deveLancarExcecaoQuandoArquivoCertPathNaoExistir() {
+        System.setProperty("nfse.cert.path", java.nio.file.Path.of("target", "caminho_inexistente_cert.pfx").toString());
+
+        try {
+            CertificadoProvider provider = new CertificadoProvider(false);
+
+            assertThatThrownBy(() -> provider.obterCertificado(null, null))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("não encontrado no caminho configurado (NFSE_CERT_PATH)");
+        } finally {
+            System.clearProperty("nfse.cert.path");
+        }
+    }
+
+    @Test
     @DisplayName("Deve lançar IllegalStateException quando nenhum certificado for configurado")
     void deveLancarExcecaoQuandoNenhumCertificadoConfigurado() {
+        System.clearProperty("nfse.cert.path");
         System.clearProperty("nfse.cert.base64");
         System.clearProperty("nfse.cert.password");
 

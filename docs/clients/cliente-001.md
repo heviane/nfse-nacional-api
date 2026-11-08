@@ -83,11 +83,22 @@ Para garantir que nenhuma credencial ou caminho absoluto fique chumbado no códi
 | Variável | Descrição | Exemplo de Valor |
 | :--- | :--- | :--- |
 | `NFSE_ENVIRONMENT` | Ambiente de emissão | `HOMOLOGACAO` ou `PRODUCAO` |
-| `NFSE_CERT_BASE64` | Conteúdo do certificado digital A1 codificado em Base64 | `MIIK...` |
+| `NFSE_CERT_PATH` | Caminho do arquivo `.pfx`/`.p12` no disco — **Recomendado para Tomcat/Linux** | `/opt/certs/certificado_cliente001.pfx` |
 | `NFSE_CERT_PASSWORD` | Senha de proteção do certificado A1 | *(configurada diretamente no servidor)* |
+| `NFSE_CERT_BASE64` | *(Alternativa para containers)* Conteúdo do certificado digital A1 em Base64 | `MIIK...` |
 | `NFSE_API_KEY` | Chave secreta de autenticação do middleware (opcional se isolado por firewall) | `chave-secreta-erp-cliente001` |
 | `NFSE_ALLOW_CERT_HEADERS` | Permite envio de certificados via headers HTTP (padrão `false` por segurança) | `false` |
 | `NFSE_LOG_LEVEL` | Nível de detalhamento de logs da aplicação | `INFO` ou `DEBUG` |
+
+> [!TIP]
+> **Prática Recomendada no Linux / Tomcat (BrasilCloud):**
+> Salvar o certificado A1 em diretório protegido no servidor e aplicar permissões restritas:
+> ```bash
+> sudo mkdir -p /opt/certs
+> sudo chown tomcat:tomcat /opt/certs/certificado_cliente001.pfx
+> sudo chmod 600 /opt/certs/certificado_cliente001.pfx
+> ```
+> O uso de `NFSE_CERT_PATH` com permissão `600` impede que outros usuários do sistema leiam a chave privada e evita a exposição do Base64 completo em `/proc/<pid>/environ` ou dumps de configuração.
 
 > [!CAUTION]
 > **Segurança:** O arquivo real do certificado digital (`*.pfx` ou `*.p12`) e sua senha **NUNCA** devem ser comitados no repositório Git. Eles devem ser inseridos manualmente no servidor de produção pelo administrador/desenvolvedora via `setenv.sh`.
@@ -130,7 +141,7 @@ Para garantir proteção fiscal integral sem depender exclusivamente da aplicaç
 4. **Isolamento de Certificados:**
    - Manter `NFSE_ALLOW_CERT_HEADERS=false` (padrão) para evitar que certificados e senhas trafeguem pela rede ou sejam capturados em logs de proxy reverso.
 
-## 7. 🔮 Próximos Passos para o Cliente 001
+## 8. 🔮 Próximos Passos para o Cliente 001
 
 - [ ] Obter e armazenar amostra do XML SOAP real enviado pelo ERP para desenhar o mapeamento exato de campos (*De/Para*).
 - [ ] Implementar endpoint de compatibilidade SOAP em `adapters.in.legacy`.

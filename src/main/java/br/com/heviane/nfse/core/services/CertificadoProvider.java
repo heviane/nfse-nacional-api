@@ -55,7 +55,27 @@ public class CertificadoProvider {
             }
         }
 
-        // 2. Prioridade: variáveis de ambiente configuradas no servidor (setenv.sh)
+        // 2. Prioridade: arquivo em disco configurado no servidor (NFSE_CERT_PATH / setenv.sh - recomendado para Linux/Tomcat)
+        String certPath = System.getenv("NFSE_CERT_PATH");
+        if (certPath == null || certPath.isBlank()) {
+            certPath = System.getProperty("nfse.cert.path");
+        }
+
+        if (certPath != null && !certPath.isBlank()) {
+            java.nio.file.Path path = java.nio.file.Path.of(certPath.trim());
+            if (!java.nio.file.Files.exists(path)) {
+                throw new IllegalStateException("Arquivo de certificado digital não encontrado no caminho configurado (NFSE_CERT_PATH): " + certPath);
+            }
+            try {
+                byte[] bytes = java.nio.file.Files.readAllBytes(path);
+                String senha = resolverSenhaServidor();
+                return new CertificadoA1(bytes, senha);
+            } catch (Exception e) {
+                throw new IllegalStateException("Falha ao ler o arquivo de certificado digital configurado em NFSE_CERT_PATH: " + certPath);
+            }
+        }
+
+        // 3. Prioridade: string Base64 configurada no servidor (NFSE_CERT_BASE64 - recomendado para containers/K8s)
         String envBase64 = System.getenv("NFSE_CERT_BASE64");
         if (envBase64 == null || envBase64.isBlank()) {
             envBase64 = System.getProperty("nfse.cert.base64");
@@ -64,10 +84,7 @@ public class CertificadoProvider {
         if (envBase64 != null && !envBase64.isBlank()) {
             try {
                 byte[] bytes = Base64.getDecoder().decode(envBase64.replaceAll("\\s+", ""));
-                String senha = System.getenv("NFSE_CERT_PASSWORD");
-                if (senha == null) {
-                    senha = System.getProperty("nfse.cert.password", "");
-                }
+                String senha = resolverSenhaServidor();
                 return new CertificadoA1(bytes, senha);
             } catch (IllegalArgumentException e) {
                 throw new IllegalStateException("Falha ao carregar certificado digital configurado nas variáveis de ambiente: formato Base64 inválido.");
@@ -77,8 +94,16 @@ public class CertificadoProvider {
         }
 
         throw new IllegalStateException(
-                "Nenhum Certificado Digital A1 foi configurado no servidor (NFSE_CERT_BASE64) nem fornecido nos cabeçalhos da requisição (X-Certificado-Base64)."
+                "Nenhum Certificado Digital A1 foi configurado no servidor via arquivo (NFSE_CERT_PATH) ou Base64 (NFSE_CERT_BASE64)."
         );
+    }
+
+    private String resolverSenhaServidor() {
+        String senha = System.getenv("NFSE_CERT_PASSWORD");
+        if (senha == null) {
+            senha = System.getProperty("nfse.cert.password", "");
+        }
+        return senha;
     }
 }
 
