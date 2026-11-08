@@ -165,41 +165,52 @@ class EmitirDpsServiceTest {
     }
 
     @Test
-    @DisplayName("Deve harmonizar tag <tpAmb> do XML para coincidir com o ambiente do servidor antes de assinar")
-    void deveHarmonizarTipoAmbienteParaCoincidirComServidor() {
+    @DisplayName("Deve rejeitar emissão com ValidacaoFiscalException quando XML contiver tpAmb=2 e servidor for PRODUCAO")
+    void deveRejeitarEmissaoQuandoTpAmbDivergirDoAmbienteDoServidor() {
         String xmlComHomologacao = "<DPS versao=\"1.00\"><infDPS Id=\"DPS1\"><tpAmb>2</tpAmb></infDPS></DPS>";
-        String xmlHarmonizadoProducao = "<DPS versao=\"1.00\"><infDPS Id=\"DPS1\"><tpAmb>1</tpAmb></infDPS></DPS>";
 
-        when(assinadorDpsPort.assinar(eq(xmlHarmonizadoProducao), eq(certificado)))
-                .thenReturn(xmlHarmonizadoProducao + "<Signature/>");
+        assertThatThrownBy(() -> service.emitir(xmlComHomologacao, AmbienteSefin.PRODUCAO, certificado))
+                .isInstanceOf(ValidacaoFiscalException.class)
+                .hasMessageContaining("Inconsistência de ambiente fiscal: O XML da DPS declara <tpAmb>2</tpAmb>, mas o serviço está configurado para operar em PRODUCAO (código 1).");
+
+        verify(assinadorDpsPort, never()).assinar(anyString(), any());
+        verify(transmissorSefinPort, never()).emitirDps(any(), any());
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar emissão com ValidacaoFiscalException quando XML contiver tpAmb=1 e servidor for HOMOLOGACAO")
+    void deveRejeitarEmissaoQuandoTpAmbProducaoEnviadoParaServidorHomologacao() {
+        String xmlComProducao = "<DPS versao=\"1.00\"><infDPS Id=\"DPS1\"><tpAmb>1</tpAmb></infDPS></DPS>";
+
+        assertThatThrownBy(() -> service.emitir(xmlComProducao, AmbienteSefin.HOMOLOGACAO, certificado))
+                .isInstanceOf(ValidacaoFiscalException.class)
+                .hasMessageContaining("Inconsistência de ambiente fiscal: O XML da DPS declara <tpAmb>1</tpAmb>, mas o serviço está configurado para operar em HOMOLOGACAO (código 2).");
+
+        verify(assinadorDpsPort, never()).assinar(anyString(), any());
+        verify(transmissorSefinPort, never()).emitirDps(any(), any());
+    }
+
+    @Test
+    @DisplayName("Deve permitir emissão mantendo XML 100% intacto quando tpAmb coincidir com o servidor")
+    void devePermitirEmissaoMantendoXmlIntactoQuandoTpAmbCoincidirComServidor() {
+        String xmlValido = "<DPS versao=\"1.00\"><infDPS Id=\"DPS1\"><tpAmb>2</tpAmb></infDPS></DPS>";
+
+        when(assinadorDpsPort.assinar(eq(xmlValido), eq(certificado)))
+                .thenReturn(xmlValido + "<Signature/>");
 
         RespostaEmissaoSefin respostaMock = new RespostaEmissaoSefin(
-                1, "Sefin_1.0", "2026-11-05T12:00:00-03:00",
+                2, "Sefin_1.0", "2026-11-05T12:00:00-03:00",
                 100, "Autorizado", CHAVE_ACESSO_50, "GZIP"
         );
         when(transmissorSefinPort.emitirDps(any(RequisicaoEnvioDps.class), eq(certificado)))
                 .thenReturn(respostaMock);
 
-        RespostaEmissaoSefin resultado = service.emitir(xmlComHomologacao, AmbienteSefin.PRODUCAO, certificado);
+        RespostaEmissaoSefin resultado = service.emitir(xmlValido, AmbienteSefin.HOMOLOGACAO, certificado);
 
         assertThat(resultado).isNotNull();
         assertThat(resultado.isSucesso()).isTrue();
-        verify(assinadorDpsPort).assinar(eq(xmlHarmonizadoProducao), eq(certificado));
-    }
-
-    @Test
-    @DisplayName("Deve rejeitar emissão com ValidacaoFiscalException quando modo estrito ativo e tpAmb divergir")
-    void deveLancarExcecaoQuandoModoEstritoAtivoEAmbienteDivergir() {
-        String xmlComHomologacao = "<DPS versao=\"1.00\"><infDPS Id=\"DPS1\"><tpAmb>2</tpAmb></infDPS></DPS>";
-        System.setProperty("nfse.ambiente.strict", "true");
-
-        try {
-            assertThatThrownBy(() -> service.emitir(xmlComHomologacao, AmbienteSefin.PRODUCAO, certificado))
-                    .isInstanceOf(ValidacaoFiscalException.class)
-                    .hasMessageContaining("Inconsistência de ambiente fiscal: O XML da DPS declara <tpAmb>2</tpAmb>, mas o serviço está configurado para operar em PRODUCAO (código 1).");
-        } finally {
-            System.clearProperty("nfse.ambiente.strict");
-        }
+        // Garante que o XML passado ao assinador foi 100% idêntico ao original (imutabilidade)
+        verify(assinadorDpsPort).assinar(eq(xmlValido), eq(certificado));
     }
 
     @Test

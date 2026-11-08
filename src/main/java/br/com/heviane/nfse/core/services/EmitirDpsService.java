@@ -60,14 +60,14 @@ public class EmitirDpsService implements EmitirDpsUseCase {
 
         AmbienteSefin amb = (ambiente != null) ? ambiente : AmbienteSefin.HOMOLOGACAO;
 
-        // Harmoniza <tpAmb> para coincidir rigorosamente com o ambiente configurado no servidor
-        String xmlProcessado = harmonizarTipoAmbiente(xmlDps, amb);
+        // 1. Validação estrita de coerência do ambiente fiscal (<tpAmb>) - Princípio de Imutabilidade
+        validarTipoAmbiente(xmlDps, amb);
 
-        // 1. Validação estrita do schema XSD
-        validadorSchemaPort.validarDpsOuFalhar(xmlProcessado);
+        // 2. Validação estrita do schema XSD
+        validadorSchemaPort.validarDpsOuFalhar(xmlDps);
 
-        // 2. Assinatura digital ICP-Brasil A1 (RSA-SHA256)
-        String xmlDpsAssinado = assinadorDpsPort.assinar(xmlProcessado, certificado);
+        // 3. Assinatura digital ICP-Brasil A1 (RSA-SHA256)
+        String xmlDpsAssinado = assinadorDpsPort.assinar(xmlDps, certificado);
 
         // 3. Transmissão com handshake mTLS
         RequisicaoEnvioDps requisicaoEnvio = new RequisicaoEnvioDps(xmlDpsAssinado, amb);
@@ -130,31 +130,17 @@ public class EmitirDpsService implements EmitirDpsUseCase {
         }
     }
 
-    private String harmonizarTipoAmbiente(String xmlDps, AmbienteSefin amb) {
+    private void validarTipoAmbiente(String xmlDps, AmbienteSefin amb) {
         Pattern pattern = Pattern.compile("<tpAmb>(\\d+)</tpAmb>");
         Matcher matcher = pattern.matcher(xmlDps);
         if (matcher.find()) {
             int tpAmbXml = Integer.parseInt(matcher.group(1));
             if (tpAmbXml != amb.getCodigo()) {
-                if (isStrictAmbienteValidation()) {
-                    throw new ValidacaoFiscalException(
-                            String.format("Inconsistência de ambiente fiscal: O XML da DPS declara <tpAmb>%d</tpAmb>, mas o serviço está configurado para operar em %s (código %d).",
-                                    tpAmbXml, amb, amb.getCodigo())
-                    );
-                }
-                log.info("Harmonizando tag <tpAmb> da DPS de {} para {} para coincidir com o ambiente do servidor ({})",
-                        tpAmbXml, amb.getCodigo(), amb);
-                return matcher.replaceFirst("<tpAmb>" + amb.getCodigo() + "</tpAmb>");
+                throw new ValidacaoFiscalException(
+                        String.format("Inconsistência de ambiente fiscal: O XML da DPS declara <tpAmb>%d</tpAmb>, mas o serviço está configurado para operar em %s (código %d). Corrija o campo <tpAmb> no ERP ou aponte a requisição para o ambiente correspondente.",
+                                tpAmbXml, amb, amb.getCodigo())
+                );
             }
         }
-        return xmlDps;
-    }
-
-    private boolean isStrictAmbienteValidation() {
-        String env = System.getenv("NFSE_STRICT_AMB");
-        if (env == null || env.isBlank()) {
-            env = System.getProperty("nfse.ambiente.strict", "false");
-        }
-        return Boolean.parseBoolean(env.trim());
     }
 }
