@@ -3,6 +3,7 @@
 > **API REST para integração direta com o Ambiente Nacional da NFS-e (Sefin Nacional / ADN): emissão, consulta e cancelamento de DPS com assinatura A1 e mTLS.**
 
 [![Java](https://img.shields.io/badge/Java-17%2B-orange?style=flat-square&logo=openjdk)](https://openjdk.org/)
+[![CI](https://github.com/heviane/nfse-nacional-api/actions/workflows/ci.yml/badge.svg)](https://github.com/heviane/nfse-nacional-api/actions/workflows/ci.yml)
 [![Status](https://img.shields.io/badge/Status-MVP%20Conclu%C3%ADdo%20(v0.1.0)-success?style=flat-square)](#)
 [![Arquitetura](https://img.shields.io/badge/Arquitetura-Spec--Driven%20(SDD)-purple?style=flat-square)](#)
 [![Licença](https://img.shields.io/badge/Licen%C3%A7a-MIT-green?style=flat-square)](./LICENSE)

@@ -1,0 +1,94 @@
+name: CI (Build, Test & Security)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    name: Gitleaks (Secret & Certificate Leak Detection)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code (full history for secret scanning)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-test:
+    name: Build & Test (Java 17 / Maven)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up OpenJDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Ensure Maven Wrapper has executable permission
+        run: chmod +x mvnw
+
+      - name: Build and Verify with Maven Wrapper
+        run: ./mvnw clean verify --no-transfer-progress
+
+      - name: Archive Test Results (Surefire)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          retention-days: 7
+
+      - name: Archive Production WAR
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-war
+          path: target/nfse-nacional-api.war
+          retention-days: 14
+
+  owasp-dependency-check:
+    name: OWASP Dependency-Check (SCA)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up OpenJDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Ensure Maven Wrapper has executable permission
+        run: chmod +x mvnw
+
+      - name: Run OWASP Dependency Check
+        run: >
+          ./mvnw org.owasp:dependency-check-maven:check
+          -DfailBuildOnCVSS=8
+          --no-transfer-progress
+        continue-on-error: true
+
+      - name: Archive Dependency-Check Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: target/dependency-check-report.html
+          retention-days: 14
