@@ -14,10 +14,10 @@ Com a plataforma **Java 17 (LTS)** definida na [ADR-001](./0001-escolha-linguage
 A decisão é orientada pelas seguintes forças técnicas e operacionais:
 
 * **Força 1: Implantação em Servlet Container Gerenciado Tomcat (BrasilCloud)**  
-  O ambiente de produção do cliente opera servidores Apache Tomcat (versão 10+) em nuvem gerenciada. A aplicação deve ser entregue em formato **WAR** (*Web Application Archive*) para ser executada sob o ciclo de vida do servlet container do host, sem a necessidade de provisionar instâncias isoladas ou contêineres Docker independentes.
+  O ambiente de produção do cliente opera servidores Apache Tomcat em nuvem gerenciada. A aplicação deve ser entregue em formato **WAR** (*Web Application Archive*) para ser executada sob o ciclo de vida do servlet container do host, sem a necessidade de provisionar instâncias isoladas ou contêineres Docker independentes.
 
-* **Força 2: Compatibilidade com o Namespace `jakarta.*` (Tomcat 10+)**  
-  A partir da especificação Jakarta EE 9 / Tomcat 10, o ecossistema Java migrou do namespace legado `javax.servlet` para `jakarta.servlet`. O framework escolhido deve ter suporte nativo e maduro à especificação Jakarta EE, eliminando a necessidade de plugins de transformação de bytecode em tempo de deploy.
+* **Força 2: Compatibilidade com o Namespace `jakarta.*` e Especificação Servlet 6.0 (Tomcat 10.1+)**  
+  A partir da especificação Jakarta EE 9 / Tomcat 10, o ecossistema Java migrou do namespace legado `javax.servlet` para `jakarta.servlet`. Com o Spring Boot 3.3+, o baseline mandatório é a especificação **Jakarta EE 10 / Servlet 6.0**, o que exige o **Apache Tomcat 10.1 ou superior** como runtime de produção. O framework escolhido deve ter suporte nativo e maduro à especificação Jakarta EE, eliminando a necessidade de plugins de transformação de bytecode em tempo de deploy.
 
 * **Força 3: Suporte Híbrido a Protocolos (XML/SOAP Legado + REST/JSON Moderno)**  
   Conforme definição de negócio, o sistema deve atender imediatamente um cliente legado com zero alterações no ERP (recebendo requisições XML/SOAP que antes iam para o GeneXus 18) e, futuramente, expor endpoints REST padronizados em JSON para novos clientes. O framework web deve manipular requisições com diferentes `Content-Type` (`text/xml`, `application/soap+xml`, `application/json`) de forma nativa e sem necessidade de bibliotecas pesadas e obsoletas de SOAP (como Apache CXF complexo).
@@ -50,8 +50,13 @@ Essa abordagem permite um **modelo híbrido de execução**:
 * **Consumo de Memória na Inicialização:** O Spring Boot realiza varredura de componentes (*component scanning*) e injeção de dependências no startup, consumindo um pouco mais de memória que frameworks estáticos, plenamente comportado pela capacidade do host na BrasilCloud.
 
 ### Riscos Mitigados:
-* Mitiga o risco de incompatibilidade de classes do tipo `ClassNotFoundException: javax.servlet.Filter` ao realizar o deploy em servidores Tomcat 10+, visto que o Spring Boot 3 usa exclusivamente o pacote `jakarta.*`.
+* Mitiga o risco de incompatibilidade de classes do tipo `ClassNotFoundException: javax.servlet.Filter` ao realizar o deploy em servidores Tomcat modernos, visto que o Spring Boot 3 usa exclusivamente o pacote `jakarta.*`.
 * Elimina o risco de retrabalho na criação de testes automatizados de integração.
+
+> [!IMPORTANT]
+> **Requisito Crítico de Versão do Tomcat em Produção (Tomcat $\ge$ 10.1):**  
+> O Spring Boot 3.3.x tem como baseline mandatório a especificação **Jakarta EE 10 / Servlet 6.0**. Portanto, o servidor Apache Tomcat em produção na BrasilCloud **deve ser obrigatoriamente a versão 10.1 ou superior**.  
+> O Apache Tomcat 10.0 implementa apenas a especificação Jakarta EE 9 / Servlet 5.0 e **não é compatível** com o Spring Boot 3.3, resultando em falha imediata de inicialização caso implantado. A versão do Tomcat gerenciado na BrasilCloud deve ser confirmada previamente com a equipe de infraestrutura do cliente antes da homologação final.
 
 ---
 

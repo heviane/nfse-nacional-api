@@ -50,7 +50,7 @@ flowchart LR
 
 ## 🛠️ Stack Tecnológica & Pré-requisitos
 
-* **Linguagem & Runtime:** Java 17+ (compatível com Tomcat 10+ / Servlet Container na BrasilCloud).
+* **Linguagem & Runtime:** Java 17+ (compatível com Tomcat 10.1+ / Servlet Container 6.0 na BrasilCloud).
 * **Segurança & Criptografia:** Java Cryptography Architecture (JCA), PKCS#12 e RSA-SHA256.
 * **Comunicação Segura:** Handshake TLS mútuo (mTLS) com `SSLContext` dedicado.
 * **Padrões de Projeto:** Spec-Driven Development (SDD), Clean Architecture e TDD.

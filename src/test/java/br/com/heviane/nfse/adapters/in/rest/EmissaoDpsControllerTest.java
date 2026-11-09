@@ -56,6 +56,7 @@ class EmissaoDpsControllerTest {
         byte[] pfxBytes = certificadoA1.getInputStream().readAllBytes();
         certBase64 = Base64.getEncoder().encodeToString(pfxBytes);
         when(nfseProperties.resolverAmbiente()).thenReturn(AmbienteSefin.HOMOLOGACAO);
+        when(certificadoProvider.obterCertificado(any(), any())).thenReturn(certificadoA1);
     }
 
     private String compactarGZipBase64(String conteudo) throws Exception {
@@ -109,6 +110,8 @@ class EmissaoDpsControllerTest {
 
         mockMvc.perform(post("/api/v1/dps/emitir")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Certificado-Base64", certBase64)
+                        .header("X-Certificado-Senha", "123456")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusHttp").value(400))
@@ -127,6 +130,8 @@ class EmissaoDpsControllerTest {
 
         mockMvc.perform(post("/api/v1/dps/emitir")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Certificado-Base64", certBase64)
+                        .header("X-Certificado-Senha", "123456")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.statusHttp").value(422))
@@ -146,6 +151,8 @@ class EmissaoDpsControllerTest {
 
         mockMvc.perform(post("/api/v1/dps/emitir")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Certificado-Base64", certBase64)
+                        .header("X-Certificado-Senha", "123456")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.statusHttp").value(502))

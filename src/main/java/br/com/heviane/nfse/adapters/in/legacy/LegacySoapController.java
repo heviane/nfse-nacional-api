@@ -314,6 +314,12 @@ public class LegacySoapController {
         return resultado.trim();
     }
 
+    /**
+     * Monta o envelope SOAP de resposta com o resultado serializado dentro de {@code <GerarNfseResult>}.
+     * Como o contrato WSDL define {@code GerarNfseResult} como {@code xsd:string}, o corpo XML {@code <RetornoEmissao>}
+     * é codificado como string XML (entidades &lt; e &gt;). O conteúdo interno de {@code <XmlNfse>} é escapado uma
+     * única vez para que o parser do GeneXus obtenha a string XML da NFS-e íntegra após a desserialização do envelope.
+     */
     private String montarRespostaSoapSucesso(boolean sucesso, int status, String motivo, String chaveAcesso, String xmlNfse) {
         String chave = chaveAcesso != null ? chaveAcesso : "";
         String xmlEscape = xmlNfse != null ? xmlNfse.replace("<", "&lt;").replace(">", "&gt;") : "";

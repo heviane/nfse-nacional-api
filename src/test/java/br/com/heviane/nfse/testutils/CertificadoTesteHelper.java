@@ -22,6 +22,17 @@ public final class CertificadoTesteHelper {
             return certificadoCache;
         }
 
+        // 1. Tenta carregar o certificado estático descartável do classpath (rápido e sem dependência de processos do SO)
+        try (java.io.InputStream is = CertificadoTesteHelper.class.getResourceAsStream("/certs/teste_a1.p12")) {
+            if (is != null) {
+                byte[] bytes = is.readAllBytes();
+                certificadoCache = new CertificadoA1(bytes, "testpassword123");
+                return certificadoCache;
+            }
+        } catch (Exception ignored) {
+        }
+
+        // 2. Fallback: gera dinamicamente via keytool caso o arquivo do classpath não seja encontrado
         try {
             File tempKeystore = File.createTempFile("keystore_teste_", ".p12");
             Files.deleteIfExists(tempKeystore.toPath());

@@ -44,7 +44,7 @@ A necessidade de migração decorre da **Resolução CGSN nº 191/2026**, formal
 ## 3. ☁️ Topologia de Hospedagem & Infraestrutura
 
 * **Provedor de Nuvem:** **BrasilCloud** (em conta gerenciada e mantida pelo próprio cliente).
-* **Servidor de Aplicação:** **Apache Tomcat 10+** (suporte nativo à especificação Jakarta EE).
+* **Servidor de Aplicação:** **Apache Tomcat 10.1+** (suporte mandatório a Jakarta EE 10 / Servlet 6.0, exigido pelo Spring Boot 3.3; Tomcat 10.0 suporta apenas Servlet 5.0 e é incompatível).
 * **Linguagem & Runtime:** **Java 17 (OpenJDK)**.
 * **Modelo de Empacotamento:** Arquivo **WAR** (`nfse-nacional-api.war`) implantado no diretório `webapps/` do Tomcat.
 * **Custódia & Responsabilidade:** Como o servidor pertence ao cliente, a guarda do Certificado Digital A1, a chave privada e a responsabilidade perante a LGPD e o sigilo fiscal permanecem no perímetro de segurança do cliente.

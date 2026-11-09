@@ -79,9 +79,9 @@ $env:SERVER_PORT = "8080"
 java -jar target/nfse-nacional-api.war
 ```
 
-### Modo B: Container Docker com Apache Tomcat 10 (Espelho 1:1 BrasilCloud) 🐳
+### Modo B: Container Docker com Apache Tomcat 10.1 (Espelho 1:1 BrasilCloud) 🐳
 
-Se você deseja testar exatamente como o Apache Tomcat 10 descompacta e roda o arquivo WAR:
+Se você deseja testar exatamente como o Apache Tomcat 10.1 descompacta e roda o arquivo WAR:
 
 ```bash
 docker run -d --name nfse-local \
@@ -90,7 +90,7 @@ docker run -d --name nfse-local \
   -e NFSE_CERT_PASSWORD="<SENHA>" \
   -e NFSE_ENVIRONMENT="HOMOLOGACAO" \
   -v $(pwd)/target/nfse-nacional-api.war:/usr/local/tomcat/webapps/ROOT.war \
-  tomcat:10-jdk17
+  tomcat:10.1-jdk17
 ```
 
 ---

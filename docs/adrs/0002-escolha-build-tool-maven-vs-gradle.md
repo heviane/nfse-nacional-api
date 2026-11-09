@@ -67,3 +67,23 @@ O uso do **Maven Wrapper** é mandatório no repositório, garantindo que o coma
 | :------------------------------- | :----------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
 | **Gradle (Groovy / Kotlin DSL)** | Builds incrementais velozes através de daemon; sintaxe concisa e altamente flexível. | Plugins para geração de código JAXB a partir de XSD sofrem com frequentes descontinuidades e menor padronização no ecossistema fiscal brasileiro; maior risco de scripts imperativos complexos no build. | Custo de manutenção e instabilidade nos plugins XSD não compensam o ganho marginal de performance em um projeto deste porte. |
 | **Apache Ant + Apache Ivy**      | Alta flexibilidade de tarefas manuais em XML.                                        | Tecnologia legada e obsoleta para projetos novos; gestão arcaica de dependências e sem convenção moderna de ciclo de vida.                                                                               | Não atende os padrões de engenharia de software modernos.                                                                    |
+
+---
+
+## 5. 🔄 Adendo / Revisão Arquitetural: Validação de Schema XSD sem JAXB
+
+> **Data do Adendo:** 2026-11-09  
+> **Status:** `Ratificado`
+
+Na formulação inicial desta ADR (Força 1 e Consequências Positivas), considerou-se a adoção do `jaxb2-maven-plugin` para geração automática de classes Java (POJOs/DTOs) a partir dos arquivos XSD fornecidos pela Receita Federal (`DPS_v1.00.xsd`, `DPS_v1.01.xsd`, `pedRegEvento_v1.00.xsd`, etc.).
+
+Durante o desenvolvimento do middleware, **optou-se conscientemente por não incluir o `jaxb2-maven-plugin` no `pom.xml`**, adotando em seu lugar:
+1. **Validação Estrutural e Semântica Direta via JAXP:** Implementada em `ValidadorSchemaService` utilizando `javax.xml.validation.SchemaFactory` e `Validator` nativos do Java 17 com suporte a XML Schema 1.0 (`XMLConstants.W3C_XML_SCHEMA_NS_URI`) e proteção contra XXE (`FEATURE_SECURE_PROCESSING`, desativação explícita de `ACCESS_EXTERNAL_DTD` e `ACCESS_EXTERNAL_SCHEMA`).
+2. **Manipulação e Assinatura Digital Baseadas em DOM/W3C XML-DSig:** Assinatura digital da tag `<infDPS>` realizada via Java Cryptography Architecture (JCA) e `XMLSignatureFactory` sobre a árvore DOM, sem necessidade de serialização/deserialização intermediária via JAXB.
+3. **Modelagem de Domínio Pura com Java Records:** O Core Domain (`br.com.heviane.nfse.core.domain`) opera com *Records* imutáveis, independentes de anotações de frameworks de serialização (zero acoplamento com Jackson ou JAXB no Core).
+
+### Vantagens Desta Abordagem:
+- **Build Mais Rápido e Determinístico:** Elimina o tempo e a complexidade de compilar dezenas de schemas XSD em centenas de classes geradas a cada build do Maven.
+- **Isolamento e Pureza Arquitetural:** O Core não é poluído por centenas de classes JAXB aninhadas e heterogêneas geradas por compiladores externos.
+- **Fidelidade Criptográfica:** A manipulação direta do XML/DOM preserva a integridade de espaços, quebras de linha e canonicalização C14N necessária para a assinatura digital do padrão Sefin/ADN.
+
