@@ -109,23 +109,118 @@ Para garantir que nenhuma credencial ou caminho absoluto fique chumbado no códi
 
 ## 6. 🚀 Procedimento Operacional de Deploy (Manual — Fase 1)
 
-Atendendo à urgência imediata do Cliente 001 e familiaridade operacional:
+Atendendo à urgência imediata do Cliente 001 e familiaridade operacional com o ambiente Linux / Tomcat:
 
-1. **Geração do Artefato:**
+### 📦 Passo 1: Geração do Artefato em Ambiente Local
+Execute o build do pacote WAR ignorando a execução de testes locais (que já foram validados na suíte de CI):
+```bash
+mvn clean package -DskipTests
+```
+*O Maven gerará o arquivo executável em `target/nfse-nacional-api.war`.*
+
+### 💾 Passo 2: Backup Preventivo Obrigatório no Servidor (BrasilCloud)
+Antes de interromper o Tomcat ou substituir qualquer arquivo, conecte ao servidor via SSH e realize a salvaguarda da versão atual em execução:
+```bash
+# 1. Definir variáveis do Tomcat e timestamp de backup
+export TOMCAT_HOME="/opt/tomcat"
+export BACKUP_DIR="/opt/tomcat/backups/$(date +%Y%m%d_%H%M%S)"
+sudo mkdir -p "$BACKUP_DIR"
+
+# 2. Copiar o WAR atual e o script de variáveis de ambiente
+if [ -f "$TOMCAT_HOME/webapps/ROOT.war" ]; then
+    sudo cp -p "$TOMCAT_HOME/webapps/ROOT.war" "$BACKUP_DIR/ROOT.war"
+fi
+if [ -f "$TOMCAT_HOME/webapps/nfse-nacional-api.war" ]; then
+    sudo cp -p "$TOMCAT_HOME/webapps/nfse-nacional-api.war" "$BACKUP_DIR/nfse-nacional-api.war"
+fi
+if [ -f "$TOMCAT_HOME/bin/setenv.sh" ]; then
+    sudo cp -p "$TOMCAT_HOME/bin/setenv.sh" "$BACKUP_DIR/setenv.sh"
+fi
+
+echo "Backup concluído com sucesso em: $BACKUP_DIR"
+```
+
+### 🛑 Passo 3: Parada Limpa e Limpeza de Cache (*Clean Deploy*)
+Para evitar conflito de classes em cache ou vazamentos de memória na atualização do WAR:
+```bash
+# 1. Parar o serviço do Tomcat
+sudo systemctl stop tomcat
+
+# 2. Limpar o diretório expandido da aplicação anterior e pastas de trabalho temporárias
+sudo rm -rf "$TOMCAT_HOME/webapps/ROOT"
+sudo rm -rf "$TOMCAT_HOME/webapps/nfse-nacional-api"
+sudo rm -rf "$TOMCAT_HOME/work/Catalina/localhost/*"
+sudo rm -rf "$TOMCAT_HOME/temp/*"
+```
+
+### 📤 Passo 4: Publicação do Novo Artefato WAR
+Envie o arquivo `target/nfse-nacional-api.war` via SFTP ou `scp` para o servidor:
+```bash
+# Exemplo via SCP a partir da sua máquina local:
+scp target/nfse-nacional-api.war usuario@<ip-brasilcloud>:/tmp/nfse-nacional-api.war
+
+# No servidor, publicar no diretório webapps:
+# Opção A (Recomendada - Raiz Tomcat /):
+sudo cp /tmp/nfse-nacional-api.war "$TOMCAT_HOME/webapps/ROOT.war"
+sudo chown tomcat:tomcat "$TOMCAT_HOME/webapps/ROOT.war"
+sudo chmod 644 "$TOMCAT_HOME/webapps/ROOT.war"
+```
+
+### 🚀 Passo 5: Inicialização e Monitoramento dos Logs
+Inicie o serviço do Tomcat e acompanhe a inicialização do contexto Spring Boot:
+```bash
+sudo systemctl start tomcat
+sudo tail -f "$TOMCAT_HOME/logs/catalina.out"
+```
+*Certifique-se de que a mensagem `Started NfseApplication in ... seconds` é exibida sem exceções fatais.*
+
+### ✅ Passo 6: Verificação de Saúde (*Smoke Test*)
+1. Acesse o endpoint do Actuator:
    ```bash
-   mvn clean package -DskipTests
+   curl -i http://localhost:8080/actuator/health
+   # Retorno esperado: HTTP 200 {"status":"UP"}
    ```
-   *O Maven gerará o arquivo `target/nfse-nacional-api.war`.*
-2. **Acesso à BrasilCloud:** Conectar ao servidor do cliente via painel de controle da BrasilCloud ou cliente SFTP seguro com as credenciais fornecidas pelo cliente.
-3. **Publicação no Tomcat (Context Path & Contrato GeneXus):**
-   - O ERP GeneXus consome o serviço na rota tradicional `/prefeitura/notafiscal/nfse.asmx`. Para manter compatibilidade transparente:
-     - **Opção A (Recomendada - Raiz Tomcat):** Publicar o arquivo renomeado para `webapps/ROOT.war`. Dessa forma o contexto do Tomcat será `/`, e o endpoint responderá diretamente em `http(s)://<dominio-brasilcloud>/prefeitura/notafiscal/nfse.asmx`, idêntico ao ambiente local.
-     - **Opção B (Contexto Nomeado com Proxy Reverso):** Manter o arquivo como `webapps/nfse-nacional-api.war` e configurar o Nginx / Apache para encaminhar requisições de `/prefeitura/**` para `/nfse-nacional-api/prefeitura/**`.
-4. **Verificação de Saúde (*Smoke Test*):**
-   - Acessar a rota de integridade: `http(s)://<dominio-brasilcloud>/actuator/health` (se ROOT.war) ou `/nfse-nacional-api/actuator/health`.
-   - Confirmar se o status retornado é `UP`.
-5. **Teste de Emissão de DPS:**
-   - Disparar uma emissão de teste no ambiente de homologação a partir do ERP para validar a ponta a ponta.
+2. Realize uma chamada de teste de emissão no ambiente de homologação a partir do ERP GeneXus apontando para `/prefeitura/notafiscal/nfse.asmx`.
+
+---
+
+### 6.1. ⏪ Plano de Rollback Imediato (Garantia de Continuidade Fiscal)
+
+Caso a nova versão apresente falha crítica de inicialização ou inconsistência de integração com o ERP que impeça o faturamento, execute o rollback imediato em menos de 2 minutos:
+
+#### 🚨 Gatilhos para Acionamento do Rollback:
+- O endpoint `/actuator/health` não retorna status `UP` após 60 segundos da inicialização.
+- Exceção fatal `CrashLoop` ou `ClassNotFoundException` persistente no `catalina.out`.
+- Rejeição estrutural generalizada no ERP durante o primeiro envio de teste em homologação.
+
+#### 🛠️ Procedimento Operacional de Rollback:
+```bash
+# 1. Parar imediatamente o Tomcat
+sudo systemctl stop tomcat
+
+# 2. Localizar o backup mais recente gerado no Passo 2
+LATEST_BACKUP=$(ls -td /opt/tomcat/backups/*/ | head -1)
+echo "Restaurando backup de: $LATEST_BACKUP"
+
+# 3. Remover a versão com falha e caches residuais
+sudo rm -rf "$TOMCAT_HOME/webapps/ROOT.war" "$TOMCAT_HOME/webapps/ROOT"
+sudo rm -rf "$TOMCAT_HOME/work/Catalina/localhost/*"
+sudo rm -rf "$TOMCAT_HOME/temp/*"
+
+# 4. Restaurar o artefato WAR da versão anterior estável
+if [ -f "${LATEST_BACKUP}ROOT.war" ]; then
+    sudo cp -p "${LATEST_BACKUP}ROOT.war" "$TOMCAT_HOME/webapps/ROOT.war"
+elif [ -f "${LATEST_BACKUP}nfse-nacional-api.war" ]; then
+    sudo cp -p "${LATEST_BACKUP}nfse-nacional-api.war" "$TOMCAT_HOME/webapps/nfse-nacional-api.war"
+fi
+
+# 5. Reiniciar o Tomcat
+sudo systemctl start tomcat
+
+# 6. Validar restauração
+curl -i http://localhost:8080/actuator/health
+```
+Após o restabelecimento do status `UP`, colete os logs de erro (`logs/catalina.out` e `logs/audit-fiscal.log`) para análise da equipe de desenvolvimento sem impacto operacional no cliente.
 
 ---
 
