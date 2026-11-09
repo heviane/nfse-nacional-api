@@ -1,5 +1,7 @@
 package br.com.heviane.nfse.adapters.in.legacy;
 
+import br.com.heviane.nfse.adapters.in.observability.FiscalAuditLogger;
+import br.com.heviane.nfse.adapters.in.observability.NfseMetrics;
 import br.com.heviane.nfse.adapters.in.rest.CorrelationIdFilter;
 import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
 import br.com.heviane.nfse.config.NfseProperties;
@@ -32,18 +34,30 @@ public class LegacySoapController {
     private final EmitirDpsUseCase emitirDpsUseCase;
     private final CertificadoProvider certificadoProvider;
     private final NfseProperties nfseProperties;
+    private final NfseMetrics nfseMetrics;
+    private final FiscalAuditLogger fiscalAuditLogger;
 
     @org.springframework.beans.factory.annotation.Autowired
     public LegacySoapController(EmitirDpsUseCase emitirDpsUseCase,
                                 CertificadoProvider certificadoProvider,
-                                NfseProperties nfseProperties) {
+                                NfseProperties nfseProperties,
+                                @org.springframework.beans.factory.annotation.Autowired(required = false) NfseMetrics nfseMetrics,
+                                @org.springframework.beans.factory.annotation.Autowired(required = false) FiscalAuditLogger fiscalAuditLogger) {
         this.emitirDpsUseCase = emitirDpsUseCase;
         this.certificadoProvider = certificadoProvider;
         this.nfseProperties = (nfseProperties != null) ? nfseProperties : new NfseProperties();
+        this.nfseMetrics = nfseMetrics;
+        this.fiscalAuditLogger = fiscalAuditLogger;
+    }
+
+    public LegacySoapController(EmitirDpsUseCase emitirDpsUseCase,
+                                CertificadoProvider certificadoProvider,
+                                NfseProperties nfseProperties) {
+        this(emitirDpsUseCase, certificadoProvider, nfseProperties, null, null);
     }
 
     public LegacySoapController(EmitirDpsUseCase emitirDpsUseCase, CertificadoProvider certificadoProvider) {
-        this(emitirDpsUseCase, certificadoProvider, new NfseProperties());
+        this(emitirDpsUseCase, certificadoProvider, new NfseProperties(), null, null);
     }
 
     /**
@@ -161,12 +175,27 @@ public class LegacySoapController {
             @RequestHeader(value = "X-Certificado-Senha", required = false) String certSenha
     ) {
         log.info("Recebida requisição SOAP de emissão legada via GeneXus 18");
+        long inicio = System.currentTimeMillis();
+        String cnpjEmitente = null;
+
         try {
             String xmlDps = extrairXmlDps(envelopeSoap);
+            if (fiscalAuditLogger != null) {
+                cnpjEmitente = fiscalAuditLogger.extrairCnpjDps(xmlDps);
+            }
+
             CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
             AmbienteSefin ambiente = nfseProperties.resolverAmbiente();
 
             RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(xmlDps, ambiente, certificado);
+            long duracao = System.currentTimeMillis() - inicio;
+
+            if (fiscalAuditLogger != null) {
+                fiscalAuditLogger.registrarEmissao("SOAP", resposta.chaveAcesso(), cnpjEmitente, resposta.codigoStatus(), 200, duracao);
+            }
+            if (nfseMetrics != null) {
+                nfseMetrics.registrarEmissao("SOAP", resposta.isSucesso(), !resposta.isSucesso(), duracao);
+            }
 
             String soapResponse = montarRespostaSoapSucesso(
                     resposta.isSucesso(),
@@ -181,6 +210,7 @@ public class LegacySoapController {
                     .body(soapResponse);
 
         } catch (Exception e) {
+            long duracao = System.currentTimeMillis() - inicio;
             String correlationId = MDC.get(CorrelationIdFilter.CORRELATION_ID_KEY);
             if (correlationId == null || correlationId.isBlank()) {
                 correlationId = UUID.randomUUID().toString();
@@ -195,6 +225,14 @@ public class LegacySoapController {
             }
 
             String mensagemControlada = mapearMensagemErro(e, correlationId);
+
+            if (fiscalAuditLogger != null) {
+                fiscalAuditLogger.registrarFalhaEmissao("SOAP", cnpjEmitente, 200, mensagemControlada, duracao);
+            }
+            if (nfseMetrics != null) {
+                nfseMetrics.registrarEmissao("SOAP", false, false, duracao);
+            }
+
             String soapErrorResponse = montarRespostaSoapErro(mensagemControlada);
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_XML)

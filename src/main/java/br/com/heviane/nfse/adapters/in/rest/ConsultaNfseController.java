@@ -1,5 +1,7 @@
 package br.com.heviane.nfse.adapters.in.rest;
 
+import br.com.heviane.nfse.adapters.in.observability.FiscalAuditLogger;
+import br.com.heviane.nfse.adapters.in.observability.NfseMetrics;
 import br.com.heviane.nfse.adapters.in.rest.dto.ConsultaNfseResponse;
 import br.com.heviane.nfse.adapters.in.rest.dto.ErroResponse;
 import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
@@ -13,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,10 +26,22 @@ public class ConsultaNfseController {
 
     private final ConsultarNfseUseCase consultarNfseUseCase;
     private final CertificadoProvider certificadoProvider;
+    private final NfseMetrics nfseMetrics;
+    private final FiscalAuditLogger fiscalAuditLogger;
 
-    public ConsultaNfseController(ConsultarNfseUseCase consultarNfseUseCase, CertificadoProvider certificadoProvider) {
+    @Autowired
+    public ConsultaNfseController(ConsultarNfseUseCase consultarNfseUseCase,
+                                  CertificadoProvider certificadoProvider,
+                                  @Autowired(required = false) NfseMetrics nfseMetrics,
+                                  @Autowired(required = false) FiscalAuditLogger fiscalAuditLogger) {
         this.consultarNfseUseCase = consultarNfseUseCase;
         this.certificadoProvider = certificadoProvider;
+        this.nfseMetrics = nfseMetrics;
+        this.fiscalAuditLogger = fiscalAuditLogger;
+    }
+
+    public ConsultaNfseController(ConsultarNfseUseCase consultarNfseUseCase, CertificadoProvider certificadoProvider) {
+        this(consultarNfseUseCase, certificadoProvider, null, null);
     }
 
     @GetMapping(value = "/{chaveAcesso}", produces = "application/json")
@@ -52,24 +67,44 @@ public class ConsultaNfseController {
             @Parameter(in = ParameterIn.HEADER, description = "Senha de proteção do Certificado Digital A1")
             @RequestHeader(value = "X-Certificado-Senha", required = false) String certSenha
     ) {
-        if (chaveAcesso == null || !chaveAcesso.matches("\\d{50}")) {
-            throw new IllegalArgumentException("Chave de acesso deve conter exatamente 50 dígitos numéricos.");
+        long inicio = System.currentTimeMillis();
+        try {
+            if (chaveAcesso == null || !chaveAcesso.matches("\\d{50}")) {
+                throw new IllegalArgumentException("Chave de acesso deve conter exatamente 50 dígitos numéricos.");
+            }
+
+            CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
+            AmbienteSefin amb = ambiente != null ? ambiente : AmbienteSefin.HOMOLOGACAO;
+
+            RespostaConsultaNfse resposta = consultarNfseUseCase.consultar(chaveAcesso, amb, certificado);
+            long duracao = System.currentTimeMillis() - inicio;
+
+            if (fiscalAuditLogger != null) {
+                fiscalAuditLogger.registrarConsulta(chaveAcesso, resposta.codigoStatus(), 200, duracao);
+            }
+            if (nfseMetrics != null) {
+                nfseMetrics.registrarConsulta(true, resposta.isEncontrada(), duracao);
+            }
+
+            ConsultaNfseResponse response = new ConsultaNfseResponse(
+                    resposta.isEncontrada(),
+                    resposta.codigoStatus(),
+                    resposta.motivoStatus(),
+                    resposta.chaveAcesso(),
+                    resposta.obterNfseXmlDescompactado()
+            );
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            long duracao = System.currentTimeMillis() - inicio;
+            if (fiscalAuditLogger != null) {
+                fiscalAuditLogger.registrarConsulta(chaveAcesso, null, 400, duracao);
+            }
+            if (nfseMetrics != null) {
+                nfseMetrics.registrarConsulta(false, false, duracao);
+            }
+            throw e;
         }
-
-        CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
-        AmbienteSefin amb = ambiente != null ? ambiente : AmbienteSefin.HOMOLOGACAO;
-
-        RespostaConsultaNfse resposta = consultarNfseUseCase.consultar(chaveAcesso, amb, certificado);
-
-        ConsultaNfseResponse response = new ConsultaNfseResponse(
-                resposta.isEncontrada(),
-                resposta.codigoStatus(),
-                resposta.motivoStatus(),
-                resposta.chaveAcesso(),
-                resposta.obterNfseXmlDescompactado()
-        );
-
-        return ResponseEntity.ok(response);
     }
 }
 

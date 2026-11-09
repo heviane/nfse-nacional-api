@@ -1,5 +1,7 @@
 package br.com.heviane.nfse.adapters.in.rest;
 
+import br.com.heviane.nfse.adapters.in.observability.FiscalAuditLogger;
+import br.com.heviane.nfse.adapters.in.observability.NfseMetrics;
 import br.com.heviane.nfse.adapters.in.rest.dto.EmissaoDpsRequest;
 import br.com.heviane.nfse.adapters.in.rest.dto.EmissaoDpsResponse;
 import br.com.heviane.nfse.adapters.in.rest.dto.ErroResponse;
@@ -29,18 +31,30 @@ public class EmissaoDpsController {
     private final EmitirDpsUseCase emitirDpsUseCase;
     private final CertificadoProvider certificadoProvider;
     private final NfseProperties nfseProperties;
+    private final NfseMetrics nfseMetrics;
+    private final FiscalAuditLogger fiscalAuditLogger;
 
     @Autowired
     public EmissaoDpsController(EmitirDpsUseCase emitirDpsUseCase,
                                 CertificadoProvider certificadoProvider,
-                                NfseProperties nfseProperties) {
+                                NfseProperties nfseProperties,
+                                @Autowired(required = false) NfseMetrics nfseMetrics,
+                                @Autowired(required = false) FiscalAuditLogger fiscalAuditLogger) {
         this.emitirDpsUseCase = emitirDpsUseCase;
         this.certificadoProvider = certificadoProvider;
         this.nfseProperties = (nfseProperties != null) ? nfseProperties : new NfseProperties();
+        this.nfseMetrics = nfseMetrics;
+        this.fiscalAuditLogger = fiscalAuditLogger;
+    }
+
+    public EmissaoDpsController(EmitirDpsUseCase emitirDpsUseCase,
+                                CertificadoProvider certificadoProvider,
+                                NfseProperties nfseProperties) {
+        this(emitirDpsUseCase, certificadoProvider, nfseProperties, null, null);
     }
 
     public EmissaoDpsController(EmitirDpsUseCase emitirDpsUseCase, CertificadoProvider certificadoProvider) {
-        this(emitirDpsUseCase, certificadoProvider, new NfseProperties());
+        this(emitirDpsUseCase, certificadoProvider, new NfseProperties(), null, null);
     }
 
     @PostMapping(value = "/emitir", consumes = "application/json", produces = "application/json")
@@ -66,25 +80,47 @@ public class EmissaoDpsController {
             @Parameter(in = ParameterIn.HEADER, description = "Senha de proteção do Certificado Digital A1")
             @RequestHeader(value = "X-Certificado-Senha", required = false) String certSenha
     ) {
-        if (request == null || request.xmlDps() == null || request.xmlDps().isBlank()) {
-            throw new IllegalArgumentException("O conteúdo do XML da DPS (xmlDps) é obrigatório.");
+        long inicio = System.currentTimeMillis();
+        String cnpjEmitente = (fiscalAuditLogger != null && request != null) ? fiscalAuditLogger.extrairCnpjDps(request.xmlDps()) : null;
+
+        try {
+            if (request == null || request.xmlDps() == null || request.xmlDps().isBlank()) {
+                throw new IllegalArgumentException("O conteúdo do XML da DPS (xmlDps) é obrigatório.");
+            }
+
+            CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
+            AmbienteSefin ambiente = request.ambiente() != null ? request.ambiente() : nfseProperties.resolverAmbiente();
+
+            RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(request.xmlDps(), ambiente, certificado);
+            long duracao = System.currentTimeMillis() - inicio;
+
+            if (fiscalAuditLogger != null) {
+                fiscalAuditLogger.registrarEmissao("REST", resposta.chaveAcesso(), cnpjEmitente, resposta.codigoStatus(), 200, duracao);
+            }
+            if (nfseMetrics != null) {
+                nfseMetrics.registrarEmissao("REST", resposta.isSucesso(), !resposta.isSucesso(), duracao);
+            }
+
+            EmissaoDpsResponse response = new EmissaoDpsResponse(
+                    resposta.isSucesso(),
+                    resposta.codigoStatus(),
+                    resposta.motivoStatus(),
+                    resposta.chaveAcesso(),
+                    resposta.obterNfseXmlDescompactado(),
+                    resposta.numeroProtocolo()
+            );
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            long duracao = System.currentTimeMillis() - inicio;
+            if (fiscalAuditLogger != null) {
+                fiscalAuditLogger.registrarFalhaEmissao("REST", cnpjEmitente, 400, e.getMessage(), duracao);
+            }
+            if (nfseMetrics != null) {
+                nfseMetrics.registrarEmissao("REST", false, false, duracao);
+            }
+            throw e;
         }
-
-        CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
-        AmbienteSefin ambiente = request.ambiente() != null ? request.ambiente() : nfseProperties.resolverAmbiente();
-
-        RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(request.xmlDps(), ambiente, certificado);
-
-        EmissaoDpsResponse response = new EmissaoDpsResponse(
-                resposta.isSucesso(),
-                resposta.codigoStatus(),
-                resposta.motivoStatus(),
-                resposta.chaveAcesso(),
-                resposta.obterNfseXmlDescompactado(),
-                resposta.numeroProtocolo()
-        );
-
-        return ResponseEntity.ok(response);
     }
 }
 

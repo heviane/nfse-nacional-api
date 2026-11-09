@@ -1,5 +1,7 @@
 package br.com.heviane.nfse.adapters.in.rest;
 
+import br.com.heviane.nfse.adapters.in.observability.FiscalAuditLogger;
+import br.com.heviane.nfse.adapters.in.observability.NfseMetrics;
 import br.com.heviane.nfse.adapters.in.rest.dto.CancelamentoNfseRequest;
 import br.com.heviane.nfse.adapters.in.rest.dto.CancelamentoNfseResponse;
 import br.com.heviane.nfse.adapters.in.rest.dto.ErroResponse;
@@ -14,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,10 +27,22 @@ public class CancelamentoNfseController {
 
     private final CancelarNfseUseCase cancelarNfseUseCase;
     private final CertificadoProvider certificadoProvider;
+    private final NfseMetrics nfseMetrics;
+    private final FiscalAuditLogger fiscalAuditLogger;
 
-    public CancelamentoNfseController(CancelarNfseUseCase cancelarNfseUseCase, CertificadoProvider certificadoProvider) {
+    @Autowired
+    public CancelamentoNfseController(CancelarNfseUseCase cancelarNfseUseCase,
+                                      CertificadoProvider certificadoProvider,
+                                      @Autowired(required = false) NfseMetrics nfseMetrics,
+                                      @Autowired(required = false) FiscalAuditLogger fiscalAuditLogger) {
         this.cancelarNfseUseCase = cancelarNfseUseCase;
         this.certificadoProvider = certificadoProvider;
+        this.nfseMetrics = nfseMetrics;
+        this.fiscalAuditLogger = fiscalAuditLogger;
+    }
+
+    public CancelamentoNfseController(CancelarNfseUseCase cancelarNfseUseCase, CertificadoProvider certificadoProvider) {
+        this(cancelarNfseUseCase, certificadoProvider, null, null);
     }
 
     @PostMapping(value = "/cancelar", consumes = "application/json", produces = "application/json")
@@ -50,32 +65,55 @@ public class CancelamentoNfseController {
             @Parameter(in = ParameterIn.HEADER, description = "Senha de proteção do Certificado Digital A1")
             @RequestHeader(value = "X-Certificado-Senha", required = false) String certSenha
     ) {
-        if (request == null) {
-            throw new IllegalArgumentException("Corpo da requisição de cancelamento é obrigatório.");
+        long inicio = System.currentTimeMillis();
+        String chave = request != null ? request.chaveAcesso() : null;
+        String cnpjAutor = request != null ? request.cnpjAutor() : null;
+
+        try {
+            if (request == null) {
+                throw new IllegalArgumentException("Corpo da requisição de cancelamento é obrigatório.");
+            }
+
+            CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
+
+            RequisicaoCancelamentoDps comando = new RequisicaoCancelamentoDps(
+                    request.chaveAcesso(),
+                    request.cnpjAutor(),
+                    request.codigoMotivo(),
+                    request.motivo(),
+                    request.ambiente()
+            );
+
+            RespostaEventoCancelamento resposta = cancelarNfseUseCase.cancelar(comando, certificado);
+            long duracao = System.currentTimeMillis() - inicio;
+
+            if (fiscalAuditLogger != null) {
+                fiscalAuditLogger.registrarCancelamento(resposta.chaveAcesso(), cnpjAutor, resposta.codigoStatus(), 200, duracao);
+            }
+            if (nfseMetrics != null) {
+                nfseMetrics.registrarCancelamento(resposta.isSucesso(), !resposta.isSucesso(), duracao);
+            }
+
+            CancelamentoNfseResponse response = new CancelamentoNfseResponse(
+                    resposta.isSucesso(),
+                    resposta.codigoStatus(),
+                    resposta.motivoStatus(),
+                    resposta.chaveAcesso(),
+                    resposta.idEvento(),
+                    resposta.obterEventoXmlDescompactado()
+            );
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            long duracao = System.currentTimeMillis() - inicio;
+            if (fiscalAuditLogger != null) {
+                fiscalAuditLogger.registrarCancelamento(chave, cnpjAutor, null, 400, duracao);
+            }
+            if (nfseMetrics != null) {
+                nfseMetrics.registrarCancelamento(false, false, duracao);
+            }
+            throw e;
         }
-
-        CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
-
-        RequisicaoCancelamentoDps comando = new RequisicaoCancelamentoDps(
-                request.chaveAcesso(),
-                request.cnpjAutor(),
-                request.codigoMotivo(),
-                request.motivo(),
-                request.ambiente()
-        );
-
-        RespostaEventoCancelamento resposta = cancelarNfseUseCase.cancelar(comando, certificado);
-
-        CancelamentoNfseResponse response = new CancelamentoNfseResponse(
-                resposta.isSucesso(),
-                resposta.codigoStatus(),
-                resposta.motivoStatus(),
-                resposta.chaveAcesso(),
-                resposta.idEvento(),
-                resposta.obterEventoXmlDescompactado()
-        );
-
-        return ResponseEntity.ok(response);
     }
 }
 
