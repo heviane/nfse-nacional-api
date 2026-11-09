@@ -23,5 +23,5 @@ Explique o motivo desta tarefa. Por exemplo:
 ### Critérios de Aceitação / Definição de "Pronto"
 
 - [ ] O pipeline de CI está configurado e executando com sucesso.
-- [ ] A biblioteca X foi atualizada para a versão Y em todos os microserviços.
+- [ ] A biblioteca X foi atualizada para a versão Y.
 - [ ] O módulo de autenticação foi refatorado e os testes unitários continuam passando.

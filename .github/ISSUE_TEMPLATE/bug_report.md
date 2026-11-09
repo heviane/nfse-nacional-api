@@ -28,6 +28,8 @@ Se aplicável, adicione screenshots para ajudar a explicar o seu problema.
 
 ### Contexto Adicional
 
-- **Microserviço Afetado**: (ex: Estoque, Vendas, API Gateway)
-- **Versão do .NET**:
+- **Módulo / Componente Afetado**: (ex: Core Fiscal / Validação XSD, Assinador A1 / XML-DSig, Transmissão Sefin mTLS, Camada Anticorrupção SOAP / GeneXus, API REST)
+- **Versão do Java / JVM**: (ex: OpenJDK 17.0.12)
+- **Ambiente de Execução**: (ex: Homologação / Produção Restrita, Tomcat 10.1 na BrasilCloud, Local standalone)
+- **Correlation-ID (se houver)**:
 - Adicione qualquer outro contexto sobre o problema aqui.

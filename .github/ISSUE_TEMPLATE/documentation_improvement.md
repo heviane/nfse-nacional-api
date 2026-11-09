@@ -9,7 +9,7 @@ assignees: ''
 
 ### Qual parte da documentação precisa ser melhorada?
 
-Por favor, seja específico. Forneça o nome do arquivo (ex: `README.md`, `docs/Especificação de Requisitos de Software (ERS).md`) ou a localização no código.
+Por favor, seja específico. Forneça o nome do arquivo (ex: `README.md`, `docs/backlog.md`, `docs/specs/0001-...`) ou a localização no código.
 
 ### Qual é o problema com a documentação atual?
 
