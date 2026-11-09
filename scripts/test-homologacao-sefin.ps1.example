@@ -1,0 +1,151 @@
+# ==============================================================================
+# SCRIPT DE DISPARO DE TESTE EM HOMOLOGAÇÃO NO SEFIN NACIONAL (POWERSHELL)
+# ==============================================================================
+# INSTRUÇÕES DE USO:
+# 1. Copie este arquivo para 'test-homologacao-sefin.ps1' (ignorado pelo Git).
+# 2. Ajuste o CNPJ do emitente e a URL do seu servidor local ou de homologação.
+# 3. Certifique-se de que a aplicação esteja rodando com:
+#    NFSE_ENVIRONMENT=HOMOLOGACAO
+# 4. Execute: .\scripts\test-homologacao-sefin.ps1
+# ==============================================================================
+
+param(
+    [string]$BaseUrl = "http://localhost:8080",
+    [string]$ApiKey = ""
+)
+
+$ErrorActionPreference = "Stop"
+
+Write-Host "==========================================================" -ForegroundColor Cyan
+Write-Host "Iniciando Teste Operacional de Homologacao - Sefin Nacional" -ForegroundColor Cyan
+Write-Host "Alvo: $BaseUrl" -ForegroundColor Cyan
+Write-Host "==========================================================" -ForegroundColor Cyan
+
+# 1. Verificar integridade do servidor
+Write-Host "`n1. Verificando Actuator Health..." -ForegroundColor Yellow
+try {
+    $health = Invoke-RestMethod -Uri "$BaseUrl/actuator/health" -Method Get
+    Write-Host "Health Status: $($health.status)" -ForegroundColor Green
+    if ($health.status -ne "UP") {
+        Write-Error "O servidor nao retornou status UP."
+        exit 1
+    }
+} catch {
+    Write-Error "Falha ao conectar no endpoint de saude do servidor em $BaseUrl/actuator/health"
+    exit 1
+}
+
+# 2. Gerar identificador unico de teste baseado no timestamp
+$timestamp = Get-Date -Format "yyyyMMddHHmmss"
+$cnpjEmitente = "00000000000191"
+$idDps = "DPS3205200260100000000001910000100000000000$($timestamp.Substring(4))"
+$dataHoraIso = (Get-Date).ToString("yyyy-MM-ddTHH:mm:sszzz")
+$competencia = (Get-Date).ToString("yyyy-MM-dd")
+
+Write-Host "`n2. Montando DPS de teste com Id: $idDps" -ForegroundColor Yellow
+
+$xmlDps = @"
+<DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+    <infDPS Id="$idDps">
+        <tpAmb>2</tpAmb>
+        <dhEmi>$dataHoraIso</dhEmi>
+        <verAplic>NfseApi_v1.0</verAplic>
+        <dCompet>$competencia</dCompet>
+        <prest>
+            <CNPJ>$cnpjEmitente</CNPJ>
+            <regTrib>
+                <opSimpNac>1</opSimpNac>
+                <regApTribSN>1</regApTribSN>
+            </regTrib>
+        </prest>
+        <toma>
+            <CNPJ>$cnpjEmitente</CNPJ>
+            <xNome>TOMADOR DE TESTE HOMOLOGACAO</xNome>
+            <ender>
+                <endNac>
+                    <cMun>3205200</cMun>
+                    <CEP>29100000</CEP>
+                </endNac>
+                <xLgr>RUA DE TESTE</xLgr>
+                <nro>100</nro>
+                <xBairro>CENTRO</xBairro>
+            </ender>
+        </toma>
+        <serv>
+            <locPrest>
+                <cLocPrestacao>3205200</cLocPrestacao>
+            </locPrest>
+            <cServ>
+                <cTribNac>010701</cTribNac>
+                <xDescServ>TESTE DE EMISSAO HOMOLOGACAO SEFIN NACIONAL</xDescServ>
+            </cServ>
+            <valores>
+                <vServPrest>
+                    <vServ>10.00</vServ>
+                </vServPrest>
+                <trib>
+                    <tribMun>
+                        <tribISSQN>1</tribISSQN>
+                        <cLocIncid>3205200</cLocIncid>
+                        <vBC>10.00</vBC>
+                        <pAliq>2.00</pAliq>
+                        <vISSQN>0.20</vISSQN>
+                        <tpRetISSQN>1</tpRetISSQN>
+                    </tribMun>
+                    <tribFed>
+                        <piscofins>
+                            <tpRetPisCofins>2</tpRetPisCofins>
+                        </piscofins>
+                    </tribFed>
+                </trib>
+            </valores>
+        </serv>
+    </infDPS>
+</DPS>
+"@
+
+$bodyEmissao = @{
+    xmlDps = $xmlDps
+    ambiente = "HOMOLOGACAO"
+} | ConvertTo-Json
+
+$headers = @{
+    "Content-Type" = "application/json; charset=utf-8"
+}
+if ($ApiKey -ne "") {
+    $headers["X-API-Key"] = $ApiKey
+}
+
+# 3. Disparar emissão
+Write-Host "`n3. Disparando emissao de DPS para o Sefin Nacional..." -ForegroundColor Yellow
+try {
+    $respostaEmissao = Invoke-RestMethod -Uri "$BaseUrl/api/v1/dps" -Method Post -Headers $headers -Body $bodyEmissao
+    Write-Host "Emissao processada com sucesso!" -ForegroundColor Green
+    Write-Host "Status HTTP: 200" -ForegroundColor Green
+    Write-Host "Chave de Acesso Nacional: $($respostaEmissao.chaveAcesso)" -ForegroundColor Cyan
+    Write-Host "Numero do Protocolo: $($respostaEmissao.numeroProtocolo)" -ForegroundColor Cyan
+
+    $chaveAcesso = $respostaEmissao.chaveAcesso
+
+    if ($chaveAcesso -and $chaveAcesso.Length -eq 50) {
+        # 4. Consultar a NFS-e autorizada
+        Write-Host "`n4. Consultando NFS-e autorizada por Chave de Acesso no Sefin..." -ForegroundColor Yellow
+        Start-Sleep -Seconds 2
+        $respostaConsulta = Invoke-RestMethod -Uri "$BaseUrl/api/v1/nfse/$chaveAcesso?ambiente=HOMOLOGACAO" -Method Get -Headers $headers
+        Write-Host "Consulta concluida! Localizada: $($respostaConsulta.localizada)" -ForegroundColor Green
+        Write-Host "Status Fiscal: $($respostaConsulta.codigoStatus) - $($respostaConsulta.motivoStatus)" -ForegroundColor Green
+    }
+
+} catch {
+    Write-Error "Falha ao emitir DPS no Sefin Nacional: $_"
+    if ($_.Exception.Response) {
+        $stream = $_.Exception.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($stream)
+        Write-Host "Resposta do Servidor: $($reader.ReadToEnd())" -ForegroundColor Red
+    }
+    exit 1
+}
+
+Write-Host "`n==========================================================" -ForegroundColor Green
+Write-Host "Teste de Homologacao concluido com sucesso!" -ForegroundColor Green
+Write-Host "==========================================================" -ForegroundColor Green
