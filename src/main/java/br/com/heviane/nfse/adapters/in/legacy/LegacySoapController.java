@@ -2,6 +2,8 @@ package br.com.heviane.nfse.adapters.in.legacy;
 
 import br.com.heviane.nfse.adapters.in.observability.FiscalAuditLogger;
 import br.com.heviane.nfse.adapters.in.observability.NfseMetrics;
+import br.com.heviane.nfse.adapters.in.observability.RegistroEmissaoAuditoria;
+import br.com.heviane.nfse.adapters.in.observability.RegistroEmissaoDuravelService;
 import br.com.heviane.nfse.adapters.in.rest.CorrelationIdFilter;
 import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
 import br.com.heviane.nfse.config.NfseProperties;
@@ -16,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -36,28 +39,31 @@ public class LegacySoapController {
     private final NfseProperties nfseProperties;
     private final NfseMetrics nfseMetrics;
     private final FiscalAuditLogger fiscalAuditLogger;
+    private final RegistroEmissaoDuravelService registroDuravelService;
 
     @org.springframework.beans.factory.annotation.Autowired
     public LegacySoapController(EmitirDpsUseCase emitirDpsUseCase,
                                 CertificadoProvider certificadoProvider,
                                 NfseProperties nfseProperties,
                                 @org.springframework.beans.factory.annotation.Autowired(required = false) NfseMetrics nfseMetrics,
-                                @org.springframework.beans.factory.annotation.Autowired(required = false) FiscalAuditLogger fiscalAuditLogger) {
+                                @org.springframework.beans.factory.annotation.Autowired(required = false) FiscalAuditLogger fiscalAuditLogger,
+                                @org.springframework.beans.factory.annotation.Autowired(required = false) RegistroEmissaoDuravelService registroDuravelService) {
         this.emitirDpsUseCase = emitirDpsUseCase;
         this.certificadoProvider = certificadoProvider;
         this.nfseProperties = (nfseProperties != null) ? nfseProperties : new NfseProperties();
         this.nfseMetrics = nfseMetrics;
         this.fiscalAuditLogger = fiscalAuditLogger;
+        this.registroDuravelService = registroDuravelService;
     }
 
     public LegacySoapController(EmitirDpsUseCase emitirDpsUseCase,
                                 CertificadoProvider certificadoProvider,
                                 NfseProperties nfseProperties) {
-        this(emitirDpsUseCase, certificadoProvider, nfseProperties, null, null);
+        this(emitirDpsUseCase, certificadoProvider, nfseProperties, null, null, null);
     }
 
     public LegacySoapController(EmitirDpsUseCase emitirDpsUseCase, CertificadoProvider certificadoProvider) {
-        this(emitirDpsUseCase, certificadoProvider, new NfseProperties(), null, null);
+        this(emitirDpsUseCase, certificadoProvider, new NfseProperties(), null, null, null);
     }
 
     /**
@@ -177,11 +183,13 @@ public class LegacySoapController {
         log.info("Recebida requisição SOAP de emissão legada via GeneXus 18");
         long inicio = System.currentTimeMillis();
         String cnpjEmitente = null;
+        String idDps = null;
 
         try {
             String xmlDps = extrairXmlDps(envelopeSoap);
             if (fiscalAuditLogger != null) {
                 cnpjEmitente = fiscalAuditLogger.extrairCnpjDps(xmlDps);
+                idDps = fiscalAuditLogger.extrairIdDps(xmlDps);
             }
 
             CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
@@ -190,11 +198,29 @@ public class LegacySoapController {
             RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(xmlDps, ambiente, certificado);
             long duracao = System.currentTimeMillis() - inicio;
 
+            String correlationId = MDC.get(CorrelationIdFilter.CORRELATION_ID_KEY);
+            if (correlationId == null || correlationId.isBlank()) {
+                correlationId = UUID.randomUUID().toString();
+            }
+
             if (fiscalAuditLogger != null) {
-                fiscalAuditLogger.registrarEmissao("SOAP", resposta.chaveAcesso(), cnpjEmitente, resposta.codigoStatus(), 200, duracao);
+                fiscalAuditLogger.registrarEmissao("SOAP", idDps, resposta.chaveAcesso(), cnpjEmitente, resposta.numeroProtocolo(), resposta.codigoStatus(), 200, duracao);
             }
             if (nfseMetrics != null) {
                 nfseMetrics.registrarEmissao("SOAP", resposta.isSucesso(), !resposta.isSucesso(), duracao);
+            }
+            if (registroDuravelService != null) {
+                registroDuravelService.salvar(new RegistroEmissaoAuditoria(
+                        Instant.now(),
+                        idDps,
+                        resposta.chaveAcesso(),
+                        resposta.numeroProtocolo(),
+                        resposta.codigoStatus(),
+                        fiscalAuditLogger != null ? fiscalAuditLogger.mascararCnpj(cnpjEmitente) : cnpjEmitente,
+                        ambiente.name(),
+                        "SOAP",
+                        correlationId
+                ));
             }
 
             String soapResponse = montarRespostaSoapSucesso(
@@ -227,7 +253,7 @@ public class LegacySoapController {
             String mensagemControlada = mapearMensagemErro(e, correlationId);
 
             if (fiscalAuditLogger != null) {
-                fiscalAuditLogger.registrarFalhaEmissao("SOAP", cnpjEmitente, 200, mensagemControlada, duracao);
+                fiscalAuditLogger.registrarFalhaEmissao("SOAP", idDps, cnpjEmitente, 200, mensagemControlada, duracao);
             }
             if (nfseMetrics != null) {
                 nfseMetrics.registrarEmissao("SOAP", false, false, duracao);

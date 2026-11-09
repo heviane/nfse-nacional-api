@@ -46,6 +46,22 @@ class FiscalAuditLoggerTest {
     }
 
     @Test
+    @DisplayName("Deve extrair o identificador Id da infDPS a partir do XML da DPS")
+    void deveExtrairIdDpsDoXml() {
+        String xml = """
+                <DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+                    <infDPS Id="DPS32052002601000000000019100001000000000000001">
+                        <tpAmb>2</tpAmb>
+                    </infDPS>
+                </DPS>
+                """;
+
+        String idDps = auditLogger.extrairIdDps(xml);
+
+        assertThat(idDps).isEqualTo("DPS32052002601000000000019100001000000000000001");
+    }
+
+    @Test
     @DisplayName("Deve registrar emissão, falha, consulta e cancelamento sem lançar exceções")
     void deveRegistrarEventosSemExcecoes() {
         assertDoesNotThrow(() -> {

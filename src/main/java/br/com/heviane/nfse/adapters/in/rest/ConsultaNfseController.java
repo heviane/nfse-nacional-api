@@ -2,6 +2,8 @@ package br.com.heviane.nfse.adapters.in.rest;
 
 import br.com.heviane.nfse.adapters.in.observability.FiscalAuditLogger;
 import br.com.heviane.nfse.adapters.in.observability.NfseMetrics;
+import br.com.heviane.nfse.adapters.in.observability.RegistroEmissaoAuditoria;
+import br.com.heviane.nfse.adapters.in.observability.RegistroEmissaoDuravelService;
 import br.com.heviane.nfse.adapters.in.rest.dto.ConsultaNfseResponse;
 import br.com.heviane.nfse.adapters.in.rest.dto.ErroResponse;
 import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
@@ -28,20 +30,23 @@ public class ConsultaNfseController {
     private final CertificadoProvider certificadoProvider;
     private final NfseMetrics nfseMetrics;
     private final FiscalAuditLogger fiscalAuditLogger;
+    private final RegistroEmissaoDuravelService registroEmissaoDuravelService;
 
     @Autowired
     public ConsultaNfseController(ConsultarNfseUseCase consultarNfseUseCase,
                                   CertificadoProvider certificadoProvider,
                                   @Autowired(required = false) NfseMetrics nfseMetrics,
-                                  @Autowired(required = false) FiscalAuditLogger fiscalAuditLogger) {
+                                  @Autowired(required = false) FiscalAuditLogger fiscalAuditLogger,
+                                  @Autowired(required = false) RegistroEmissaoDuravelService registroEmissaoDuravelService) {
         this.consultarNfseUseCase = consultarNfseUseCase;
         this.certificadoProvider = certificadoProvider;
         this.nfseMetrics = nfseMetrics;
         this.fiscalAuditLogger = fiscalAuditLogger;
+        this.registroEmissaoDuravelService = registroEmissaoDuravelService;
     }
 
     public ConsultaNfseController(ConsultarNfseUseCase consultarNfseUseCase, CertificadoProvider certificadoProvider) {
-        this(consultarNfseUseCase, certificadoProvider, null, null);
+        this(consultarNfseUseCase, certificadoProvider, null, null, null);
     }
 
     @GetMapping(value = "/{chaveAcesso}", produces = "application/json")
@@ -105,6 +110,28 @@ public class ConsultaNfseController {
             }
             throw e;
         }
+    }
+
+    @GetMapping(value = "/historico-local/{idDps}", produces = "application/json")
+    @Operation(
+            summary = "Recuperar Emissão por Id da DPS no Histórico Local Durável",
+            description = "Consulta o log de auditoria persistido em disco para recuperar a Chave de Acesso e protocolo de uma DPS emitida, útil para reconciliação quando o ERP perde a resposta da transmissão."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Registro local localizado com sucesso",
+                    content = @Content(schema = @Schema(implementation = RegistroEmissaoAuditoria.class))),
+            @ApiResponse(responseCode = "404", description = "Nenhum registro local encontrado para o Id da DPS informado")
+    })
+    public ResponseEntity<RegistroEmissaoAuditoria> buscarHistoricoPorIdDps(
+            @Parameter(description = "Identificador único da DPS (ex: DPS32052002601000000000019100001000000000000001)")
+            @PathVariable("idDps") String idDps
+    ) {
+        if (registroEmissaoDuravelService == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return registroEmissaoDuravelService.buscarPorIdDps(idDps)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
 

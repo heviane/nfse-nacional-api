@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <springProperty scope="context" name="AUDIT_DIR" source="nfse.audit.dir" defaultValue="./logs" />
+
+    <!-- Appender Padrão Console -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p [%X{correlationId:-sistema}] %logger{36} : %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Appender Durável em Arquivo com Rotação Diária para Auditoria Fiscal -->
+    <appender name="AUDIT_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${AUDIT_DIR}/audit-fiscal.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Rotação diária com retenção de 90 dias -->
+            <fileNamePattern>${AUDIT_DIR}/audit-fiscal-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>90</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Logger dedicado de Auditoria Fiscal -->
+    <logger name="audit.fiscal" level="INFO" additivity="true">
+        <appender-ref ref="AUDIT_FILE" />
+    </logger>
+
+    <!-- Root Logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+</configuration>

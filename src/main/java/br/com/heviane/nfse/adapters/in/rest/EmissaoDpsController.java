@@ -2,6 +2,8 @@ package br.com.heviane.nfse.adapters.in.rest;
 
 import br.com.heviane.nfse.adapters.in.observability.FiscalAuditLogger;
 import br.com.heviane.nfse.adapters.in.observability.NfseMetrics;
+import br.com.heviane.nfse.adapters.in.observability.RegistroEmissaoAuditoria;
+import br.com.heviane.nfse.adapters.in.observability.RegistroEmissaoDuravelService;
 import br.com.heviane.nfse.adapters.in.rest.dto.EmissaoDpsRequest;
 import br.com.heviane.nfse.adapters.in.rest.dto.EmissaoDpsResponse;
 import br.com.heviane.nfse.adapters.in.rest.dto.ErroResponse;
@@ -19,9 +21,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/v1/dps")
@@ -33,28 +38,31 @@ public class EmissaoDpsController {
     private final NfseProperties nfseProperties;
     private final NfseMetrics nfseMetrics;
     private final FiscalAuditLogger fiscalAuditLogger;
+    private final RegistroEmissaoDuravelService registroDuravelService;
 
     @Autowired
     public EmissaoDpsController(EmitirDpsUseCase emitirDpsUseCase,
                                 CertificadoProvider certificadoProvider,
                                 NfseProperties nfseProperties,
                                 @Autowired(required = false) NfseMetrics nfseMetrics,
-                                @Autowired(required = false) FiscalAuditLogger fiscalAuditLogger) {
+                                @Autowired(required = false) FiscalAuditLogger fiscalAuditLogger,
+                                @Autowired(required = false) RegistroEmissaoDuravelService registroDuravelService) {
         this.emitirDpsUseCase = emitirDpsUseCase;
         this.certificadoProvider = certificadoProvider;
         this.nfseProperties = (nfseProperties != null) ? nfseProperties : new NfseProperties();
         this.nfseMetrics = nfseMetrics;
         this.fiscalAuditLogger = fiscalAuditLogger;
+        this.registroDuravelService = registroDuravelService;
     }
 
     public EmissaoDpsController(EmitirDpsUseCase emitirDpsUseCase,
                                 CertificadoProvider certificadoProvider,
                                 NfseProperties nfseProperties) {
-        this(emitirDpsUseCase, certificadoProvider, nfseProperties, null, null);
+        this(emitirDpsUseCase, certificadoProvider, nfseProperties, null, null, null);
     }
 
     public EmissaoDpsController(EmitirDpsUseCase emitirDpsUseCase, CertificadoProvider certificadoProvider) {
-        this(emitirDpsUseCase, certificadoProvider, new NfseProperties(), null, null);
+        this(emitirDpsUseCase, certificadoProvider, new NfseProperties(), null, null, null);
     }
 
     @PostMapping(value = "/emitir", consumes = "application/json", produces = "application/json")
@@ -82,6 +90,7 @@ public class EmissaoDpsController {
     ) {
         long inicio = System.currentTimeMillis();
         String cnpjEmitente = (fiscalAuditLogger != null && request != null) ? fiscalAuditLogger.extrairCnpjDps(request.xmlDps()) : null;
+        String idDps = (fiscalAuditLogger != null && request != null) ? fiscalAuditLogger.extrairIdDps(request.xmlDps()) : null;
 
         try {
             if (request == null || request.xmlDps() == null || request.xmlDps().isBlank()) {
@@ -95,10 +104,23 @@ public class EmissaoDpsController {
             long duracao = System.currentTimeMillis() - inicio;
 
             if (fiscalAuditLogger != null) {
-                fiscalAuditLogger.registrarEmissao("REST", resposta.chaveAcesso(), cnpjEmitente, resposta.codigoStatus(), 200, duracao);
+                fiscalAuditLogger.registrarEmissao("REST", idDps, resposta.chaveAcesso(), cnpjEmitente, resposta.numeroProtocolo(), resposta.codigoStatus(), 200, duracao);
             }
             if (nfseMetrics != null) {
                 nfseMetrics.registrarEmissao("REST", resposta.isSucesso(), !resposta.isSucesso(), duracao);
+            }
+            if (registroDuravelService != null) {
+                registroDuravelService.salvar(new RegistroEmissaoAuditoria(
+                        Instant.now(),
+                        idDps,
+                        resposta.chaveAcesso(),
+                        resposta.numeroProtocolo(),
+                        resposta.codigoStatus(),
+                        fiscalAuditLogger != null ? fiscalAuditLogger.mascararCnpj(cnpjEmitente) : cnpjEmitente,
+                        ambiente.name(),
+                        "REST",
+                        MDC.get(CorrelationIdFilter.CORRELATION_ID_KEY)
+                ));
             }
 
             EmissaoDpsResponse response = new EmissaoDpsResponse(
@@ -114,7 +136,7 @@ public class EmissaoDpsController {
         } catch (Exception e) {
             long duracao = System.currentTimeMillis() - inicio;
             if (fiscalAuditLogger != null) {
-                fiscalAuditLogger.registrarFalhaEmissao("REST", cnpjEmitente, 400, e.getMessage(), duracao);
+                fiscalAuditLogger.registrarFalhaEmissao("REST", idDps, cnpjEmitente, 400, e.getMessage(), duracao);
             }
             if (nfseMetrics != null) {
                 nfseMetrics.registrarEmissao("REST", false, false, duracao);

@@ -26,30 +26,45 @@ public class FiscalAuditLogger {
     private static final Logger auditLog = LoggerFactory.getLogger("audit.fiscal");
     private static final Pattern CNPJ_XML_PATTERN = Pattern.compile("<(?:prest|emit)>[\\s\\S]*?<CNPJ>(\\d{14})</CNPJ>", Pattern.CASE_INSENSITIVE);
     private static final Pattern GENERIC_CNPJ_PATTERN = Pattern.compile("<CNPJ>(\\d{14})</CNPJ>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ID_DPS_PATTERN = Pattern.compile("<infDPS[\\s]+[^>]*?Id=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
 
     /**
-     * Registra auditoria de uma operação de emissão de DPS (autorizada ou rejeitada pelo Sefin).
+     * Registra auditoria detalhada de uma operação de emissão de DPS (autorizada ou rejeitada pelo Sefin).
      */
-    public void registrarEmissao(String origem, String chaveAcesso, String cnpjEmitente, Integer statusSefin, int statusHttp, long duracaoMs) {
+    public void registrarEmissao(String origem, String idDps, String chaveAcesso, String cnpjEmitente, String numeroProtocolo, Integer statusSefin, int statusHttp, long duracaoMs) {
+        String id = isNotBlank(idDps) ? idDps.trim() : "N/A";
         String chave = isNotBlank(chaveAcesso) ? chaveAcesso.trim() : "N/A";
+        String protocolo = isNotBlank(numeroProtocolo) ? numeroProtocolo.trim() : "N/A";
         String cnpjMascarado = mascararCnpj(cnpjEmitente);
         String statusFiscal = statusSefin != null ? String.valueOf(statusSefin) : "N/A";
         String correlationId = obterCorrelationId();
 
-        auditLog.info("AUDIT-FISCAL: operacao=EMISSAO | origem={} | statusFiscal={} | statusHttp={} | chave={} | cnpjEmitente={} | duracaoMs={} | correlationId={}",
-                origem, statusFiscal, statusHttp, chave, cnpjMascarado, duracaoMs, correlationId);
+        auditLog.info("AUDIT-FISCAL: operacao=EMISSAO | origem={} | statusFiscal={} | statusHttp={} | idDps={} | chave={} | protocolo={} | cnpjEmitente={} | duracaoMs={} | correlationId={}",
+                origem, statusFiscal, statusHttp, id, chave, protocolo, cnpjMascarado, duracaoMs, correlationId);
+    }
+
+    /**
+     * Registra auditoria de uma operação de emissão de DPS (assinatura compatível).
+     */
+    public void registrarEmissao(String origem, String chaveAcesso, String cnpjEmitente, Integer statusSefin, int statusHttp, long duracaoMs) {
+        registrarEmissao(origem, "N/A", chaveAcesso, cnpjEmitente, "N/A", statusSefin, statusHttp, duracaoMs);
     }
 
     /**
      * Registra auditoria de falha ou erro de validação/comunicação na emissão de DPS.
      */
-    public void registrarFalhaEmissao(String origem, String cnpjEmitente, int statusHttp, String motivo, long duracaoMs) {
+    public void registrarFalhaEmissao(String origem, String idDps, String cnpjEmitente, int statusHttp, String motivo, long duracaoMs) {
+        String id = isNotBlank(idDps) ? idDps.trim() : "N/A";
         String cnpjMascarado = mascararCnpj(cnpjEmitente);
         String correlationId = obterCorrelationId();
         String motivoSanitizado = isNotBlank(motivo) ? motivo.replace('\n', ' ').replace('\r', ' ').trim() : "Erro desconhecido";
 
-        auditLog.warn("AUDIT-FISCAL: operacao=EMISSAO_FALHA | origem={} | statusHttp={} | cnpjEmitente={} | motivo=\"{}\" | duracaoMs={} | correlationId={}",
-                origem, statusHttp, cnpjMascarado, motivoSanitizado, duracaoMs, correlationId);
+        auditLog.warn("AUDIT-FISCAL: operacao=EMISSAO_FALHA | origem={} | statusHttp={} | idDps={} | cnpjEmitente={} | motivo=\"{}\" | duracaoMs={} | correlationId={}",
+                origem, statusHttp, id, cnpjMascarado, motivoSanitizado, duracaoMs, correlationId);
+    }
+
+    public void registrarFalhaEmissao(String origem, String cnpjEmitente, int statusHttp, String motivo, long duracaoMs) {
+        registrarFalhaEmissao(origem, "N/A", cnpjEmitente, statusHttp, motivo, duracaoMs);
     }
 
     /**
@@ -93,6 +108,22 @@ public class FiscalAuditLogger {
         Matcher fallback = GENERIC_CNPJ_PATTERN.matcher(xmlDps);
         if (fallback.find()) {
             return fallback.group(1);
+        }
+
+        return null;
+    }
+
+    /**
+     * Extrai o identificador da DPS (atributo Id de infDPS) de forma leve via regex.
+     */
+    public String extrairIdDps(String xmlDps) {
+        if (!isNotBlank(xmlDps)) {
+            return null;
+        }
+
+        Matcher matcher = ID_DPS_PATTERN.matcher(xmlDps);
+        if (matcher.find()) {
+            return matcher.group(1);
         }
 
         return null;
