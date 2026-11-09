@@ -11,10 +11,13 @@ import br.com.heviane.nfse.core.ports.out.TransmissorSefinPort;
 import br.com.heviane.nfse.core.ports.out.ValidadorSchemaPort;
 import br.com.heviane.nfse.core.services.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -75,7 +78,19 @@ public class NfseCoreConfiguration {
                         .description("API REST e Middleware de Integração com o Ambiente Nacional da NFS-e (Sefin Nacional / ADN). " +
                                 "Inclui Camada Anticorrupção (ACL) para emulação de WebService SOAP para ERPs legados.")
                         .contact(new Contact().name("Heviane").url("https://github.com/heviane/nfse-nacional-api"))
-                        .license(new License().name("Apache 2.0")));
+                        .license(new License().name("Apache 2.0")))
+                .addSecurityItem(new SecurityRequirement().addList("ApiKeyAuth").addList("BearerAuth"))
+                .components(new Components()
+                        .addSecuritySchemes("ApiKeyAuth", new SecurityScheme()
+                                .type(SecurityScheme.Type.APIKEY)
+                                .in(SecurityScheme.In.HEADER)
+                                .name("X-API-Key")
+                                .description("Chave de API do middleware (cabeçalho X-API-Key)"))
+                        .addSecuritySchemes("BearerAuth", new SecurityScheme()
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("API Key")
+                                .description("Chave de API do middleware (cabeçalho Authorization: Bearer <key>)")));
     }
 }
 

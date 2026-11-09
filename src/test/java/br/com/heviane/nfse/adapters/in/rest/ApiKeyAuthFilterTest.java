@@ -164,5 +164,60 @@ class ApiKeyAuthFilterTest {
         verify(filterChain, never()).doFilter(any(), any());
         assertThat(response.getStatus()).isEqualTo(401);
     }
+
+    @Test
+    @DisplayName("Deve bloquear Swagger UI e OpenAPI docs com 401 quando API Key estiver ativa e Swagger não for público")
+    void deveBloquearSwaggerSemChaveQuandoApiKeyAtivaESwaggerNaoPublico() throws ServletException, IOException {
+        ApiKeyAuthFilter filter = new ApiKeyAuthFilter(API_KEY_SECRETA, false);
+
+        MockHttpServletRequest requestSwagger = new MockHttpServletRequest("GET", "/swagger-ui/index.html");
+        MockHttpServletResponse responseSwagger = new MockHttpServletResponse();
+        FilterChain filterChainSwagger = mock(FilterChain.class);
+
+        filter.doFilter(requestSwagger, responseSwagger, filterChainSwagger);
+
+        verify(filterChainSwagger, never()).doFilter(any(), any());
+        assertThat(responseSwagger.getStatus()).isEqualTo(401);
+
+        MockHttpServletRequest requestApiDocs = new MockHttpServletRequest("GET", "/v3/api-docs");
+        MockHttpServletResponse responseApiDocs = new MockHttpServletResponse();
+        FilterChain filterChainApiDocs = mock(FilterChain.class);
+
+        filter.doFilter(requestApiDocs, responseApiDocs, filterChainApiDocs);
+
+        verify(filterChainApiDocs, never()).doFilter(any(), any());
+        assertThat(responseApiDocs.getStatus()).isEqualTo(401);
+    }
+
+    @Test
+    @DisplayName("Deve permitir Swagger UI e OpenAPI docs quando explicitamente configurado como público")
+    void devePermitirSwaggerQuandoExplicitamenteConfiguradoComoPublico() throws ServletException, IOException {
+        ApiKeyAuthFilter filter = new ApiKeyAuthFilter(API_KEY_SECRETA, true);
+
+        MockHttpServletRequest requestSwagger = new MockHttpServletRequest("GET", "/swagger-ui/index.html");
+        MockHttpServletResponse responseSwagger = new MockHttpServletResponse();
+        FilterChain filterChain = mock(FilterChain.class);
+
+        filter.doFilter(requestSwagger, responseSwagger, filterChain);
+
+        verify(filterChain, times(1)).doFilter(requestSwagger, responseSwagger);
+        assertThat(responseSwagger.getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("Deve autenticar com sucesso via parâmetro de consulta api_key ou apiKey")
+    void deveAutenticarSwaggerViaQueryParamApiKey() throws ServletException, IOException {
+        ApiKeyAuthFilter filter = new ApiKeyAuthFilter(API_KEY_SECRETA, false);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/swagger-ui/index.html");
+        request.setParameter("api_key", API_KEY_SECRETA);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain filterChain = mock(FilterChain.class);
+
+        filter.doFilter(request, response, filterChain);
+
+        verify(filterChain, times(1)).doFilter(request, response);
+        assertThat(response.getStatus()).isEqualTo(200);
+    }
 }
 
