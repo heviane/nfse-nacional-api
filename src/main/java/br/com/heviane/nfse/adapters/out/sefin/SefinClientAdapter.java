@@ -36,6 +36,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
     private final Duration timeout;
     private final String baseUrlOverride;
     private final SefinRetryConfig retryConfig;
+    private final Map<String, HttpClient> httpClientCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     public SefinClientAdapter(AssinadorDpsPort assinadorPort, ObjectMapper objectMapper) {
         this(assinadorPort, new br.com.heviane.nfse.core.services.ValidadorSchemaService(), objectMapper, Duration.ofSeconds(30), null, SefinRetryConfig.padrao());
@@ -83,9 +84,8 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             String baseUrl = (baseUrlOverride != null) ? baseUrlOverride : requisicao.ambiente().getBaseUrl();
             String url = baseUrl.replaceAll("/+$", "") + "/nfse";
 
-            // 3. Inicializar SSLContext mTLS em memória
-            SSLContext sslContext = SefinSSLContextFactory.criarSslContext(certificado);
-            HttpClient client = criarHttpClient(sslContext);
+            // 3. Obter HttpClient mTLS em cache por certificado
+            HttpClient client = obterOuCriarHttpClient(certificado);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -115,8 +115,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             String baseUrl = (baseUrlOverride != null) ? baseUrlOverride : amb.getBaseUrl();
             String url = baseUrl.replaceAll("/+$", "") + "/nfse/" + chaveAcesso;
 
-            SSLContext sslContext = SefinSSLContextFactory.criarSslContext(certificado);
-            HttpClient client = criarHttpClient(sslContext);
+            HttpClient client = obterOuCriarHttpClient(certificado);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -145,8 +144,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             String baseUrl = (baseUrlOverride != null) ? baseUrlOverride : amb.getBaseUrl();
             String url = baseUrl.replaceAll("/+$", "") + "/dps/" + idDps.trim();
 
-            SSLContext sslContext = SefinSSLContextFactory.criarSslContext(certificado);
-            HttpClient client = criarHttpClient(sslContext);
+            HttpClient client = obterOuCriarHttpClient(certificado);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -188,8 +186,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             String baseUrl = (baseUrlOverride != null) ? baseUrlOverride : requisicao.ambiente().getBaseUrl();
             String url = baseUrl.replaceAll("/+$", "") + "/eventos";
 
-            SSLContext sslContext = SefinSSLContextFactory.criarSslContext(certificado);
-            HttpClient client = criarHttpClient(sslContext);
+            HttpClient client = obterOuCriarHttpClient(certificado);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -332,6 +329,17 @@ public class SefinClientAdapter implements TransmissorSefinPort {
                 null,
                 body
         );
+    }
+
+    private HttpClient obterOuCriarHttpClient(CertificadoA1 certificado) {
+        return httpClientCache.computeIfAbsent(certificado.getHashConteudo(), hash -> {
+            SSLContext sslContext = SefinSSLContextFactory.obterOuCriarSslContext(certificado);
+            return criarHttpClient(sslContext);
+        });
+    }
+
+    public void limparHttpClientCache() {
+        httpClientCache.clear();
     }
 
     private HttpClient criarHttpClient(SSLContext sslContext) {

@@ -167,6 +167,10 @@ public class AssinadorDpsService implements AssinadorDpsPort {
         return serializeDocument(doc);
     }
 
+    /**
+     * Valida matematicamente a assinatura e os digests do XML contra a chave pública presente no próprio KeyInfo.
+     * Não valida a cadeia de certificação ICP-Brasil nem o status de revogação (LCR/OCSP).
+     */
     @Override
     public boolean validarAssinatura(String xmlAssinado) {
         if (xmlAssinado == null || xmlAssinado.isBlank()) {

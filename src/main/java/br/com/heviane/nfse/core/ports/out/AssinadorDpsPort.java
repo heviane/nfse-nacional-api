@@ -30,6 +30,11 @@ public interface AssinadorDpsPort {
 
     /**
      * Valida matematicamente a assinatura digital contida em um XML de DPS assinado.
+     * <p>
+     * <b>Atenção:</b> Este método valida exclusivamente a integridade matemática da assinatura e dos
+     * digests criptográficos contra a chave pública contida no bloco {@code <KeyInfo>} do próprio XML.
+     * Ele <b>não</b> valida a cadeia de certificação ICP-Brasil (PKIX/Trust anchors), temporalidade nem
+     * o status de revogação do certificado emissor (LCR/OCSP).
      *
      * @param xmlDpsAssinado Conteúdo XML da DPS contendo o elemento Signature
      * @return true se a assinatura for matematicamente válida contra a chave pública contida no KeyInfo

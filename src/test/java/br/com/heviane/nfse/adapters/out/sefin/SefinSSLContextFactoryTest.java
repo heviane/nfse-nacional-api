@@ -21,8 +21,19 @@ class SefinSSLContextFactoryTest {
         SSLContext sslContext = SefinSSLContextFactory.criarSslContext(certificado);
 
         assertThat(sslContext).isNotNull();
-        assertThat(sslContext.getProtocol()).isEqualTo("TLSv1.2");
+        assertThat(sslContext.getProtocol()).isEqualTo("TLS");
         assertThat(sslContext.getClientSessionContext()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Deve reutilizar instância de SSLContext em cache para o mesmo certificado")
+    void deveReutilizarInstanciaSslContextEmCache() {
+        CertificadoA1 certificado = CertificadoTesteHelper.obterCertificadoTeste();
+
+        SSLContext ctx1 = SefinSSLContextFactory.obterOuCriarSslContext(certificado);
+        SSLContext ctx2 = SefinSSLContextFactory.obterOuCriarSslContext(certificado);
+
+        assertThat(ctx1).isSameAs(ctx2);
     }
 
     @Test

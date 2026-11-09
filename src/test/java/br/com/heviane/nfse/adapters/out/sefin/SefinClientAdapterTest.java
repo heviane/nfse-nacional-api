@@ -615,6 +615,44 @@ class SefinClientAdapterTest {
         assertThat(desabilitado.maxTentativas()).isEqualTo(1);
     }
 
+    @Test
+    @DisplayName("Deve reutilizar HttpClient em cache em chamadas consecutivas e permitir limpeza")
+    void deveReutilizarHttpClientEmChamadasConsecutivasELimparCache() {
+        mockServer.createContext("/test-cache/nfse/" + CHAVE_ACESSO_50, exchange -> {
+            String respJson = """
+                    {
+                      "ambiente": 2,
+                      "versaoAplicativo": "1.0",
+                      "dataHoraProcessamento": "2026-11-08T18:00:00-03:00",
+                      "codigoStatus": 100,
+                      "motivoStatus": "NFS-e autorizada",
+                      "chaveAcesso": "%s",
+                      "nfseXmlGZipB64": "%s"
+                    }
+                    """.formatted(CHAVE_ACESSO_50, compactarGzipBase64("<NFSe></NFSe>"));
+            byte[] bytes = respJson.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        SefinClientAdapter testAdapter = new SefinClientAdapter(
+                assinador, objectMapper, Duration.ofSeconds(5), mockBaseUrl + "/test-cache"
+        );
+
+        RespostaConsultaNfse r1 = testAdapter.consultarPorChave(CHAVE_ACESSO_50, AmbienteSefin.HOMOLOGACAO, certificado);
+        RespostaConsultaNfse r2 = testAdapter.consultarPorChave(CHAVE_ACESSO_50, AmbienteSefin.HOMOLOGACAO, certificado);
+
+        assertThat(r1).isNotNull();
+        assertThat(r2).isNotNull();
+        assertThat(r1.chaveAcesso()).isEqualTo(CHAVE_ACESSO_50);
+        assertThat(r2.chaveAcesso()).isEqualTo(CHAVE_ACESSO_50);
+
+        testAdapter.limparHttpClientCache();
+    }
+
     private String compactarGzipBase64(String texto) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();

@@ -20,15 +20,25 @@ public class NfseProperties {
      */
     private CertificadoProperties cert = new CertificadoProperties();
 
+    /**
+     * Configurações de TrustStore dedicado para validação da cadeia de confiança ICP-Brasil/gov.br.
+     */
+    private TruststoreProperties truststore = new TruststoreProperties();
+
     public NfseProperties() {}
 
     public NfseProperties(AmbienteSefin environment) {
-        this(environment, new CertificadoProperties());
+        this(environment, new CertificadoProperties(), new TruststoreProperties());
     }
 
     public NfseProperties(AmbienteSefin environment, CertificadoProperties cert) {
+        this(environment, cert, new TruststoreProperties());
+    }
+
+    public NfseProperties(AmbienteSefin environment, CertificadoProperties cert, TruststoreProperties truststore) {
         this.environment = (environment != null) ? environment : AmbienteSefin.HOMOLOGACAO;
         this.cert = (cert != null) ? cert : new CertificadoProperties();
+        this.truststore = (truststore != null) ? truststore : new TruststoreProperties();
     }
 
     public AmbienteSefin getEnvironment() {
@@ -45,6 +55,14 @@ public class NfseProperties {
 
     public void setCert(CertificadoProperties cert) {
         this.cert = (cert != null) ? cert : new CertificadoProperties();
+    }
+
+    public TruststoreProperties getTruststore() {
+        return truststore;
+    }
+
+    public void setTruststore(TruststoreProperties truststore) {
+        this.truststore = (truststore != null) ? truststore : new TruststoreProperties();
     }
 
     /**
@@ -102,6 +120,51 @@ public class NfseProperties {
 
         public void setPassword(String password) {
             this.password = (password != null) ? password : "";
+        }
+    }
+
+    /**
+     * Propriedades para configuração de TrustStore dedicado (ex: cadeias de certificados ICP-Brasil/gov.br).
+     */
+    public static class TruststoreProperties {
+        private String path;
+        private String password = "";
+        private String type = "JKS";
+
+        public TruststoreProperties() {}
+
+        public TruststoreProperties(String path, String password, String type) {
+            this.path = path;
+            this.password = (password != null) ? password : "";
+            this.type = (type != null && !type.isBlank()) ? type : "JKS";
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = (password != null) ? password : "";
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = (type != null && !type.isBlank()) ? type : "JKS";
+        }
+
+        public boolean isConfigurado() {
+            return path != null && !path.isBlank();
         }
     }
 }
