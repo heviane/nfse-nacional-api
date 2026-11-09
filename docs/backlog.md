@@ -3,7 +3,7 @@
 > **Docs-as-Code — Planejamento Ágil, Especificações & Roadmap**
 > Repositório: [`heviane/nfse-nacional-api`](https://github.com/heviane/nfse-nacional-api)
 > Quadro de Acompanhamento: [AI Engineering Hub — Portfolio & Roadmap (Project 14)](https://github.com/users/heviane/projects/14)
-> Versão Atual: `v0.1.0-alpha` (Incepção & Fase Zero Concluída)
+> Versão Atual: `v0.1.0` (MVP do Core Fiscal, Transmissão Sefin & Camada Anticorrupção Concluídos)
 
 ---
 
@@ -88,14 +88,14 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ---
 
-### Épico 6: Exposição da API REST, Camada Anticorrupção & Deploy BrasilCloud — 🟡 Em Andamento
+### Épico 6: Exposição da API REST, Camada Anticorrupção & Deploy BrasilCloud — 🟢 100% Concluído
 
 | Status |    ID    | Prioridade | Item                                                | Descrição / Critérios de Aceite                                                                                                                                                                              |
 | :----: | :------: | :--------: | :-------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 |   🟢   | `API-01` |    `P1`    | **Endpoints REST para o ERP**                       | Criar rotas padronizadas (`POST /api/v1/dps/emitir`, `GET /api/v1/nfse/{chave}`, `POST /api/v1/nfse/cancelar`) com DTOs limpos.                                                                              |
 |   🟢   | `API-02` |    `P2`    | **Documentação Interativa (Swagger/OpenAPI)**       | Configurar interface Swagger UI e OpenAPI 3 para testes e integração rápida de novos clientes.                                                                                                               |
 |   🟢   | `API-03` |    `P1`    | **Build e Empacotamento para Tomcat (BrasilCloud)** | Configurar geração de artefato WAR otimizado para deploy no Apache Tomcat 10+ na BrasilCloud.                                                                                                                |
-|   🟡   | `API-04` |    `P0`    | **Camada Anticorrupção (ACL GeneXus 18)**           | Emulação exata do WSDL/namespaces SIL Tecnologia (`http://www.siltecnologia.com.br/`), retorno estruturado de SDT GeneXus e parser tolerante a CDATA/entidades XML (`&lt;`, `&gt;`). Aguardando refinamento. |
+|   🟢   | `API-04` |    `P0`    | **Camada Anticorrupção (ACL GeneXus 18)**           | Emulação exata do WSDL/namespaces SIL Tecnologia (`http://www.siltecnologia.com.br/`), retorno estruturado de SDT GeneXus e parser tolerante a CDATA/entidades XML (`&lt;`, `&gt;`). Implementado e coberto por testes. |
 |   🟢   | `API-05` |    `P1`    | **Observabilidade & Correlation-ID (MDC)**          | Implementar filtro HTTP para injetar `X-Correlation-ID` no MDC do SLF4J e no cabeçalho de resposta, rastreando cada requisição nos logs do Tomcat.                                                           |
 
 ---

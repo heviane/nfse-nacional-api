@@ -52,6 +52,7 @@ Esta especificação define os contratos de transporte, modelos de dados, tratam
 | **RF-04** | **Tratamento de Rejeições e Falhas Fiscais** | `P0` | **Dado** retorno do Sefin com código de erro ou status != 100,<br>**Quando** analisar a resposta,<br>**Então** deve lançar `SefinTransmissaoException` contendo o código de status e descrição detalhada da inconsistência. |
 | **RF-05** | **Consulta por Chave de Acesso (50 dígitos)** | `P1` | **Dado** uma chave de acesso válida de 50 dígitos,<br>**Quando** consultar via `GET /nfse/{chaveAcesso}`,<br>**Então** deve retornar a situação da nota e o XML da NFS-e autorizada. |
 | **RF-06** | **Tratamento de Resiliência, Timeouts e Idempotência** | `P1` | **Dado** timeout de rede (HTTP 504) ou retorno de duplicidade (Status 204),<br>**Quando** a transmissão falhar,<br>**Então** deve reconciliar consultando `GET /dps/{id}` e resgatar a chave e o XML autorizado da nota sem duplicar emissões. |
+| **RF-07** | **Registro de Evento de Cancelamento (Evento 101101)** | `P1` | **Dado** uma solicitação de cancelamento com chave de acesso de 50 dígitos, CNPJ do autor e motivo válidos,<br>**Quando** despachado via `POST /eventos` no ambiente configurado,<br>**Então** deve gerar o pedido `pedRegEvento` assinado digitalmente, compactar em GZIP Base64 e retornar o status do evento processado. |
 
 ---
 
@@ -119,4 +120,5 @@ public interface TransmissorSefinPort {
 - [x] **Teste 4 (Erro HTTP 400/500):** Simular falha de rede ou HTTP 500 do Sefin, garantindo tratamento seguro sem quebra da JVM.
 - [x] **Teste 5 (Consulta por Chave):** Simular chamada `GET /nfse/{chaveAcesso}` e verificar parse da resposta com descompactação da nota autorizada.
 - [x] **Teste 6 (Reconciliação e Idempotência via GET /dps/{id}):** Simular timeout de rede (HTTP 504) ou status 204 e validar recuperação da NFS-e autorizada sem duplicidade.
+- [x] **Teste 7 (Cancelamento de NFS-e - Evento 101101):** Simular envio de evento de cancelamento assinado ao endpoint `POST /eventos` do Sefin Nacional, validando assinatura do `pedRegEvento`, compactação GZIP Base64 e tratamento da resposta.
 

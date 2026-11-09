@@ -68,7 +68,7 @@ A aplicação atua como um middleware desacoplado com dois propósitos fundament
 * **Método `GET` (com parâmetro `?WSDL`):** Retorna a definição WSDL XML que permite ao GeneXus 18 reconhecer o serviço como o antigo WebService municipal da SIL Tecnologia.
 * **Método `POST` (Envelope SOAP):**
   - Recebe o envelope SOAP contendo a declaração de serviço.
-  - Extrai o XML contido na tag SOAP do payload (`<EnviarLoteRpsEnvio>`, `<GerarNfseEnvio>` ou `<DPS>`).
+  - Extrai a `<DPS>` contida no nó XML do payload (`<GerarNfseEnvio>` ou `<DPS>` direta, com suporte a texto claro, entidades escapadas `&lt;DPS...&gt;` ou CDATA). Operações de lote RPS legado (`<EnviarLoteRpsEnvio>`) não são aplicáveis ao fluxo síncrono da NFS-e Nacional.
   - Aciona o Core Fiscal (`EmitirDpsUseCase`) para validar, assinar e transmitir.
   - Empacota o retorno (chave de 50 dígitos e protocolo) em um envelope SOAP de resposta idêntico ao formato esperado pelo GeneXus.
 

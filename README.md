@@ -3,7 +3,7 @@
 > **API REST para integração direta com o Ambiente Nacional da NFS-e (Sefin Nacional / ADN): emissão, consulta e cancelamento de DPS com assinatura A1 e mTLS.**
 
 [![Java](https://img.shields.io/badge/Java-17%2B-orange?style=flat-square&logo=openjdk)](https://openjdk.org/)
-[![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento%20(v0.1.0--alpha)-blue?style=flat-square)](#)
+[![Status](https://img.shields.io/badge/Status-MVP%20Conclu%C3%ADdo%20(v0.1.0)-success?style=flat-square)](#)
 [![Arquitetura](https://img.shields.io/badge/Arquitetura-Spec--Driven%20(SDD)-purple?style=flat-square)](#)
 [![Licença](https://img.shields.io/badge/Licen%C3%A7a-MIT-green?style=flat-square)](./LICENSE)
 
@@ -41,10 +41,10 @@ flowchart LR
 
 ## 🚀 Funcionalidades do MVP
 
-- [ ] **Emissão de DPS:** Envio síncrono e assíncrono de DPS gerando a NFS-e oficial.
-- [ ] **Consulta de Notas & Lotes:** Consulta do status de processamento e recuperação do XML/DANFSE.
-- [ ] **Eventos da Nota:** Registro de cancelamento e substituição de NFS-e.
-- [ ] **Gerenciamento de Certificado A1:** Carga e leitura segura de certificados em memória sem persistência desprotegida.
+- [x] **Emissão de DPS:** Envio síncrono e assíncrono de DPS gerando a NFS-e oficial.
+- [x] **Consulta de Notas & Lotes:** Consulta do status de processamento e recuperação do XML/DANFSE.
+- [x] **Eventos da Nota:** Registro de cancelamento e substituição de NFS-e.
+- [x] **Gerenciamento de Certificado A1:** Carga e leitura segura de certificados em memória sem persistência desprotegida.
 
 ---
 
@@ -62,8 +62,8 @@ flowchart LR
 Toda a evolução do projeto é gerida via **Docs-as-Code**:
 
 * **[Backlog do Projeto](./docs/backlog.md):** Épicos, fatias verticais e status das tarefas.
-* **[Especificações Técnicas (`docs/specs/`)](./docs/templates/SPEC.md):** Regras de negócio e contratos de cada fatia antes da codificação.
-* **[Decisões Arquiteturais (`docs/adrs/`)](./docs/templates/ADR.md):** Registros formais de decisões técnicas (ADRs).
+* **[Especificações Técnicas (`docs/specs/`)](./docs/specs/):** Regras de negócio e contratos de cada fatia antes da codificação.
+* **[Decisões Arquiteturais (`docs/adrs/`)](./docs/adrs/):** Registros formais de decisões técnicas (ADRs).
 * **[Diretrizes de IA (`AGENTS.md`)](./AGENTS.md):** Regras e restrições operacionais para agentes de pair programming.
 
 ---

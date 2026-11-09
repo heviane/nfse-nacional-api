@@ -71,7 +71,7 @@ flowchart TD
    - Mapeador de tradução (_De/Para_) que converte o payload antigo para a entidade de domínio `Dps`.
    - Conversor de resposta que devolve o XML no layout SOAP antigo esperado pelo ERP.
 6. **`adapters.in.rest`:** Controladores REST (`@RestController`) para atendimento de novos clientes via JSON (Fase posterior).
-7. **`adapters.out.crypto`:** Implementação da porta de assinatura via JCA nativo.
+7. **`adapters.out.signer`:** Implementação da porta de assinatura via JCA nativo e W3C XML Signature.
 8. **`adapters.out.sefin`:** Implementação da transmissão via cliente HTTP seguro com mTLS.
 
 ---

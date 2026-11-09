@@ -72,7 +72,7 @@ npm run lint    # ou: dotnet format --verify-no-changes
 ## 📑 Documentação e Especificações
 
 * [Especificação Funcional e Técnica (SDD)](./docs/specs/)
-* [Decisões de Arquitetura (ADRs)](./docs/adr/)
+* [Decisões de Arquitetura (ADRs)](./docs/adrs/)
 * [Instruções para Agentes de IA](./AGENTS.md)
 
 ---
