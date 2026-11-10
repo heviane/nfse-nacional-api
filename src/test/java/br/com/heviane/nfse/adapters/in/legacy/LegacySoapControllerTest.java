@@ -342,7 +342,7 @@ class LegacySoapControllerTest {
                         .content(soapRequest))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;Sucesso&gt;false&lt;/Sucesso&gt;")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("SIL Tecnologia (&lt;Rps&gt; / &lt;GerarNfseEnvio&gt;)")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("SIL Tecnologia (&amp;lt;Rps&amp;gt; / &amp;lt;GerarNfseEnvio&amp;gt;)")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("mapeamento De/Para")));
     }
 
@@ -370,6 +370,88 @@ class LegacySoapControllerTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;CodigoStatus&gt;999&lt;/CodigoStatus&gt;")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Falha na assinatura digital da DPS")))
                 .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("keystore password was incorrect"))));
+    }
+
+    @Test
+    @DisplayName("Deve retornar envelope SOAP com escape duplo em XmlNfse preservando caracteres especiais para desserialização GeneXus")
+    void deveRetornarEnvelopeSoapComEscapeDuploPreservandoCaracteresEspeciaisParaDesserializacaoGeneXus() throws Exception {
+        String chave = "32052002601000000000019100001000000000000001123456";
+        String xmlNfse = "<NFSe versao=\"1.00\"><infNFSe Id=\"NFS" + chave + "\"><xNome>Restaurante Bom &amp; Barato</xNome></infNFSe></NFSe>";
+        String gzipB64 = compactarGZipBase64(xmlNfse);
+
+        RespostaEmissaoSefin respostaSefin = new RespostaEmissaoSefin(
+                2,
+                "Sefin_v1.0",
+                "2026-11-02T16:00:00-03:00",
+                100,
+                "NFS-e gerada com sucesso",
+                chave,
+                gzipB64
+        );
+
+        when(certificadoProvider.obterCertificado(any(), any())).thenReturn(certificadoA1);
+        when(emitirDpsUseCase.emitir(any(), eq(AmbienteSefin.HOMOLOGACAO), any(CertificadoA1.class)))
+                .thenReturn(respostaSefin);
+
+        String soapRequest = """
+                <?xml version="1.0" encoding="utf-8"?>
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sil="http://www.siltecnologia.com.br/">
+                  <soapenv:Header/>
+                  <soapenv:Body>
+                    <sil:GerarNfse>
+                      <sil:xmlEnvio>
+                        <DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+                          <infDPS Id="DPS320520020000000000019100001000000000000001"></infDPS>
+                        </DPS>
+                      </sil:xmlEnvio>
+                    </sil:GerarNfse>
+                  </soapenv:Body>
+                </soapenv:Envelope>
+                """.stripIndent();
+
+        String rawResponse = mockMvc.perform(post("/prefeitura/notafiscal/nfse.asmx")
+                        .contentType(MediaType.TEXT_XML)
+                        .content(soapRequest))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("GerarNfseResponse")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;Sucesso&gt;true&lt;/Sucesso&gt;")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;XmlNfse&gt;&amp;lt;NFSe")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Bom &amp;amp;amp; Barato")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        // Simulação do leitor GeneXus (.NET / ASMX client):
+        // Etapa 1: Leitura do nó <GerarNfseResult> e desescape da camada SOAP (1 nível de unescape)
+        int inicioResult = rawResponse.indexOf("<GerarNfseResult>") + "<GerarNfseResult>".length();
+        int fimResult = rawResponse.indexOf("</GerarNfseResult>");
+        String gerarNfseResult = rawResponse.substring(inicioResult, fimResult).trim();
+        String retornoEmissaoXml = gerarNfseResult.replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"")
+                .replace("&apos;", "'")
+                .replace("&amp;", "&");
+
+        assertThat(retornoEmissaoXml)
+                .startsWith("<RetornoEmissao>")
+                .endsWith("</RetornoEmissao>")
+                .contains("<Sucesso>true</Sucesso>")
+                .contains("<CodigoStatus>100</CodigoStatus>")
+                .contains("<ChaveAcesso>" + chave + "</ChaveAcesso>");
+
+        // Etapa 2: No SDT RetornoEmissao do GeneXus, XmlNfse é uma string que contém o XML da NFS-e escapado
+        int inicioXml = retornoEmissaoXml.indexOf("<XmlNfse>") + "<XmlNfse>".length();
+        int fimXml = retornoEmissaoXml.indexOf("</XmlNfse>");
+        String xmlNfseExtraido = retornoEmissaoXml.substring(inicioXml, fimXml);
+
+        // Ao ler o nó de texto, o parser XML do GeneXus desescapa o valor para preencher a propriedade string &RetornoEmissao.XmlNfse
+        String xmlNfseFinal = xmlNfseExtraido.replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"")
+                .replace("&apos;", "'")
+                .replace("&amp;", "&");
+
+        assertThat(xmlNfseFinal).isEqualTo(xmlNfse);
     }
 }
 

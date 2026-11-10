@@ -381,50 +381,51 @@ public class LegacySoapController {
     /**
      * Monta o envelope SOAP de resposta com o resultado serializado dentro de {@code <GerarNfseResult>}.
      * Como o contrato WSDL define {@code GerarNfseResult} como {@code xsd:string}, o corpo XML {@code <RetornoEmissao>}
-     * é codificado como string XML (entidades &lt; e &gt;). O conteúdo interno de {@code <XmlNfse>} é escapado uma
-     * única vez para que o parser do GeneXus obtenha a string XML da NFS-e íntegra após a desserialização do envelope.
+     * é codificado como string XML (entidades &lt; e &gt;). O XML da NFS-e é escapado dentro de {@code <XmlNfse>},
+     * resultando em escape duplo (&amp;lt;NFSe...&amp;gt;) no payload SOAP de transporte. Assim, quando o cliente SOAP
+     * do GeneXus desserializa o envelope, o campo {@code XmlNfse} é preenchido com a string XML original e íntegra.
      */
     private String montarRespostaSoapSucesso(boolean sucesso, int status, String motivo, String chaveAcesso, String xmlNfse) {
         String chave = chaveAcesso != null ? chaveAcesso : "";
-        String xmlEscape = xmlNfse != null ? xmlNfse.replace("<", "&lt;").replace(">", "&gt;") : "";
+        String xml = xmlNfse != null ? xmlNfse : "";
+
+        String interno = "<RetornoEmissao>"
+                + "<Sucesso>" + sucesso + "</Sucesso>"
+                + "<CodigoStatus>" + status + "</CodigoStatus>"
+                + "<MotivoStatus>" + escapeXml(motivo) + "</MotivoStatus>"
+                + "<ChaveAcesso>" + escapeXml(chave) + "</ChaveAcesso>"
+                + "<XmlNfse>" + escapeXml(xml) + "</XmlNfse>"
+                + "</RetornoEmissao>";
 
         return String.format("""
                 <?xml version="1.0" encoding="utf-8"?>
                 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
                   <soap:Body>
                     <GerarNfseResponse xmlns="http://www.siltecnologia.com.br/">
-                      <GerarNfseResult>
-                        &lt;RetornoEmissao&gt;
-                          &lt;Sucesso&gt;%s&lt;/Sucesso&gt;
-                          &lt;CodigoStatus&gt;%d&lt;/CodigoStatus&gt;
-                          &lt;MotivoStatus&gt;%s&lt;/MotivoStatus&gt;
-                          &lt;ChaveAcesso&gt;%s&lt;/ChaveAcesso&gt;
-                          &lt;XmlNfse&gt;%s&lt;/XmlNfse&gt;
-                        &lt;/RetornoEmissao&gt;
-                      </GerarNfseResult>
+                      <GerarNfseResult>%s</GerarNfseResult>
                     </GerarNfseResponse>
                   </soap:Body>
                 </soap:Envelope>
-                """, sucesso, status, escapeXml(motivo), chave, xmlEscape);
+                """, escapeXml(interno));
     }
 
     private String montarRespostaSoapErro(String mensagem) {
+        String interno = "<RetornoEmissao>"
+                + "<Sucesso>false</Sucesso>"
+                + "<CodigoStatus>999</CodigoStatus>"
+                + "<MotivoStatus>" + escapeXml(mensagem) + "</MotivoStatus>"
+                + "</RetornoEmissao>";
+
         return String.format("""
                 <?xml version="1.0" encoding="utf-8"?>
                 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
                   <soap:Body>
                     <GerarNfseResponse xmlns="http://www.siltecnologia.com.br/">
-                      <GerarNfseResult>
-                        &lt;RetornoEmissao&gt;
-                          &lt;Sucesso&gt;false&lt;/Sucesso&gt;
-                          &lt;CodigoStatus&gt;999&lt;/CodigoStatus&gt;
-                          &lt;MotivoStatus&gt;%s&lt;/MotivoStatus&gt;
-                        &lt;/RetornoEmissao&gt;
-                      </GerarNfseResult>
+                      <GerarNfseResult>%s</GerarNfseResult>
                     </GerarNfseResponse>
                   </soap:Body>
                 </soap:Envelope>
-                """, escapeXml(mensagem));
+                """, escapeXml(interno));
     }
 
     private String escapeXml(String texto) {
