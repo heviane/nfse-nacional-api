@@ -89,12 +89,12 @@ Envie a requisição contendo o XML da DPS a ser validada, assinada e transmitid
 ```bash
 curl -X POST http://localhost:8080/api/v1/dps \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: sua-chave-api-se-configurada" \
   -d '{
     "xmlDps": "<DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" versao=\"1.00\"><infDPS Id=\"DPS32052002601000000000019100001000000000000001\"><tpAmb>2</tpAmb><dhEmi>2026-11-09T12:00:00-03:00</dhEmi><verAplic>NfseApi_v1.0</verAplic><dCompet>2026-11-09</dCompet><prest><CNPJ>00000000000191</CNPJ><regTrib><opSimpNac>1</opSimpNac><regApTribSN>1</regApTribSN></regTrib></prest><toma><CNPJ>00000000000191</CNPJ><xNome>TOMADOR DE TESTE HOMOLOGACAO</xNome><ender><endNac><cMun>3205200</cMun><CEP>29100000</CEP></endNac><xLgr>RUA DE TESTE</xLgr><nro>100</nro><xBairro>CENTRO</xBairro></ender></toma><serv><locPrest><cLocPrestacao>3205200</cLocPrestacao></locPrest><cServ><cTribNac>010701</cTribNac><xDescServ>SERVICO DE DESENVOLVIMENTO DE SOFTWARE HOMOLOGACAO</xDescServ></cServ><valores><vServPrest><vServ>10.00</vServ></vServPrest><trib><tribMun><tribISSQN>1</tribISSQN><cLocIncid>3205200</cLocIncid><vBC>10.00</vBC><pAliq>2.00</pAliq><vISSQN>0.20</vISSQN><tpRetISSQN>1</tpRetISSQN></tribMun><tribFed><piscofins><tpRetPisCofins>2</tpRetPisCofins></piscofins></tribFed></trib></valores></serv></infDPS></DPS>",
     "ambiente": "HOMOLOGACAO"
   }'
 ```
+> *(Nota de Autenticação: Caso a proteção por API Key esteja ativada no middleware, adicione o cabeçalho correspondente na chamada, por exemplo `-H "X-API-Key: $NFSE_API_KEY"`).*
 
 #### Opção B: Via Emulador SOAP GeneXus (`POST /prefeitura/notafiscal/nfse.asmx`)
 Dispare a emissão pelo próprio ERP GeneXus ou via `curl` simulando o envelope SOAP legado:
@@ -125,8 +125,7 @@ curl -X POST http://localhost:8080/prefeitura/notafiscal/nfse.asmx \
 ### Passo 5: Consulta da NFS-e Emitida pela Chave de Acesso
 Valide se a NFS-e autorizada pode ser consultada e recuperada do repositório nacional do Sefin:
 ```bash
-curl -X GET "http://localhost:8080/api/v1/nfse/32052002601000000000019100001000000000000001123456?ambiente=HOMOLOGACAO" \
-  -H "X-API-Key: sua-chave-api-se-configurada"
+curl -X GET "http://localhost:8080/api/v1/nfse/32052002601000000000019100001000000000000001123456?ambiente=HOMOLOGACAO"
 ```
 **Resposta esperada:**
 - `localizada`: `true`
@@ -138,7 +137,6 @@ Dispare o evento de cancelamento da NFS-e autorizada no teste anterior:
 ```bash
 curl -X POST "http://localhost:8080/api/v1/nfse/32052002601000000000019100001000000000000001123456/cancelar" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: sua-chave-api-se-configurada" \
   -d '{
     "codigoMotivo": "1",
     "motivo": "Cancelamento de teste operacional no ambiente de homologacao",

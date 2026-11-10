@@ -1,0 +1,8 @@
+# Gitleaks ignore file - Falsos positivos conhecidos em documentacao historica
+# commit-sha:file-path:rule-id:line-number
+83ee2a975810ab944bc6f99075efe64d9d15a9b3:docs/dev/roteiro-homologacao-sefin-nacional.md:curl-auth-header:90
+83ee2a975810ab944bc6f99075efe64d9d15a9b3:docs/dev/roteiro-homologacao-sefin-nacional.md:curl-auth-header:92
+83ee2a975810ab944bc6f99075efe64d9d15a9b3:docs/dev/roteiro-homologacao-sefin-nacional.md:curl-auth-header:128
+83ee2a975810ab944bc6f99075efe64d9d15a9b3:docs/dev/roteiro-homologacao-sefin-nacional.md:curl-auth-header:129
+83ee2a975810ab944bc6f99075efe64d9d15a9b3:docs/dev/roteiro-homologacao-sefin-nacional.md:curl-auth-header:139
+83ee2a975810ab944bc6f99075efe64d9d15a9b3:docs/dev/roteiro-homologacao-sefin-nacional.md:curl-auth-header:141
