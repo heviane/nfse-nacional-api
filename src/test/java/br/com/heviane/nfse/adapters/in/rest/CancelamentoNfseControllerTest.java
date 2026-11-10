@@ -140,7 +140,50 @@ class CancelamentoNfseControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusHttp").value(400))
-                .andExpect(jsonPath("$.mensagem").value("Justificativa de cancelamento deve conter no mínimo 15 caracteres."));
+                .andExpect(jsonPath("$.mensagem").value("Justificativa de cancelamento deve conter entre 15 e 255 caracteres."));
+    }
+
+    @Test
+    @DisplayName("Deve retornar HTTP 400 quando o código do motivo de cancelamento for inválido")
+    void deveRetornarBadRequestQuandoCodigoMotivoInvalido() throws Exception {
+        when(certificadoProvider.obterCertificado(any(), any())).thenReturn(certificadoA1);
+
+        CancelamentoNfseRequest request = new CancelamentoNfseRequest(
+                "32052002601000000000019100001000000000000001123456",
+                "00000000000191",
+                "3",
+                "Cancelamento solicitado por motivo nao permitido no schema",
+                AmbienteSefin.HOMOLOGACAO
+        );
+
+        mockMvc.perform(post("/api/v1/nfse/cancelar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusHttp").value(400))
+                .andExpect(jsonPath("$.mensagem").value("Código do motivo de cancelamento deve ser 1 (Erro na Emissão), 2 (Serviço não Prestado) ou 9 (Outros)."));
+    }
+
+    @Test
+    @DisplayName("Deve retornar HTTP 400 quando a justificativa tiver mais de 255 caracteres")
+    void deveRetornarBadRequestQuandoJustificativaExceder255Caracteres() throws Exception {
+        when(certificadoProvider.obterCertificado(any(), any())).thenReturn(certificadoA1);
+
+        String motivoLongo = "A".repeat(256);
+        CancelamentoNfseRequest request = new CancelamentoNfseRequest(
+                "32052002601000000000019100001000000000000001123456",
+                "00000000000191",
+                "1",
+                motivoLongo,
+                AmbienteSefin.HOMOLOGACAO
+        );
+
+        mockMvc.perform(post("/api/v1/nfse/cancelar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusHttp").value(400))
+                .andExpect(jsonPath("$.mensagem").value("Justificativa de cancelamento deve conter entre 15 e 255 caracteres."));
     }
 
     @Test

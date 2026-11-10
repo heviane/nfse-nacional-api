@@ -17,11 +17,11 @@ public record RequisicaoCancelamentoDps(
         if (cnpjAutor == null || !cnpjAutor.matches("\\d{14}")) {
             throw new IllegalArgumentException("CNPJ do autor deve conter 14 dígitos numéricos.");
         }
-        if (codigoMotivo == null || codigoMotivo.isBlank()) {
-            throw new IllegalArgumentException("Código do motivo de cancelamento é obrigatório.");
+        if (codigoMotivo == null || !codigoMotivo.matches("^[129]$")) {
+            throw new IllegalArgumentException("Código do motivo de cancelamento deve ser 1 (Erro na Emissão), 2 (Serviço não Prestado) ou 9 (Outros).");
         }
-        if (motivo == null || motivo.trim().length() < 15) {
-            throw new IllegalArgumentException("Justificativa de cancelamento deve conter no mínimo 15 caracteres.");
+        if (motivo == null || motivo.trim().length() < 15 || motivo.trim().length() > 255) {
+            throw new IllegalArgumentException("Justificativa de cancelamento deve conter entre 15 e 255 caracteres.");
         }
         if (ambiente == null) {
             ambiente = AmbienteSefin.HOMOLOGACAO;

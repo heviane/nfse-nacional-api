@@ -213,6 +213,8 @@ public class SefinClientAdapter implements TransmissorSefinPort {
         while (true) {
             try {
                 return acao.executar();
+            } catch (ValidacaoFiscalException | AssinaturaDigitalException | IllegalArgumentException e) {
+                throw e;
             } catch (SefinTransmissaoException e) {
                 if (isStatusRetentavel(e.getHttpStatusCode()) && tentativa < retryConfig.maxTentativas()) {
                     log.warn("[{}] Falha transitória HTTP {} na tentativa {}/{}. Retentando em {}ms... Motivo: {}",

@@ -323,7 +323,27 @@ class SefinClientAdapterTest {
                 "Curto",
                 AmbienteSefin.HOMOLOGACAO
         )).isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("no mínimo 15 caracteres");
+                .hasMessageContaining("entre 15 e 255 caracteres");
+
+        // Justificativa maior que 255 caracteres
+        assertThatThrownBy(() -> new RequisicaoCancelamentoDps(
+                CHAVE_ACESSO_50,
+                "00000000000191",
+                "1",
+                "A".repeat(256),
+                AmbienteSefin.HOMOLOGACAO
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("entre 15 e 255 caracteres");
+
+        // Código do motivo inválido (diferente de 1, 2 ou 9)
+        assertThatThrownBy(() -> new RequisicaoCancelamentoDps(
+                CHAVE_ACESSO_50,
+                "00000000000191",
+                "3",
+                "Justificativa válida com mais de 15 caracteres",
+                AmbienteSefin.HOMOLOGACAO
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Código do motivo de cancelamento deve ser 1 (Erro na Emissão), 2 (Serviço não Prestado) ou 9 (Outros).");
 
         // CNPJ com tamanho inválido
         assertThatThrownBy(() -> new RequisicaoCancelamentoDps(
@@ -334,6 +354,68 @@ class SefinClientAdapterTest {
                 AmbienteSefin.HOMOLOGACAO
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("14 dígitos");
+    }
+
+    @Test
+    @DisplayName("Deve propagar ValidacaoFiscalException sem envelopar em SefinTransmissaoException quando falhar schema XSD do evento")
+    void devePropagarValidacaoFiscalExceptionSemEnveloparEmSefinTransmissaoException() {
+        ValidadorSchemaPort validadorMock = org.mockito.Mockito.mock(ValidadorSchemaPort.class);
+        org.mockito.Mockito.doThrow(new ValidacaoFiscalException("Falha no schema pedRegEvento", java.util.List.of("cMotivo inválido")))
+                .when(validadorMock).validarPedRegEventoOuFalhar(any());
+
+        SefinClientAdapter adapterComValidadorMock = new SefinClientAdapter(
+                assinador,
+                validadorMock,
+                objectMapper,
+                Duration.ofSeconds(5),
+                mockBaseUrl,
+                SefinRetryConfig.semEspera(1)
+        );
+
+        RequisicaoCancelamentoDps req = new RequisicaoCancelamentoDps(
+                CHAVE_ACESSO_50,
+                "00000000000191",
+                "1",
+                "Cancelamento solicitado por erro de emissao",
+                AmbienteSefin.HOMOLOGACAO
+        );
+
+        assertThatThrownBy(() -> adapterComValidadorMock.cancelar(req, certificado))
+                .isInstanceOf(ValidacaoFiscalException.class)
+                .isNotInstanceOf(SefinTransmissaoException.class)
+                .hasMessageContaining("Falha no schema pedRegEvento");
+    }
+
+    @Test
+    @DisplayName("Deve propagar AssinaturaDigitalException sem envelopar em SefinTransmissaoException quando falhar assinatura do evento")
+    void devePropagarAssinaturaDigitalExceptionSemEnveloparEmSefinTransmissaoException() {
+        AssinadorDpsPort assinadorMock = org.mockito.Mockito.mock(AssinadorDpsPort.class);
+        org.mockito.Mockito.doThrow(new AssinaturaDigitalException("Falha na assinatura digital"))
+                .when(assinadorMock).assinar(any(), any(), any());
+
+        ValidadorSchemaPort validadorMock = org.mockito.Mockito.mock(ValidadorSchemaPort.class);
+
+        SefinClientAdapter adapterComAssinadorMock = new SefinClientAdapter(
+                assinadorMock,
+                validadorMock,
+                objectMapper,
+                Duration.ofSeconds(5),
+                mockBaseUrl,
+                SefinRetryConfig.semEspera(1)
+        );
+
+        RequisicaoCancelamentoDps req = new RequisicaoCancelamentoDps(
+                CHAVE_ACESSO_50,
+                "00000000000191",
+                "1",
+                "Cancelamento solicitado por erro de emissao",
+                AmbienteSefin.HOMOLOGACAO
+        );
+
+        assertThatThrownBy(() -> adapterComAssinadorMock.cancelar(req, certificado))
+                .isInstanceOf(AssinaturaDigitalException.class)
+                .isNotInstanceOf(SefinTransmissaoException.class)
+                .hasMessageContaining("Falha na assinatura digital");
     }
 
     @Test
