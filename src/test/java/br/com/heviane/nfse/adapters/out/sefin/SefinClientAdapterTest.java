@@ -2,6 +2,8 @@ package br.com.heviane.nfse.adapters.out.sefin;
 
 import br.com.heviane.nfse.adapters.out.signer.AssinadorDpsService;
 import br.com.heviane.nfse.core.domain.*;
+import br.com.heviane.nfse.core.ports.out.AssinadorDpsPort;
+import br.com.heviane.nfse.core.ports.out.ValidadorSchemaPort;
 import br.com.heviane.nfse.testutils.CertificadoTesteHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
@@ -21,6 +23,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 
 @DisplayName("Testes Unitários: Adaptador HTTP REST Sefin Nacional (COM-02 e COM-03)")
 class SefinClientAdapterTest {
