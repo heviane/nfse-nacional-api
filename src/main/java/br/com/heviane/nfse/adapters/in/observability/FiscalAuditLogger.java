@@ -1,6 +1,8 @@
 package br.com.heviane.nfse.adapters.in.observability;
 
 import br.com.heviane.nfse.adapters.in.rest.CorrelationIdFilter;
+import br.com.heviane.nfse.core.domain.DpsInfo;
+import br.com.heviane.nfse.core.domain.DpsXmlParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -93,11 +95,16 @@ public class FiscalAuditLogger {
     }
 
     /**
-     * Extrai o CNPJ do emitente contido no XML da DPS de forma leve via regex, sem parser DOM.
+     * Extrai o CNPJ do emitente contido no XML da DPS via parser DOM seguro com fallback regex.
      */
     public String extrairCnpjDps(String xmlDps) {
         if (!isNotBlank(xmlDps)) {
             return null;
+        }
+
+        DpsInfo info = DpsXmlParser.extrairInfo(xmlDps);
+        if (info != null && info.cnpjPrestador() != null && !info.cnpjPrestador().isBlank()) {
+            return info.cnpjPrestador();
         }
 
         Matcher matcher = CNPJ_XML_PATTERN.matcher(xmlDps);
@@ -114,11 +121,16 @@ public class FiscalAuditLogger {
     }
 
     /**
-     * Extrai o identificador da DPS (atributo Id de infDPS) de forma leve via regex.
+     * Extrai o identificador da DPS (atributo Id de infDPS) via parser DOM seguro com fallback regex.
      */
     public String extrairIdDps(String xmlDps) {
         if (!isNotBlank(xmlDps)) {
             return null;
+        }
+
+        DpsInfo info = DpsXmlParser.extrairInfo(xmlDps);
+        if (info != null && info.id() != null && !info.id().isBlank()) {
+            return info.id();
         }
 
         Matcher matcher = ID_DPS_PATTERN.matcher(xmlDps);

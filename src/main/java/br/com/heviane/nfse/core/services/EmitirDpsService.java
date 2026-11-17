@@ -59,19 +59,22 @@ public class EmitirDpsService implements EmitirDpsUseCase {
         }
         AmbienteSefin amb = ambiente;
 
-        // 1. Validação estrita de coerência do ambiente fiscal (<tpAmb>) - Princípio de Imutabilidade
-        validarTipoAmbiente(xmlDps, amb);
+        // 1. Extração estruturada de metadados da DPS via DOM Namespace-Aware
+        DpsInfo info = DpsXmlParser.extrairInfo(xmlDps);
 
-        // 2. Validação estrita de coerência do Id da DPS contra os campos declarados
-        validarCoerenciaIdDps(xmlDps);
+        // 2. Validação estrita de coerência do ambiente fiscal (<tpAmb>) - Princípio de Imutabilidade
+        validarTipoAmbiente(info, amb);
 
-        // 3. Validação estrita do schema XSD
+        // 3. Validação estrita de coerência do Id da DPS contra os campos declarados
+        validarCoerenciaIdDps(info);
+
+        // 4. Validação estrita do schema XSD
         validadorSchemaPort.validarDpsOuFalhar(xmlDps);
 
-        // 4. Assinatura digital ICP-Brasil A1 (RSA-SHA256)
+        // 5. Assinatura digital ICP-Brasil A1 (RSA-SHA256)
         String xmlDpsAssinado = assinadorDpsPort.assinar(xmlDps, certificado);
 
-        // 4. Transmissão com handshake mTLS e resiliência de reconciliação
+        // 6. Transmissão com handshake mTLS e resiliência de reconciliação
         RequisicaoEnvioDps requisicaoEnvio = new RequisicaoEnvioDps(xmlDpsAssinado, amb);
         RespostaEmissaoSefin resposta;
         try {
@@ -180,13 +183,9 @@ public class EmitirDpsService implements EmitirDpsUseCase {
     }
 
     private String extrairIdDps(String xmlDps) {
-        if (xmlDps == null) {
-            return null;
-        }
-        Pattern pattern = Pattern.compile("<infDPS[^>]*\\bId=\"([^\"]+)\"");
-        Matcher matcher = pattern.matcher(xmlDps);
-        if (matcher.find()) {
-            return matcher.group(1);
+        DpsInfo info = DpsXmlParser.extrairInfo(xmlDps);
+        if (info != null && info.id() != null && !info.id().isBlank()) {
+            return info.id();
         }
         return null;
     }
@@ -240,11 +239,9 @@ public class EmitirDpsService implements EmitirDpsUseCase {
         }
     }
 
-    private void validarTipoAmbiente(String xmlDps, AmbienteSefin amb) {
-        Pattern pattern = Pattern.compile("<tpAmb>(\\d+)</tpAmb>");
-        Matcher matcher = pattern.matcher(xmlDps);
-        if (matcher.find()) {
-            int tpAmbXml = Integer.parseInt(matcher.group(1));
+    private void validarTipoAmbiente(DpsInfo info, AmbienteSefin amb) {
+        if (info != null && info.tpAmb() != null) {
+            int tpAmbXml = info.tpAmb();
             if (tpAmbXml != amb.getCodigo()) {
                 throw new ValidacaoFiscalException(
                         String.format("Inconsistência de ambiente fiscal: O XML da DPS declara <tpAmb>%d</tpAmb>, mas o serviço está configurado para operar em %s (código %d). Corrija o campo <tpAmb> no ERP ou aponte a requisição para o ambiente correspondente.",
@@ -254,39 +251,19 @@ public class EmitirDpsService implements EmitirDpsUseCase {
         }
     }
 
-    private void validarCoerenciaIdDps(String xmlDps) {
-        Pattern patternId = Pattern.compile("<infDPS\\b[^>]*\\bId=[\"']([^\"']+)[\"']");
-        Matcher matcherId = patternId.matcher(xmlDps);
-        if (!matcherId.find()) {
+    private void validarCoerenciaIdDps(DpsInfo info) {
+        if (info == null || info.id() == null || info.id().isBlank()) {
             return;
         }
-        String idDeclarado = matcherId.group(1);
+        String idDeclarado = info.id();
 
-        Pattern patternCLocEmi = Pattern.compile("<cLocEmi>(\\d+)</cLocEmi>");
-        Pattern patternSerie = Pattern.compile("<serie>(\\d+)</serie>");
-        Pattern patternNDps = Pattern.compile("<nDPS>(\\d+)</nDPS>");
-        Pattern patternCnpjPrest = Pattern.compile("<prest>[\\s\\S]*?<CNPJ>(\\d+)</CNPJ>[\\s\\S]*?</prest>");
-        Pattern patternCpfPrest = Pattern.compile("<prest>[\\s\\S]*?<CPF>(\\d+)</CPF>[\\s\\S]*?</prest>");
+        String cLocEmi = info.cLocEmi();
+        String serie = info.serie();
+        String nDps = info.nDps();
+        String documento = info.getDocumentoPrestador();
+        String tipoInsc = info.getTipoInscPrestador();
 
-        Matcher matcherCLocEmi = patternCLocEmi.matcher(xmlDps);
-        Matcher matcherSerie = patternSerie.matcher(xmlDps);
-        Matcher matcherNDps = patternNDps.matcher(xmlDps);
-        Matcher matcherCnpj = patternCnpjPrest.matcher(xmlDps);
-        Matcher matcherCpf = patternCpfPrest.matcher(xmlDps);
-
-        boolean temCLocEmi = matcherCLocEmi.find();
-        boolean temSerie = matcherSerie.find();
-        boolean temNDps = matcherNDps.find();
-        boolean temCnpj = matcherCnpj.find();
-        boolean temCpf = matcherCpf.find();
-
-        if (temCLocEmi && temSerie && temNDps && (temCnpj || temCpf)) {
-            String cLocEmi = matcherCLocEmi.group(1);
-            String serie = matcherSerie.group(1);
-            String nDps = matcherNDps.group(1);
-            String tipoInsc = temCnpj ? DpsIdHelper.TIPO_INSC_CNPJ : DpsIdHelper.TIPO_INSC_CPF;
-            String documento = temCnpj ? matcherCnpj.group(1) : matcherCpf.group(1);
-
+        if (cLocEmi != null && serie != null && nDps != null && documento != null && tipoInsc != null) {
             try {
                 String idEsperado = DpsIdHelper.gerarId(cLocEmi, tipoInsc, documento, serie, nDps);
                 if (!idDeclarado.equals(idEsperado)) {

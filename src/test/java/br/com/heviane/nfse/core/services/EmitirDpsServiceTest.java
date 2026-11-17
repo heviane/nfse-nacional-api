@@ -358,4 +358,62 @@ class EmitirDpsServiceTest {
         assertThat(resultado.isSucesso()).isTrue();
         verify(assinadorDpsPort).assinar(eq(xmlDpsCoerente), eq(certificado));
     }
+
+    @Test
+    @DisplayName("Deve validar coerência do Id da DPS via parser DOM mesmo com prefixo de namespace e atributos")
+    void deveRejeitarEmissaoQuandoIdDpsDivergirMesmoComPrefixoNamespaceEAtributos() {
+        String xmlNamespace = """
+                <ns:DPS xmlns:ns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+                    <ns:infDPS Id="DPS353060710009999999999900001000000000000001" versao="1.0">
+                        <ns:tpAmb>2</ns:tpAmb>
+                        <ns:serie>00001</ns:serie>
+                        <ns:nDPS>1</ns:nDPS>
+                        <ns:cLocEmi>3530607</ns:cLocEmi>
+                        <ns:prest id="prestador-1">
+                            <ns:CNPJ>00000000000191</ns:CNPJ>
+                        </ns:prest>
+                    </ns:infDPS>
+                </ns:DPS>
+                """;
+
+        assertThatThrownBy(() -> service.emitir(xmlNamespace, AmbienteSefin.HOMOLOGACAO, certificado))
+                .isInstanceOf(ValidacaoFiscalException.class)
+                .hasMessageContaining("Inconsistência no atributo Id da DPS");
+
+        verify(assinadorDpsPort, never()).assinar(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("Deve isolar escopo de serie e nDPS no infDPS ignorando tags homônimas em subst")
+    void devePermitirEmissaoQuandoIdDpsForCoerenteMesmoComTagsHomonimasEmSubst() {
+        String xmlComSubst = """
+                <DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+                    <infDPS Id="DPS353060710000000000019100001000000000000001">
+                        <tpAmb>2</tpAmb>
+                        <serie>00001</serie>
+                        <nDPS>1</nDPS>
+                        <cLocEmi>3530607</cLocEmi>
+                        <prest>
+                            <CNPJ>00000000000191</CNPJ>
+                        </prest>
+                        <subst>
+                            <serie>99999</serie>
+                            <nDPS>888888</nDPS>
+                        </subst>
+                    </infDPS>
+                </DPS>
+                """;
+
+        RespostaEmissaoSefin respostaMock = new RespostaEmissaoSefin(
+                2, "Sefin_1.0", "2026-11-05T12:00:00-03:00",
+                100, "Autorizado", CHAVE_ACESSO_50, "GZIP"
+        );
+        when(assinadorDpsPort.assinar(eq(xmlComSubst), eq(certificado))).thenReturn(xmlComSubst + "<Signature/>");
+        when(transmissorSefinPort.emitirDps(any(RequisicaoEnvioDps.class), eq(certificado))).thenReturn(respostaMock);
+
+        RespostaEmissaoSefin resultado = service.emitir(xmlComSubst, AmbienteSefin.HOMOLOGACAO, certificado);
+
+        assertThat(resultado).isNotNull();
+        assertThat(resultado.isSucesso()).isTrue();
+    }
 }
