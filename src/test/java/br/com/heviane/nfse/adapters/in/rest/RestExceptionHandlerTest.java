@@ -71,6 +71,22 @@ class RestExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("Deve mapear SefinTransmissaoException com erro 401 ou 403 do Sefin para HTTP 502 Bad Gateway")
+    void deveMapearErro401E403DoSefinParaBadGateway() {
+        SefinTransmissaoException ex401 = new SefinTransmissaoException("Unauthorized no Sefin", 401, null, "unauthorized");
+        ResponseEntity<ErroResponse> resp401 = handler.handleSefinTransmissao(ex401);
+        assertThat(resp401.getStatusCode()).isEqualTo(HttpStatus.BAD_GATEWAY);
+        assertThat(resp401.getBody()).isNotNull();
+        assertThat(resp401.getBody().statusHttp()).isEqualTo(502);
+
+        SefinTransmissaoException ex403 = new SefinTransmissaoException("Forbidden no Sefin", 403, null, "forbidden");
+        ResponseEntity<ErroResponse> resp403 = handler.handleSefinTransmissao(ex403);
+        assertThat(resp403.getStatusCode()).isEqualTo(HttpStatus.BAD_GATEWAY);
+        assertThat(resp403.getBody()).isNotNull();
+        assertThat(resp403.getBody().statusHttp()).isEqualTo(502);
+    }
+
+    @Test
     @DisplayName("Deve mapear SefinTransmissaoException com erro 500 do Sefin para HTTP 502 Bad Gateway")
     void deveMapearErro500ParaBadGateway() {
         SefinTransmissaoException ex = new SefinTransmissaoException("Internal Server Error no Sefin", 500, null, "erro");

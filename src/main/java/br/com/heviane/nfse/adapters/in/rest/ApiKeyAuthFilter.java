@@ -14,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
 
 /**
@@ -89,6 +90,28 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
         return swaggerPublic;
     }
 
+    @jakarta.annotation.PostConstruct
+    public void logStartupStatus() {
+        if (!isSecurityEnabled()) {
+            log.warn("ATENÇÃO DE SEGURANÇA: Nenhuma API Key configurada no servidor (NFSE_API_KEY ausente). A API está operando em modo permissivo.");
+        } else {
+            log.info("Filtro de segurança por API Key ativo para proteção dos endpoints.");
+        }
+    }
+
+    /**
+     * Valida a chave fornecida utilizando comparação em tempo constante (MessageDigest.isEqual)
+     * para mitigar ataques de timing baseados em resposta antecipada.
+     */
+    public boolean isChaveValida(String chaveFornecida) {
+        if (chaveFornecida == null || configuredApiKey == null) {
+            return false;
+        }
+        byte[] a = chaveFornecida.getBytes(StandardCharsets.UTF_8);
+        byte[] b = configuredApiKey.getBytes(StandardCharsets.UTF_8);
+        return MessageDigest.isEqual(a, b);
+    }
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         // Se nenhuma chave foi configurada no servidor, o filtro opera em modo permissivo
@@ -129,7 +152,7 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String providedKey = extrairApiKey(request);
 
-        if (providedKey != null && providedKey.equals(configuredApiKey)) {
+        if (isChaveValida(providedKey)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -174,13 +197,13 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
                         String[] parts = credentials.split(":", 2);
                         String user = parts[0].trim();
                         String pass = parts.length > 1 ? parts[1].trim() : "";
-                        if (configuredApiKey.equals(pass)) {
+                        if (isChaveValida(pass)) {
                             return pass;
                         }
-                        if (configuredApiKey.equals(user)) {
+                        if (isChaveValida(user)) {
                             return user;
                         }
-                    } else if (configuredApiKey.equals(credentials.trim())) {
+                    } else if (isChaveValida(credentials.trim())) {
                         return credentials.trim();
                     }
                 } catch (Exception ignored) {

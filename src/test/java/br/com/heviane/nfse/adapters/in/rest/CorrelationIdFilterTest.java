@@ -108,6 +108,43 @@ class CorrelationIdFilterTest {
     }
 
     @Test
+    @DisplayName("Deve rejeitar Correlation-ID com caracteres ilegais ou CRLF e gerar novo UUID")
+    void shouldRejectCorrelationIdWithInvalidCharactersAndGenerateNewOne() throws ServletException, IOException {
+        String[] invalidIds = {
+                "trace\r\nInjected-Header: value",
+                "trace<script>alert(1)</script>",
+                "trace with spaces",
+                "a".repeat(65), // > 64 chars
+                "trace$dollar"
+        };
+
+        for (String invalidId : invalidIds) {
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            request.addHeader(CorrelationIdFilter.CORRELATION_ID_HEADER, invalidId);
+            MockHttpServletResponse response = new MockHttpServletResponse();
+
+            filter.doFilter(request, response, (req, res) -> {});
+
+            String generatedId = response.getHeader(CorrelationIdFilter.CORRELATION_ID_HEADER);
+            assertThat(generatedId).isNotBlank().isNotEqualTo(invalidId);
+            assertThat(UUID.fromString(generatedId)).isNotNull();
+        }
+    }
+
+    @Test
+    @DisplayName("Deve aceitar Correlation-ID com caracteres válidos (alfanumérico, hífen, underscore, ponto)")
+    void shouldAcceptValidCorrelationIdWithHyphenUnderscoreDot() throws ServletException, IOException {
+        String validId = "trace.app_01-subsystem-12345";
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(CorrelationIdFilter.CORRELATION_ID_HEADER, validId);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, (req, res) -> {});
+
+        assertThat(response.getHeader(CorrelationIdFilter.CORRELATION_ID_HEADER)).isEqualTo(validId);
+    }
+
+    @Test
     @DisplayName("Deve limpar o MDC obrigatoriamente mesmo quando a cadeia de filtros lançar exceção")
     void shouldClearMdcEvenIfFilterChainThrowsException() {
         MockHttpServletRequest request = new MockHttpServletRequest();

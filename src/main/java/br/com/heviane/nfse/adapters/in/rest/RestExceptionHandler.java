@@ -44,6 +44,9 @@ public class RestExceptionHandler {
                 status = HttpStatus.GATEWAY_TIMEOUT;
             } else if (ex.getHttpStatusCode() == 409 || (ex.getCodigoStatusSefin() != null && ex.getCodigoStatusSefin() == 204)) {
                 status = HttpStatus.CONFLICT;
+            } else if (ex.getHttpStatusCode() == 401 || ex.getHttpStatusCode() == 403) {
+                // Erros de autenticação/autorização mTLS no Sefin representam problema de credenciamento/certificado do servidor
+                status = HttpStatus.BAD_GATEWAY;
             } else if (ex.getHttpStatusCode() >= 400 && ex.getHttpStatusCode() < 500) {
                 status = HttpStatus.BAD_REQUEST;
             } else {

@@ -34,6 +34,9 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
     public static final String REQUEST_ID_HEADER = "X-Request-ID";
     public static final String CORRELATION_ID_KEY = "correlationId";
 
+    private static final java.util.regex.Pattern CORRELATION_ID_PATTERN =
+            java.util.regex.Pattern.compile("^[A-Za-z0-9._-]{1,64}$");
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -52,20 +55,20 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
 
     private String resolveCorrelationId(HttpServletRequest request) {
         String correlationId = request.getHeader(CORRELATION_ID_HEADER);
-        if (isNotBlank(correlationId)) {
+        if (isValido(correlationId)) {
             return correlationId.trim();
         }
 
         String requestId = request.getHeader(REQUEST_ID_HEADER);
-        if (isNotBlank(requestId)) {
+        if (isValido(requestId)) {
             return requestId.trim();
         }
 
         return UUID.randomUUID().toString();
     }
 
-    private boolean isNotBlank(String text) {
-        return text != null && !text.trim().isEmpty();
+    private boolean isValido(String correlationId) {
+        return correlationId != null && CORRELATION_ID_PATTERN.matcher(correlationId.trim()).matches();
     }
 }
 

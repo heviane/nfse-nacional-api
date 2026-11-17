@@ -10,8 +10,10 @@ import br.com.heviane.nfse.adapters.in.rest.dto.ErroResponse;
 import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
 import br.com.heviane.nfse.config.NfseProperties;
 import br.com.heviane.nfse.core.domain.AmbienteSefin;
+import br.com.heviane.nfse.core.domain.AssinaturaDigitalException;
 import br.com.heviane.nfse.core.domain.CertificadoA1;
 import br.com.heviane.nfse.core.domain.RespostaEmissaoSefin;
+import br.com.heviane.nfse.core.domain.SefinTransmissaoException;
 import br.com.heviane.nfse.core.domain.ValidacaoFiscalException;
 import br.com.heviane.nfse.core.ports.in.EmitirDpsUseCase;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +26,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -167,14 +170,64 @@ public class EmissaoDpsController {
             }
         } catch (Exception e) {
             long duracao = System.currentTimeMillis() - inicio;
+            String mensagemSanitizada = mapearMensagemFalha(e);
+            int httpStatus = mapearStatusHttpFalha(e);
+
             if (fiscalAuditLogger != null) {
-                fiscalAuditLogger.registrarFalhaEmissao("REST", idDps, cnpjEmitente, 400, e.getMessage(), duracao);
+                fiscalAuditLogger.registrarFalhaEmissao("REST", idDps, cnpjEmitente, httpStatus, mensagemSanitizada, duracao);
             }
             if (nfseMetrics != null) {
                 nfseMetrics.registrarEmissao("REST", false, false, duracao);
             }
             throw e;
         }
+    }
+
+    private String mapearMensagemFalha(Exception e) {
+        if (e instanceof ValidacaoFiscalException valEx) {
+            return (valEx.getErros() != null && !valEx.getErros().isEmpty())
+                    ? valEx.getMensagemBase()
+                    : valEx.getMessage();
+        }
+        if (e instanceof SefinTransmissaoException sefinEx) {
+            String detalheHttp = sefinEx.getHttpStatusCode() != null ? " (HTTP " + sefinEx.getHttpStatusCode() + ")" : "";
+            return "Falha na comunicação com o Sefin Nacional" + detalheHttp;
+        }
+        if (e instanceof AssinaturaDigitalException) {
+            return "Falha na assinatura digital do documento fiscal";
+        }
+        if (e instanceof IllegalArgumentException) {
+            return "Parâmetro inválido na requisição: " + e.getMessage();
+        }
+        if (e instanceof SecurityException) {
+            return e.getMessage();
+        }
+        if (e instanceof IllegalStateException stateEx && stateEx.getMessage() != null && stateEx.getMessage().toLowerCase().contains("certificado")) {
+            return "Certificado digital A1 não configurado ou inacessível no servidor";
+        }
+        return "Erro interno no processamento fiscal (" + e.getClass().getSimpleName() + ")";
+    }
+
+    private int mapearStatusHttpFalha(Exception e) {
+        if (e instanceof ValidacaoFiscalException) {
+            return HttpStatus.UNPROCESSABLE_ENTITY.value();
+        }
+        if (e instanceof SefinTransmissaoException sefinEx) {
+            if (sefinEx.getHttpStatusCode() != null) {
+                if (sefinEx.getHttpStatusCode() == 504) return HttpStatus.GATEWAY_TIMEOUT.value();
+                if (sefinEx.getHttpStatusCode() == 409 || (sefinEx.getCodigoStatusSefin() != null && sefinEx.getCodigoStatusSefin() == 204)) return HttpStatus.CONFLICT.value();
+                if (sefinEx.getHttpStatusCode() == 401 || sefinEx.getHttpStatusCode() == 403) return HttpStatus.BAD_GATEWAY.value();
+                if (sefinEx.getHttpStatusCode() >= 400 && sefinEx.getHttpStatusCode() < 500) return HttpStatus.BAD_REQUEST.value();
+            }
+            return HttpStatus.BAD_GATEWAY.value();
+        }
+        if (e instanceof SecurityException) {
+            return HttpStatus.FORBIDDEN.value();
+        }
+        if (e instanceof IllegalArgumentException || e instanceof AssinaturaDigitalException) {
+            return HttpStatus.BAD_REQUEST.value();
+        }
+        return HttpStatus.INTERNAL_SERVER_ERROR.value();
     }
 }
 
