@@ -147,7 +147,7 @@ Exemplo real sanitizado ([`src/test/resources/samples/envelope-soap-genexus.xml`
     <sil:GerarNfse>
       <sil:xmlEnvio><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
-  <infDPS Id="DPS320520020000000000019100001000000000000001">
+  <infDPS Id="DPS320520010000000000019100001000000000000001">
     <tpAmb>2</tpAmb>
     <dhEmi>2026-11-02T17:00:00-03:00</dhEmi>
     <verAplic>ERP_v1.00</verAplic>

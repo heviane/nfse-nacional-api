@@ -43,7 +43,7 @@ Abaixo está a estrutura do XML assinado da DPS (com dados genéricos para teste
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
-  <infDPS Id="DPS320520020000000000019100001000000000000001">
+  <infDPS Id="DPS320520010000000000019100001000000000000001">
     <tpAmb>2</tpAmb>
     <dhEmi>2026-11-02T17:00:00-03:00</dhEmi>
     <verAplic>ERP_v1.00</verAplic>
@@ -119,7 +119,7 @@ Abaixo está a estrutura do XML assinado da DPS (com dados genéricos para teste
     <SignedInfo>
       <CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
       <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
-      <Reference URI="#DPS320520020000000000019100001000000000000001">
+      <Reference URI="#DPS320520010000000000019100001000000000000001">
         <Transforms>
           <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
           <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>

@@ -144,7 +144,7 @@ public class ConsultaNfseController {
             @ApiResponse(responseCode = "404", description = "Nenhum registro local encontrado para o Id da DPS informado")
     })
     public ResponseEntity<RegistroEmissaoAuditoria> buscarHistoricoPorIdDps(
-            @Parameter(description = "Identificador único da DPS (ex: DPS32052002601000000000019100001000000000000001)")
+            @Parameter(description = "Identificador único da DPS (ex: DPS320520010000000000019100001000000000000001)")
             @PathVariable("idDps") String idDps
     ) {
         if (registroEmissaoDuravelService == null) {

@@ -18,8 +18,8 @@ O ecossistema do Sistema Nacional da NFS-e (Sefin Nacional / Ambiente de Dados N
 
 | Ambiente | Base URL Sefin | Propósito |
 | :--- | :--- | :--- |
-| **Homologação (Produção Restrita)** | `https://sefin.hom.nfse.gov.br` | Testes de integração, validação de regras fiscais e schemas sem validade tributária real. |
-| **Produção Oficial** | `https://sefin.nfse.gov.br` | Emissão oficial de NFS-e com efeitos tributários plenos. |
+| **Homologação (Produção Restrita)** | `https://sefin.producaorestrita.nfse.gov.br/API/SefinNacional` | Testes de integração, validação de regras fiscais e schemas sem validade tributária real. |
+| **Produção Oficial** | `https://sefin.nfse.gov.br/API/SefinNacional` | Emissão oficial de NFS-e com efeitos tributários plenos. |
 
 > [!IMPORTANT]
 > **Regra de Ouro (AGENTS.md - Regra 10):**
@@ -84,14 +84,14 @@ curl -s http://localhost:8080/actuator/health
 
 ### Passo 3: Emissão Real da Primeira DPS de Homologação
 
-#### Opção A: Via API REST (`POST /api/v1/dps`)
+#### Opção A: Via API REST (`POST /api/v1/dps/emitir`)
 Envie a requisição contendo o XML da DPS a ser validada, assinada e transmitida:
 ```bash
-curl -X POST http://localhost:8080/api/v1/dps \
+curl -X POST http://localhost:8080/api/v1/dps/emitir \
   -H "Content-Type: application/json" \
   -d '{
-    "xmlDps": "<DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" versao=\"1.00\"><infDPS Id=\"DPS32052002601000000000019100001000000000000001\"><tpAmb>2</tpAmb><dhEmi>2026-11-09T12:00:00-03:00</dhEmi><verAplic>NfseApi_v1.0</verAplic><dCompet>2026-11-09</dCompet><prest><CNPJ>00000000000191</CNPJ><regTrib><opSimpNac>1</opSimpNac><regApTribSN>1</regApTribSN></regTrib></prest><toma><CNPJ>00000000000191</CNPJ><xNome>TOMADOR DE TESTE HOMOLOGACAO</xNome><ender><endNac><cMun>3205200</cMun><CEP>29100000</CEP></endNac><xLgr>RUA DE TESTE</xLgr><nro>100</nro><xBairro>CENTRO</xBairro></ender></toma><serv><locPrest><cLocPrestacao>3205200</cLocPrestacao></locPrest><cServ><cTribNac>010701</cTribNac><xDescServ>SERVICO DE DESENVOLVIMENTO DE SOFTWARE HOMOLOGACAO</xDescServ></cServ><valores><vServPrest><vServ>10.00</vServ></vServPrest><trib><tribMun><tribISSQN>1</tribISSQN><cLocIncid>3205200</cLocIncid><vBC>10.00</vBC><pAliq>2.00</pAliq><vISSQN>0.20</vISSQN><tpRetISSQN>1</tpRetISSQN></tribMun><tribFed><piscofins><tpRetPisCofins>2</tpRetPisCofins></piscofins></tribFed></trib></valores></serv></infDPS></DPS>",
-    "ambiente": "HOMOLOGACAO"
+    "ambiente": "HOMOLOGACAO",
+    "xmlDps": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" versao=\"1.00\"><infDPS Id=\"DPS320520010000000000019100001000000000000001\"><tpAmb>2</tpAmb><dhEmi>2026-11-09T12:00:00-03:00</dhEmi><verAplic>NfseApi_v1.0</verAplic><serie>00001</serie><nDPS>1</nDPS><dCompet>2026-11-09</dCompet><tpEmit>1</tpEmit><cLocEmi>3205200</cLocEmi><prest><CNPJ>00000000000191</CNPJ><IM>12345</IM><xNome>EMPRESA PRESTADORA DE SERVICOS LTDA</xNome><fone>27999998888</fone><email>contato@prestadordeexemplo.com.br</email><regTrib><opSimpNac>1</opSimpNac><regApTribSN>1</regApTribSN><regEspTrib>0</regEspTrib></regTrib></prest><toma><CNPJ>99999999000191</CNPJ><xNome>TOMADOR DE SERVICOS TESTE LTDA</xNome><end><endNac><cMun>3205309</cMun><CEP>29010000</CEP></endNac><xLgr>AVENIDA EXEMPLO</xLgr><nro>100</nro><xBairro>CENTRO</xBairro></end></toma><serv><locPrest><cLocPrestacao>3205200</cLocPrestacao></locPrest><cServ><cTribNac>010301</cTribNac><cTribMun>700</cTribMun><xDescServ>Servicos de desenvolvimento e licenciamento de programas de computador.</xDescServ></cServ></serv><valores><vServPrest><vServ>100.00</vServ></vServPrest><trib><tribMun><tribISSQN>1</tribISSQN><pAliq>2.50</pAliq><tpRetISSQN>2</tpRetISSQN></tribMun><tribFed><piscofins><CST>07</CST><vBCPisCofins>0.00</vBCPisCofins><pAliqPis>0.00</pAliqPis><pAliqCofins>0.00</pAliqCofins><vPis>0.00</vPis><vCofins>0.00</vCofins><tpRetPisCofins>2</tpRetPisCofins></piscofins></tribFed><totTrib><indTotTrib>0</indTotTrib></totTrib></trib></valores></infDPS></DPS>"
   }'
 ```
 > *(Nota de Autenticação: Caso a proteção por API Key esteja ativada no middleware, adicione o cabeçalho correspondente na chamada, por exemplo `-H "X-API-Key: $NFSE_API_KEY"`).*
@@ -119,7 +119,7 @@ curl -X POST http://localhost:8080/prefeitura/notafiscal/nfse.asmx \
    - O middleware grava automaticamente a relação `idDps` &rarr; `chaveAcesso` no arquivo `logs/registro-emissoes.jsonl`.
    - Se a conexão cair antes de o ERP receber o retorno, basta consultar:
      ```bash
-     curl -i http://localhost:8080/api/v1/nfse/historico-local/DPS32052002601000000000019100001000000000000001
+     curl -i http://localhost:8080/api/v1/nfse/historico-local/DPS320520010000000000019100001000000000000001
      ```
 
 ### Passo 5: Consulta da NFS-e Emitida pela Chave de Acesso
@@ -135,12 +135,13 @@ curl -X GET "http://localhost:8080/api/v1/nfse/320520026010000000000191000010000
 ### Passo 6: Teste de Cancelamento Fiscal (Evento 101101)
 Dispare o evento de cancelamento da NFS-e autorizada no teste anterior:
 ```bash
-curl -X POST "http://localhost:8080/api/v1/nfse/32052002601000000000019100001000000000000001123456/cancelar" \
+curl -X POST http://localhost:8080/api/v1/nfse/cancelar \
   -H "Content-Type: application/json" \
   -d '{
+    "chaveAcesso": "32052002601000000000019100001000000000000001123456",
+    "cnpjAutor": "00000000000191",
     "codigoMotivo": "1",
     "motivo": "Cancelamento de teste operacional no ambiente de homologacao",
-    "cnpjAutor": "00000000000191",
     "ambiente": "HOMOLOGACAO"
   }'
 ```

@@ -36,9 +36,13 @@ try {
 }
 
 # 2. Gerar identificador unico de teste baseado no timestamp
-$timestamp = Get-Date -Format "yyyyMMddHHmmss"
+$cLocEmi = "3205200"
+$tipoInsc = "1"
 $cnpjEmitente = "00000000000191"
-$idDps = "DPS3205200260100000000001910000100000000000$($timestamp.Substring(4))"
+$serie = "00001"
+$numeroDps = [long]((Get-Date).ToString("yyMMddHHmmss"))
+$nDPS = $numeroDps.ToString().PadLeft(15, '0')
+$idDps = "DPS$cLocEmi$tipoInsc$cnpjEmitente$serie$nDPS"
 $dataHoraIso = (Get-Date).ToString("yyyy-MM-ddTHH:mm:sszzz")
 $competencia = (Get-Date).ToString("yyyy-MM-dd")
 
@@ -50,18 +54,27 @@ $xmlDps = @"
         <tpAmb>2</tpAmb>
         <dhEmi>$dataHoraIso</dhEmi>
         <verAplic>NfseApi_v1.0</verAplic>
+        <serie>$serie</serie>
+        <nDPS>$numeroDps</nDPS>
         <dCompet>$competencia</dCompet>
+        <tpEmit>1</tpEmit>
+        <cLocEmi>$cLocEmi</cLocEmi>
         <prest>
             <CNPJ>$cnpjEmitente</CNPJ>
+            <IM>12345</IM>
+            <xNome>EMPRESA PRESTADORA DE SERVICOS LTDA</xNome>
+            <fone>27999998888</fone>
+            <email>contato@prestadordeexemplo.com.br</email>
             <regTrib>
                 <opSimpNac>1</opSimpNac>
                 <regApTribSN>1</regApTribSN>
+                <regEspTrib>0</regEspTrib>
             </regTrib>
         </prest>
         <toma>
             <CNPJ>$cnpjEmitente</CNPJ>
             <xNome>TOMADOR DE TESTE HOMOLOGACAO</xNome>
-            <ender>
+            <end>
                 <endNac>
                     <cMun>3205200</cMun>
                     <CEP>29100000</CEP>
@@ -69,7 +82,7 @@ $xmlDps = @"
                 <xLgr>RUA DE TESTE</xLgr>
                 <nro>100</nro>
                 <xBairro>CENTRO</xBairro>
-            </ender>
+            </end>
         </toma>
         <serv>
             <locPrest>
@@ -77,29 +90,36 @@ $xmlDps = @"
             </locPrest>
             <cServ>
                 <cTribNac>010701</cTribNac>
+                <cTribMun>700</cTribMun>
                 <xDescServ>TESTE DE EMISSAO HOMOLOGACAO SEFIN NACIONAL</xDescServ>
             </cServ>
-            <valores>
-                <vServPrest>
-                    <vServ>10.00</vServ>
-                </vServPrest>
-                <trib>
-                    <tribMun>
-                        <tribISSQN>1</tribISSQN>
-                        <cLocIncid>3205200</cLocIncid>
-                        <vBC>10.00</vBC>
-                        <pAliq>2.00</pAliq>
-                        <vISSQN>0.20</vISSQN>
-                        <tpRetISSQN>1</tpRetISSQN>
-                    </tribMun>
-                    <tribFed>
-                        <piscofins>
-                            <tpRetPisCofins>2</tpRetPisCofins>
-                        </piscofins>
-                    </tribFed>
-                </trib>
-            </valores>
         </serv>
+        <valores>
+            <vServPrest>
+                <vServ>10.00</vServ>
+            </vServPrest>
+            <trib>
+                <tribMun>
+                    <tribISSQN>1</tribISSQN>
+                    <pAliq>2.00</pAliq>
+                    <tpRetISSQN>1</tpRetISSQN>
+                </tribMun>
+                <tribFed>
+                    <piscofins>
+                        <CST>07</CST>
+                        <vBCPisCofins>0.00</vBCPisCofins>
+                        <pAliqPis>0.00</pAliqPis>
+                        <pAliqCofins>0.00</pAliqCofins>
+                        <vPis>0.00</vPis>
+                        <vCofins>0.00</vCofins>
+                        <tpRetPisCofins>2</tpRetPisCofins>
+                    </piscofins>
+                </tribFed>
+                <totTrib>
+                    <indTotTrib>0</indTotTrib>
+                </totTrib>
+            </trib>
+        </valores>
     </infDPS>
 </DPS>
 "@
@@ -119,7 +139,7 @@ if ($ApiKey -ne "") {
 # 3. Disparar emissão
 Write-Host "`n3. Disparando emissao de DPS para o Sefin Nacional..." -ForegroundColor Yellow
 try {
-    $respostaEmissao = Invoke-RestMethod -Uri "$BaseUrl/api/v1/dps" -Method Post -Headers $headers -Body $bodyEmissao
+    $respostaEmissao = Invoke-RestMethod -Uri "$BaseUrl/api/v1/dps/emitir" -Method Post -Headers $headers -Body $bodyEmissao
     Write-Host "Emissao processada com sucesso!" -ForegroundColor Green
     Write-Host "Status HTTP: 200" -ForegroundColor Green
     Write-Host "Chave de Acesso Nacional: $($respostaEmissao.chaveAcesso)" -ForegroundColor Cyan
@@ -134,6 +154,21 @@ try {
         $respostaConsulta = Invoke-RestMethod -Uri "$BaseUrl/api/v1/nfse/$chaveAcesso?ambiente=HOMOLOGACAO" -Method Get -Headers $headers
         Write-Host "Consulta concluida! Localizada: $($respostaConsulta.localizada)" -ForegroundColor Green
         Write-Host "Status Fiscal: $($respostaConsulta.codigoStatus) - $($respostaConsulta.motivoStatus)" -ForegroundColor Green
+
+        # 5. Opcional: Teste de Cancelamento Fiscal
+        # Descomente o bloco abaixo caso queira testar o cancelamento imediato da nota recém-emitida:
+        <#
+        Write-Host "`n5. Solicitando cancelamento da NFS-e emitida..." -ForegroundColor Yellow
+        $bodyCancelamento = @{
+            chaveAcesso = $chaveAcesso
+            cnpjAutor = $cnpjEmitente
+            codigoMotivo = "1"
+            motivo = "Cancelamento de teste operacional no ambiente de homologacao"
+            ambiente = "HOMOLOGACAO"
+        } | ConvertTo-Json
+        $respostaCancelamento = Invoke-RestMethod -Uri "$BaseUrl/api/v1/nfse/cancelar" -Method Post -Headers $headers -Body $bodyCancelamento
+        Write-Host "Cancelamento registrado! Status Fiscal: $($respostaCancelamento.codigoStatus) - $($respostaCancelamento.motivoStatus)" -ForegroundColor Green
+        #>
     }
 
 } catch {
