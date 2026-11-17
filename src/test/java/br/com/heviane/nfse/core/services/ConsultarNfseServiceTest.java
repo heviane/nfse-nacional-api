@@ -72,5 +72,13 @@ class ConsultarNfseServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Certificado A1 é obrigatório para consulta fiscal");
     }
+
+    @Test
+    @DisplayName("Deve validar que Ambiente não pode ser nulo")
+    void deveValidarAmbienteObrigatorio() {
+        assertThatThrownBy(() -> service.consultar(CHAVE_50, null, certificado))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Ambiente é obrigatório para consulta de NFS-e.");
+    }
 }
 

@@ -54,7 +54,10 @@ public class EmitirDpsService implements EmitirDpsUseCase {
             throw new IllegalArgumentException("Certificado A1 é obrigatório para emissão fiscal.");
         }
 
-        AmbienteSefin amb = (ambiente != null) ? ambiente : AmbienteSefin.HOMOLOGACAO;
+        if (ambiente == null) {
+            throw new IllegalArgumentException("Ambiente é obrigatório para emissão fiscal.");
+        }
+        AmbienteSefin amb = ambiente;
 
         // 1. Validação estrita de coerência do ambiente fiscal (<tpAmb>) - Princípio de Imutabilidade
         validarTipoAmbiente(xmlDps, amb);

@@ -298,4 +298,12 @@ class EmitirDpsServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Certificado A1 é obrigatório");
     }
+
+    @Test
+    @DisplayName("Deve validar que Ambiente é obrigatório")
+    void deveValidarAmbienteObrigatorio() {
+        assertThatThrownBy(() -> service.emitir(XML_DPS, null, certificado))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Ambiente é obrigatório para emissão fiscal.");
+    }
 }

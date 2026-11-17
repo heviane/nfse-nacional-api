@@ -24,7 +24,7 @@ public record RequisicaoCancelamentoDps(
             throw new IllegalArgumentException("Justificativa de cancelamento deve conter entre 15 e 255 caracteres.");
         }
         if (ambiente == null) {
-            ambiente = AmbienteSefin.HOMOLOGACAO;
+            throw new IllegalArgumentException("Ambiente é obrigatório para o cancelamento (HOMOLOGACAO ou PRODUCAO).");
         }
     }
 }

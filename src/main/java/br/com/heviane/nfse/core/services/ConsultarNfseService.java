@@ -28,8 +28,10 @@ public class ConsultarNfseService implements ConsultarNfseUseCase {
             throw new IllegalArgumentException("Certificado A1 é obrigatório para consulta fiscal.");
         }
 
-        AmbienteSefin amb = (ambiente != null) ? ambiente : AmbienteSefin.HOMOLOGACAO;
-        return transmissorSefinPort.consultarPorChave(chaveAcesso, amb, certificado);
+        if (ambiente == null) {
+            throw new IllegalArgumentException("Ambiente é obrigatório para consulta de NFS-e.");
+        }
+        return transmissorSefinPort.consultarPorChave(chaveAcesso, ambiente, certificado);
     }
 }
 

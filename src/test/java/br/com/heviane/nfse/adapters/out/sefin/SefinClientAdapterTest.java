@@ -357,6 +357,21 @@ class SefinClientAdapterTest {
                 AmbienteSefin.HOMOLOGACAO
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("14 dígitos");
+
+        // Ambiente nulo
+        assertThatThrownBy(() -> new RequisicaoCancelamentoDps(
+                CHAVE_ACESSO_50,
+                "00000000000191",
+                "1",
+                "Justificativa válida com mais de 15 caracteres",
+                null
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Ambiente é obrigatório");
+
+        // RequisicaoEnvioDps com ambiente nulo
+        assertThatThrownBy(() -> new RequisicaoEnvioDps("<DPS></DPS>", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Ambiente é obrigatório");
     }
 
     @Test
@@ -675,6 +690,14 @@ class SefinClientAdapterTest {
         assertThatThrownBy(() -> adapter.consultarPorIdDps("DPS123", AmbienteSefin.HOMOLOGACAO, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Certificado A1 é obrigatório");
+
+        assertThatThrownBy(() -> adapter.consultarPorIdDps("DPS123", null, certificado))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Ambiente é obrigatório");
+
+        assertThatThrownBy(() -> adapter.consultarPorChave(CHAVE_ACESSO_50, null, certificado))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Ambiente é obrigatório");
     }
 
     @Test

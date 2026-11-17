@@ -12,6 +12,7 @@ import br.com.heviane.nfse.config.NfseProperties;
 import br.com.heviane.nfse.core.domain.AmbienteSefin;
 import br.com.heviane.nfse.core.domain.CertificadoA1;
 import br.com.heviane.nfse.core.domain.RespostaEmissaoSefin;
+import br.com.heviane.nfse.core.domain.ValidacaoFiscalException;
 import br.com.heviane.nfse.core.ports.in.EmitirDpsUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -96,9 +97,20 @@ public class EmissaoDpsController {
             if (request == null || request.xmlDps() == null || request.xmlDps().isBlank()) {
                 throw new IllegalArgumentException("O conteúdo do XML da DPS (xmlDps) é obrigatório.");
             }
+            if (request.ambiente() == null) {
+                throw new IllegalArgumentException("O campo 'ambiente' é obrigatório (HOMOLOGACAO ou PRODUCAO).");
+            }
+
+            AmbienteSefin ambienteServidor = nfseProperties.resolverAmbiente();
+            if (request.ambiente() != ambienteServidor) {
+                throw new ValidacaoFiscalException(
+                        String.format("Inconsistência de ambiente fiscal: A DPS enviada declara ambiente %s, mas o serviço está configurado para operar exclusivamente em %s. Ajuste o campo 'ambiente' na requisição para %s.",
+                                request.ambiente(), ambienteServidor, ambienteServidor)
+                );
+            }
 
             CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
-            AmbienteSefin ambiente = request.ambiente() != null ? request.ambiente() : nfseProperties.resolverAmbiente();
+            AmbienteSefin ambiente = ambienteServidor;
 
             RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(request.xmlDps(), ambiente, certificado);
             long duracao = System.currentTimeMillis() - inicio;

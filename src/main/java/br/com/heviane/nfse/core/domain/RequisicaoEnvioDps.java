@@ -12,7 +12,7 @@ public record RequisicaoEnvioDps(
             throw new IllegalArgumentException("XML da DPS assinado não pode ser nulo ou vazio.");
         }
         if (ambiente == null) {
-            ambiente = AmbienteSefin.HOMOLOGACAO;
+            throw new IllegalArgumentException("Ambiente é obrigatório para envio da DPS (HOMOLOGACAO ou PRODUCAO).");
         }
     }
 

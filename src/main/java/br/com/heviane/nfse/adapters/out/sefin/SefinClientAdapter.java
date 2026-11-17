@@ -109,10 +109,12 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             throw new IllegalArgumentException("Certificado A1 é obrigatório para consulta mTLS.");
         }
 
-        AmbienteSefin amb = (ambiente != null) ? ambiente : AmbienteSefin.HOMOLOGACAO;
+        if (ambiente == null) {
+            throw new IllegalArgumentException("Ambiente é obrigatório para consulta de NFS-e (HOMOLOGACAO ou PRODUCAO).");
+        }
 
         return executarComRetry("Consulta de NFS-e", () -> {
-            String baseUrl = (baseUrlOverride != null) ? baseUrlOverride : amb.getBaseUrl();
+            String baseUrl = (baseUrlOverride != null) ? baseUrlOverride : ambiente.getBaseUrl();
             String url = baseUrl.replaceAll("/+$", "") + "/nfse/" + chaveAcesso;
 
             HttpClient client = obterOuCriarHttpClient(certificado);
@@ -138,10 +140,12 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             throw new IllegalArgumentException("Certificado A1 é obrigatório para consulta mTLS.");
         }
 
-        AmbienteSefin amb = (ambiente != null) ? ambiente : AmbienteSefin.HOMOLOGACAO;
+        if (ambiente == null) {
+            throw new IllegalArgumentException("Ambiente é obrigatório para consulta de DPS (HOMOLOGACAO ou PRODUCAO).");
+        }
 
         return executarComRetry("Consulta de DPS por Id", () -> {
-            String baseUrl = (baseUrlOverride != null) ? baseUrlOverride : amb.getBaseUrl();
+            String baseUrl = (baseUrlOverride != null) ? baseUrlOverride : ambiente.getBaseUrl();
             String url = baseUrl.replaceAll("/+$", "") + "/dps/" + idDps.trim();
 
             HttpClient client = obterOuCriarHttpClient(certificado);

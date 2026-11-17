@@ -158,4 +158,36 @@ class EmissaoDpsControllerTest {
                 .andExpect(jsonPath("$.statusHttp").value(502))
                 .andExpect(jsonPath("$.mensagem").value("Erro interno no servidor do Sefin"));
     }
+
+    @Test
+    @DisplayName("Deve retornar HTTP 400 quando o campo ambiente for omitido na emissão")
+    void deveRetornarBadRequestQuandoAmbienteForOmitido() throws Exception {
+        String xmlDps = "<DPS><infDPS Id=\"DPS320520020000000000019100001000000000000001\"></infDPS></DPS>";
+        EmissaoDpsRequest request = new EmissaoDpsRequest(xmlDps, null);
+
+        mockMvc.perform(post("/api/v1/dps/emitir")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Certificado-Base64", certBase64)
+                        .header("X-Certificado-Senha", "123456")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusHttp").value(400))
+                .andExpect(jsonPath("$.mensagem").value("O campo 'ambiente' é obrigatório (HOMOLOGACAO ou PRODUCAO)."));
+    }
+
+    @Test
+    @DisplayName("Deve retornar HTTP 422 quando o ambiente do request divergir do servidor")
+    void deveRetornarUnprocessableEntityQuandoAmbienteDivergirDoServidor() throws Exception {
+        String xmlDps = "<DPS><infDPS Id=\"DPS320520020000000000019100001000000000000001\"></infDPS></DPS>";
+        EmissaoDpsRequest request = new EmissaoDpsRequest(xmlDps, AmbienteSefin.PRODUCAO);
+
+        mockMvc.perform(post("/api/v1/dps/emitir")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Certificado-Base64", certBase64)
+                        .header("X-Certificado-Senha", "123456")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.statusHttp").value(422))
+                .andExpect(jsonPath("$.mensagem").value(org.hamcrest.Matchers.containsString("Inconsistência de ambiente fiscal: A DPS enviada declara ambiente PRODUCAO, mas o serviço está configurado para operar exclusivamente em HOMOLOGACAO.")));
+    }
 }

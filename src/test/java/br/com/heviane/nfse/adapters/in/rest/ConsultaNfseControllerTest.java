@@ -10,6 +10,7 @@ import br.com.heviane.nfse.core.domain.RespostaConsultaNfse;
 import br.com.heviane.nfse.core.domain.SefinTransmissaoException;
 import br.com.heviane.nfse.core.ports.in.ConsultarNfseUseCase;
 import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
+import br.com.heviane.nfse.config.NfseProperties;
 import br.com.heviane.nfse.testutils.CertificadoTesteHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,11 +56,15 @@ class ConsultaNfseControllerTest {
     @MockBean
     private RegistroEmissaoDuravelService registroEmissaoDuravelService;
 
+    @MockBean
+    private NfseProperties nfseProperties;
+
     private CertificadoA1 certificadoA1;
 
     @BeforeEach
     void setUp() throws Exception {
         certificadoA1 = CertificadoTesteHelper.obterCertificadoTeste();
+        when(nfseProperties.resolverAmbiente()).thenReturn(AmbienteSefin.HOMOLOGACAO);
     }
 
     private String compactarGZipBase64(String conteudo) throws Exception {
@@ -121,10 +126,36 @@ class ConsultaNfseControllerTest {
                 .thenThrow(new SefinTransmissaoException("Serviço Sefin temporariamente indisponível", 503, null, null));
 
         mockMvc.perform(get("/api/v1/nfse/" + chave)
+                        .param("ambiente", "HOMOLOGACAO")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.statusHttp").value(502))
                 .andExpect(jsonPath("$.mensagem").value("Serviço Sefin temporariamente indisponível"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar HTTP 400 quando o parâmetro ambiente for omitido na consulta")
+    void deveRetornarBadRequestQuandoAmbienteOmitidoNaConsulta() throws Exception {
+        String chave = "32052002601000000000019100001000000000000001123456";
+
+        mockMvc.perform(get("/api/v1/nfse/" + chave)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusHttp").value(400))
+                .andExpect(jsonPath("$.mensagem").value("O parâmetro 'ambiente' é obrigatório (HOMOLOGACAO ou PRODUCAO)."));
+    }
+
+    @Test
+    @DisplayName("Deve retornar HTTP 422 quando o ambiente da consulta divergir do servidor")
+    void deveRetornarUnprocessableEntityQuandoAmbienteDivergirDoServidor() throws Exception {
+        String chave = "32052002601000000000019100001000000000000001123456";
+
+        mockMvc.perform(get("/api/v1/nfse/" + chave)
+                        .param("ambiente", "PRODUCAO")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.statusHttp").value(422))
+                .andExpect(jsonPath("$.mensagem").value(org.hamcrest.Matchers.containsString("Inconsistência de ambiente fiscal: A consulta solicita ambiente PRODUCAO, mas o serviço está configurado para operar exclusivamente em HOMOLOGACAO.")));
     }
 
     @Test

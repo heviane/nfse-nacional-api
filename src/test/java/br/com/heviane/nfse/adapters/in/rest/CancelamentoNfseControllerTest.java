@@ -7,6 +7,7 @@ import br.com.heviane.nfse.core.domain.RespostaEventoCancelamento;
 import br.com.heviane.nfse.core.domain.SefinTransmissaoException;
 import br.com.heviane.nfse.core.ports.in.CancelarNfseUseCase;
 import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
+import br.com.heviane.nfse.config.NfseProperties;
 import br.com.heviane.nfse.testutils.CertificadoTesteHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,11 +45,15 @@ class CancelamentoNfseControllerTest {
     @MockBean
     private CertificadoProvider certificadoProvider;
 
+    @MockBean
+    private NfseProperties nfseProperties;
+
     private CertificadoA1 certificadoA1;
 
     @BeforeEach
     void setUp() throws Exception {
         certificadoA1 = CertificadoTesteHelper.obterCertificadoTeste();
+        when(nfseProperties.resolverAmbiente()).thenReturn(AmbienteSefin.HOMOLOGACAO);
     }
 
     private String compactarGZipBase64(String conteudo) throws Exception {
@@ -207,5 +212,43 @@ class CancelamentoNfseControllerTest {
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.statusHttp").value(502))
                 .andExpect(jsonPath("$.mensagem").value("Erro no servidor de eventos Sefin"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar HTTP 400 quando o campo ambiente for omitido no cancelamento")
+    void deveRetornarBadRequestQuandoAmbienteForOmitido() throws Exception {
+        CancelamentoNfseRequest request = new CancelamentoNfseRequest(
+                "32052002601000000000019100001000000000000001123456",
+                "00000000000191",
+                "1",
+                "Cancelamento solicitado devido a erro de emissao pelo prestador",
+                null
+        );
+
+        mockMvc.perform(post("/api/v1/nfse/cancelar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusHttp").value(400))
+                .andExpect(jsonPath("$.mensagem").value("O campo 'ambiente' é obrigatório (HOMOLOGACAO ou PRODUCAO)."));
+    }
+
+    @Test
+    @DisplayName("Deve retornar HTTP 422 quando o ambiente do cancelamento divergir do servidor")
+    void deveRetornarUnprocessableEntityQuandoAmbienteDivergirDoServidor() throws Exception {
+        CancelamentoNfseRequest request = new CancelamentoNfseRequest(
+                "32052002601000000000019100001000000000000001123456",
+                "00000000000191",
+                "1",
+                "Cancelamento solicitado devido a erro de emissao pelo prestador",
+                AmbienteSefin.PRODUCAO
+        );
+
+        mockMvc.perform(post("/api/v1/nfse/cancelar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.statusHttp").value(422))
+                .andExpect(jsonPath("$.mensagem").value(org.hamcrest.Matchers.containsString("Inconsistência de ambiente fiscal: O cancelamento solicita ambiente PRODUCAO, mas o serviço está configurado para operar exclusivamente em HOMOLOGACAO.")));
     }
 }

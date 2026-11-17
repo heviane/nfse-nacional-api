@@ -6,6 +6,7 @@ import br.com.heviane.nfse.adapters.in.rest.dto.CancelamentoNfseRequest;
 import br.com.heviane.nfse.adapters.in.rest.dto.CancelamentoNfseResponse;
 import br.com.heviane.nfse.adapters.in.rest.dto.ErroResponse;
 import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
+import br.com.heviane.nfse.config.NfseProperties;
 import br.com.heviane.nfse.core.domain.*;
 import br.com.heviane.nfse.core.ports.in.CancelarNfseUseCase;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,22 +28,31 @@ public class CancelamentoNfseController {
 
     private final CancelarNfseUseCase cancelarNfseUseCase;
     private final CertificadoProvider certificadoProvider;
+    private final NfseProperties nfseProperties;
     private final NfseMetrics nfseMetrics;
     private final FiscalAuditLogger fiscalAuditLogger;
 
     @Autowired
     public CancelamentoNfseController(CancelarNfseUseCase cancelarNfseUseCase,
                                       CertificadoProvider certificadoProvider,
+                                      NfseProperties nfseProperties,
                                       @Autowired(required = false) NfseMetrics nfseMetrics,
                                       @Autowired(required = false) FiscalAuditLogger fiscalAuditLogger) {
         this.cancelarNfseUseCase = cancelarNfseUseCase;
         this.certificadoProvider = certificadoProvider;
+        this.nfseProperties = (nfseProperties != null) ? nfseProperties : new NfseProperties();
         this.nfseMetrics = nfseMetrics;
         this.fiscalAuditLogger = fiscalAuditLogger;
     }
 
+    public CancelamentoNfseController(CancelarNfseUseCase cancelarNfseUseCase,
+                                      CertificadoProvider certificadoProvider,
+                                      NfseProperties nfseProperties) {
+        this(cancelarNfseUseCase, certificadoProvider, nfseProperties, null, null);
+    }
+
     public CancelamentoNfseController(CancelarNfseUseCase cancelarNfseUseCase, CertificadoProvider certificadoProvider) {
-        this(cancelarNfseUseCase, certificadoProvider, null, null);
+        this(cancelarNfseUseCase, certificadoProvider, new NfseProperties(), null, null);
     }
 
     @PostMapping(value = "/cancelar", consumes = "application/json", produces = "application/json")
@@ -73,6 +83,17 @@ public class CancelamentoNfseController {
             if (request == null) {
                 throw new IllegalArgumentException("Corpo da requisição de cancelamento é obrigatório.");
             }
+            if (request.ambiente() == null) {
+                throw new IllegalArgumentException("O campo 'ambiente' é obrigatório (HOMOLOGACAO ou PRODUCAO).");
+            }
+
+            AmbienteSefin ambienteServidor = nfseProperties.resolverAmbiente();
+            if (request.ambiente() != ambienteServidor) {
+                throw new ValidacaoFiscalException(
+                        String.format("Inconsistência de ambiente fiscal: O cancelamento solicita ambiente %s, mas o serviço está configurado para operar exclusivamente em %s. Ajuste o campo 'ambiente' na requisição para %s.",
+                                request.ambiente(), ambienteServidor, ambienteServidor)
+                );
+            }
 
             CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
 
@@ -81,7 +102,7 @@ public class CancelamentoNfseController {
                     request.cnpjAutor(),
                     request.codigoMotivo(),
                     request.motivo(),
-                    request.ambiente()
+                    ambienteServidor
             );
 
             RespostaEventoCancelamento resposta = cancelarNfseUseCase.cancelar(comando, certificado);

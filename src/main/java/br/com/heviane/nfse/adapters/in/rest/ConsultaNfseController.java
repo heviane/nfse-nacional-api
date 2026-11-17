@@ -7,6 +7,7 @@ import br.com.heviane.nfse.adapters.in.observability.RegistroEmissaoDuravelServi
 import br.com.heviane.nfse.adapters.in.rest.dto.ConsultaNfseResponse;
 import br.com.heviane.nfse.adapters.in.rest.dto.ErroResponse;
 import br.com.heviane.nfse.adapters.in.security.CertificadoProvider;
+import br.com.heviane.nfse.config.NfseProperties;
 import br.com.heviane.nfse.core.domain.*;
 import br.com.heviane.nfse.core.ports.in.ConsultarNfseUseCase;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +29,7 @@ public class ConsultaNfseController {
 
     private final ConsultarNfseUseCase consultarNfseUseCase;
     private final CertificadoProvider certificadoProvider;
+    private final NfseProperties nfseProperties;
     private final NfseMetrics nfseMetrics;
     private final FiscalAuditLogger fiscalAuditLogger;
     private final RegistroEmissaoDuravelService registroEmissaoDuravelService;
@@ -35,18 +37,26 @@ public class ConsultaNfseController {
     @Autowired
     public ConsultaNfseController(ConsultarNfseUseCase consultarNfseUseCase,
                                   CertificadoProvider certificadoProvider,
+                                  NfseProperties nfseProperties,
                                   @Autowired(required = false) NfseMetrics nfseMetrics,
                                   @Autowired(required = false) FiscalAuditLogger fiscalAuditLogger,
                                   @Autowired(required = false) RegistroEmissaoDuravelService registroEmissaoDuravelService) {
         this.consultarNfseUseCase = consultarNfseUseCase;
         this.certificadoProvider = certificadoProvider;
+        this.nfseProperties = (nfseProperties != null) ? nfseProperties : new NfseProperties();
         this.nfseMetrics = nfseMetrics;
         this.fiscalAuditLogger = fiscalAuditLogger;
         this.registroEmissaoDuravelService = registroEmissaoDuravelService;
     }
 
+    public ConsultaNfseController(ConsultarNfseUseCase consultarNfseUseCase,
+                                  CertificadoProvider certificadoProvider,
+                                  NfseProperties nfseProperties) {
+        this(consultarNfseUseCase, certificadoProvider, nfseProperties, null, null, null);
+    }
+
     public ConsultaNfseController(ConsultarNfseUseCase consultarNfseUseCase, CertificadoProvider certificadoProvider) {
-        this(consultarNfseUseCase, certificadoProvider, null, null, null);
+        this(consultarNfseUseCase, certificadoProvider, new NfseProperties(), null, null, null);
     }
 
     @GetMapping(value = "/{chaveAcesso}", produces = "application/json")
@@ -66,7 +76,7 @@ public class ConsultaNfseController {
             @Parameter(description = "Chave de Acesso da NFS-e composta por exatamente 50 dígitos numéricos", example = "32052002601000000000019100001000000000000001123456")
             @PathVariable("chaveAcesso") String chaveAcesso,
             @Parameter(description = "Ambiente do Sefin Nacional (HOMOLOGACAO ou PRODUCAO)")
-            @RequestParam(value = "ambiente", defaultValue = "HOMOLOGACAO") AmbienteSefin ambiente,
+            @RequestParam(value = "ambiente", required = false) AmbienteSefin ambiente,
             @Parameter(in = ParameterIn.HEADER, description = "Certificado Digital A1 (.pfx/.p12) codificado em Base64")
             @RequestHeader(value = "X-Certificado-Base64", required = false) String certBase64,
             @Parameter(in = ParameterIn.HEADER, description = "Senha de proteção do Certificado Digital A1")
@@ -77,9 +87,20 @@ public class ConsultaNfseController {
             if (chaveAcesso == null || !chaveAcesso.matches("\\d{50}")) {
                 throw new IllegalArgumentException("Chave de acesso deve conter exatamente 50 dígitos numéricos.");
             }
+            if (ambiente == null) {
+                throw new IllegalArgumentException("O parâmetro 'ambiente' é obrigatório (HOMOLOGACAO ou PRODUCAO).");
+            }
+
+            AmbienteSefin ambienteServidor = nfseProperties.resolverAmbiente();
+            if (ambiente != ambienteServidor) {
+                throw new ValidacaoFiscalException(
+                        String.format("Inconsistência de ambiente fiscal: A consulta solicita ambiente %s, mas o serviço está configurado para operar exclusivamente em %s. Ajuste o parâmetro 'ambiente' para %s.",
+                                ambiente, ambienteServidor, ambienteServidor)
+                );
+            }
 
             CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
-            AmbienteSefin amb = ambiente != null ? ambiente : AmbienteSefin.HOMOLOGACAO;
+            AmbienteSefin amb = ambienteServidor;
 
             RespostaConsultaNfse resposta = consultarNfseUseCase.consultar(chaveAcesso, amb, certificado);
             long duracao = System.currentTimeMillis() - inicio;
