@@ -36,7 +36,8 @@ public class SefinClientAdapter implements TransmissorSefinPort {
     private final Duration timeout;
     private final String baseUrlOverride;
     private final SefinRetryConfig retryConfig;
-    private final Map<String, HttpClient> httpClientCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final int MAX_HTTP_CLIENT_CACHE = 50;
+    private final BoundedLruCache<String, HttpClient> httpClientCache = new BoundedLruCache<>(MAX_HTTP_CLIENT_CACHE);
 
     public SefinClientAdapter(AssinadorDpsPort assinadorPort, ObjectMapper objectMapper) {
         this(assinadorPort, new br.com.heviane.nfse.core.services.ValidadorSchemaService(), objectMapper, Duration.ofSeconds(30), null, SefinRetryConfig.padrao());

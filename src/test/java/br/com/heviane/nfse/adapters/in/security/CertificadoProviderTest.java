@@ -145,5 +145,105 @@ class CertificadoProviderTest {
         assertThat(resolvido).isNotNull();
         assertThat(resolvido.getSenha()).isEqualTo("123456".toCharArray());
     }
+
+    @Test
+    @DisplayName("Deve cachear a instância do certificado do servidor quando o arquivo não for modificado")
+    void deveCachearInstanciaCertificadoServidorQuandoArquivoNaoForModificado() throws Exception {
+        CertificadoA1 certMock = CertificadoTesteHelper.obterCertificadoTeste();
+        byte[] certBytes = certMock.getInputStream().readAllBytes();
+
+        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("cert-cache-", ".pfx");
+        java.nio.file.Files.write(tempFile, certBytes);
+
+        System.setProperty("nfse.cert.path", tempFile.toAbsolutePath().toString());
+        System.setProperty("nfse.cert.password", "123456");
+
+        try {
+            CertificadoProvider provider = new CertificadoProvider(false);
+            CertificadoA1 primeiro = provider.obterCertificado(null, null);
+            CertificadoA1 segundo = provider.obterCertificado(null, null);
+
+            assertThat(primeiro).isNotNull();
+            assertThat(segundo).isNotNull();
+            assertThat(primeiro).isSameAs(segundo);
+
+            // Chamar close() em CertificadoServidorA1 é no-op para proteger o cache compartilhado
+            primeiro.close();
+            assertThat(primeiro.getSenha()).isEqualTo("123456".toCharArray());
+        } finally {
+            System.clearProperty("nfse.cert.path");
+            System.clearProperty("nfse.cert.password");
+            java.nio.file.Files.deleteIfExists(tempFile);
+        }
+    }
+
+    @Test
+    @DisplayName("Deve recarregar o certificado do servidor quando o arquivo for modificado em disco")
+    void deveRecarregarCertificadoServidorQuandoArquivoForModificado() throws Exception {
+        CertificadoA1 certMock = CertificadoTesteHelper.obterCertificadoTeste();
+        byte[] certBytes = certMock.getInputStream().readAllBytes();
+
+        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("cert-reload-", ".pfx");
+        java.nio.file.Files.write(tempFile, certBytes);
+
+        System.setProperty("nfse.cert.path", tempFile.toAbsolutePath().toString());
+        System.setProperty("nfse.cert.password", "123456");
+
+        try {
+            CertificadoProvider provider = new CertificadoProvider(false);
+            CertificadoA1 primeiro = provider.obterCertificado(null, null);
+
+            // Simula renovação do arquivo em disco alterando o timestamp
+            java.nio.file.attribute.FileTime novoTimestamp = java.nio.file.attribute.FileTime.from(
+                    java.time.Instant.now().plusSeconds(10)
+            );
+            java.nio.file.Files.setLastModifiedTime(tempFile, novoTimestamp);
+
+            CertificadoA1 recarregado = provider.obterCertificado(null, null);
+
+            assertThat(recarregado).isNotNull();
+            assertThat(recarregado).isNotSameAs(primeiro);
+        } finally {
+            System.clearProperty("nfse.cert.path");
+            System.clearProperty("nfse.cert.password");
+            java.nio.file.Files.deleteIfExists(tempFile);
+        }
+    }
+
+    @Test
+    @DisplayName("Deve zerar a memória do certificado transitório de header após execução do try-with-resources")
+    void deveFecharCertificadoTransienteDeHeaderNoClose() throws Exception {
+        CertificadoA1 certMock = CertificadoTesteHelper.obterCertificadoTeste();
+        byte[] certBytes = certMock.getInputStream().readAllBytes();
+        String certB64 = Base64.getEncoder().encodeToString(certBytes);
+
+        CertificadoProvider provider = new CertificadoProvider(true);
+        CertificadoA1 transiente;
+
+        try (CertificadoA1 cert = provider.obterCertificado(certB64, "123456")) {
+            transiente = cert;
+            assertThat(cert.getSenha()).isEqualTo("123456".toCharArray());
+        }
+
+        // Após sair do try-with-resources, a senha deve ter sido limpa (zeroed)
+        assertThat(transiente.getSenha()).containsOnly('\0');
+    }
+
+    @Test
+    @DisplayName("Deve cachear o certificado do servidor configurado via Base64")
+    void deveCachearCertificadoServidorViaBase64() throws Exception {
+        CertificadoA1 certMock = CertificadoTesteHelper.obterCertificadoTeste();
+        byte[] certBytes = certMock.getInputStream().readAllBytes();
+        String certB64 = Base64.getEncoder().encodeToString(certBytes);
+
+        NfseProperties properties = new NfseProperties();
+        properties.setCert(new NfseProperties.CertificadoProperties(false, null, certB64, "123456"));
+
+        CertificadoProvider provider = new CertificadoProvider(properties);
+        CertificadoA1 primeiro = provider.obterCertificado(null, null);
+        CertificadoA1 segundo = provider.obterCertificado(null, null);
+
+        assertThat(primeiro).isSameAs(segundo);
+    }
 }
 

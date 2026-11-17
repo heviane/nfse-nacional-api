@@ -95,36 +95,36 @@ public class CancelamentoNfseController {
                 );
             }
 
-            CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
+            try (CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha)) {
+                RequisicaoCancelamentoDps comando = new RequisicaoCancelamentoDps(
+                        request.chaveAcesso(),
+                        request.cnpjAutor(),
+                        request.codigoMotivo(),
+                        request.motivo(),
+                        ambienteServidor
+                );
 
-            RequisicaoCancelamentoDps comando = new RequisicaoCancelamentoDps(
-                    request.chaveAcesso(),
-                    request.cnpjAutor(),
-                    request.codigoMotivo(),
-                    request.motivo(),
-                    ambienteServidor
-            );
+                RespostaEventoCancelamento resposta = cancelarNfseUseCase.cancelar(comando, certificado);
+                long duracao = System.currentTimeMillis() - inicio;
 
-            RespostaEventoCancelamento resposta = cancelarNfseUseCase.cancelar(comando, certificado);
-            long duracao = System.currentTimeMillis() - inicio;
+                if (fiscalAuditLogger != null) {
+                    fiscalAuditLogger.registrarCancelamento(resposta.chaveAcesso(), cnpjAutor, resposta.codigoStatus(), 200, duracao);
+                }
+                if (nfseMetrics != null) {
+                    nfseMetrics.registrarCancelamento(resposta.isSucesso(), !resposta.isSucesso(), duracao);
+                }
 
-            if (fiscalAuditLogger != null) {
-                fiscalAuditLogger.registrarCancelamento(resposta.chaveAcesso(), cnpjAutor, resposta.codigoStatus(), 200, duracao);
+                CancelamentoNfseResponse response = new CancelamentoNfseResponse(
+                        resposta.isSucesso(),
+                        resposta.codigoStatus(),
+                        resposta.motivoStatus(),
+                        resposta.chaveAcesso(),
+                        resposta.idEvento(),
+                        resposta.obterEventoXmlDescompactado()
+                );
+
+                return ResponseEntity.ok(response);
             }
-            if (nfseMetrics != null) {
-                nfseMetrics.registrarCancelamento(resposta.isSucesso(), !resposta.isSucesso(), duracao);
-            }
-
-            CancelamentoNfseResponse response = new CancelamentoNfseResponse(
-                    resposta.isSucesso(),
-                    resposta.codigoStatus(),
-                    resposta.motivoStatus(),
-                    resposta.chaveAcesso(),
-                    resposta.idEvento(),
-                    resposta.obterEventoXmlDescompactado()
-            );
-
-            return ResponseEntity.ok(response);
         } catch (Exception e) {
             long duracao = System.currentTimeMillis() - inicio;
             if (fiscalAuditLogger != null) {

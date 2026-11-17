@@ -192,48 +192,49 @@ public class LegacySoapController {
                 idDps = fiscalAuditLogger.extrairIdDps(xmlDps);
             }
 
-            CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
             AmbienteSefin ambiente = nfseProperties.resolverAmbiente();
 
-            RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(xmlDps, ambiente, certificado);
-            long duracao = System.currentTimeMillis() - inicio;
+            try (CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha)) {
+                RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(xmlDps, ambiente, certificado);
+                long duracao = System.currentTimeMillis() - inicio;
 
-            String correlationId = MDC.get(CorrelationIdFilter.CORRELATION_ID_KEY);
-            if (correlationId == null || correlationId.isBlank()) {
-                correlationId = UUID.randomUUID().toString();
-            }
+                String correlationId = MDC.get(CorrelationIdFilter.CORRELATION_ID_KEY);
+                if (correlationId == null || correlationId.isBlank()) {
+                    correlationId = UUID.randomUUID().toString();
+                }
 
-            if (fiscalAuditLogger != null) {
-                fiscalAuditLogger.registrarEmissao("SOAP", idDps, resposta.chaveAcesso(), cnpjEmitente, resposta.numeroProtocolo(), resposta.codigoStatus(), 200, duracao);
-            }
-            if (nfseMetrics != null) {
-                nfseMetrics.registrarEmissao("SOAP", resposta.isSucesso(), !resposta.isSucesso(), duracao);
-            }
-            if (registroDuravelService != null) {
-                registroDuravelService.salvar(new RegistroEmissaoAuditoria(
-                        Instant.now(),
-                        idDps,
-                        resposta.chaveAcesso(),
-                        resposta.numeroProtocolo(),
+                if (fiscalAuditLogger != null) {
+                    fiscalAuditLogger.registrarEmissao("SOAP", idDps, resposta.chaveAcesso(), cnpjEmitente, resposta.numeroProtocolo(), resposta.codigoStatus(), 200, duracao);
+                }
+                if (nfseMetrics != null) {
+                    nfseMetrics.registrarEmissao("SOAP", resposta.isSucesso(), !resposta.isSucesso(), duracao);
+                }
+                if (registroDuravelService != null) {
+                    registroDuravelService.salvar(new RegistroEmissaoAuditoria(
+                            Instant.now(),
+                            idDps,
+                            resposta.chaveAcesso(),
+                            resposta.numeroProtocolo(),
+                            resposta.codigoStatus(),
+                            fiscalAuditLogger != null ? fiscalAuditLogger.mascararCnpj(cnpjEmitente) : cnpjEmitente,
+                            ambiente.name(),
+                            "SOAP",
+                            correlationId
+                    ));
+                }
+
+                String soapResponse = montarRespostaSoapSucesso(
+                        resposta.isSucesso(),
                         resposta.codigoStatus(),
-                        fiscalAuditLogger != null ? fiscalAuditLogger.mascararCnpj(cnpjEmitente) : cnpjEmitente,
-                        ambiente.name(),
-                        "SOAP",
-                        correlationId
-                ));
+                        resposta.motivoStatus(),
+                        resposta.chaveAcesso(),
+                        resposta.obterNfseXmlDescompactado()
+                );
+
+                return ResponseEntity.ok()
+                        .contentType(MediaType.TEXT_XML)
+                        .body(soapResponse);
             }
-
-            String soapResponse = montarRespostaSoapSucesso(
-                    resposta.isSucesso(),
-                    resposta.codigoStatus(),
-                    resposta.motivoStatus(),
-                    resposta.chaveAcesso(),
-                    resposta.obterNfseXmlDescompactado()
-            );
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.TEXT_XML)
-                    .body(soapResponse);
 
         } catch (Exception e) {
             long duracao = System.currentTimeMillis() - inicio;

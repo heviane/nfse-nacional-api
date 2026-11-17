@@ -21,7 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class SefinSSLContextFactory {
 
-    private static final Map<String, SSLContext> SSL_CONTEXT_CACHE = new ConcurrentHashMap<>();
+    private static final int MAX_CACHE_ENTRIES = 50;
+    private static final BoundedLruCache<String, SSLContext> SSL_CONTEXT_CACHE = new BoundedLruCache<>(MAX_CACHE_ENTRIES);
 
     private SefinSSLContextFactory() {
     }

@@ -99,28 +99,29 @@ public class ConsultaNfseController {
                 );
             }
 
-            CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
-            AmbienteSefin amb = ambienteServidor;
+            try (CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha)) {
+                AmbienteSefin amb = ambienteServidor;
 
-            RespostaConsultaNfse resposta = consultarNfseUseCase.consultar(chaveAcesso, amb, certificado);
-            long duracao = System.currentTimeMillis() - inicio;
+                RespostaConsultaNfse resposta = consultarNfseUseCase.consultar(chaveAcesso, amb, certificado);
+                long duracao = System.currentTimeMillis() - inicio;
 
-            if (fiscalAuditLogger != null) {
-                fiscalAuditLogger.registrarConsulta(chaveAcesso, resposta.codigoStatus(), 200, duracao);
+                if (fiscalAuditLogger != null) {
+                    fiscalAuditLogger.registrarConsulta(chaveAcesso, resposta.codigoStatus(), 200, duracao);
+                }
+                if (nfseMetrics != null) {
+                    nfseMetrics.registrarConsulta(true, resposta.isEncontrada(), duracao);
+                }
+
+                ConsultaNfseResponse response = new ConsultaNfseResponse(
+                        resposta.isEncontrada(),
+                        resposta.codigoStatus(),
+                        resposta.motivoStatus(),
+                        resposta.chaveAcesso(),
+                        resposta.obterNfseXmlDescompactado()
+                );
+
+                return ResponseEntity.ok(response);
             }
-            if (nfseMetrics != null) {
-                nfseMetrics.registrarConsulta(true, resposta.isEncontrada(), duracao);
-            }
-
-            ConsultaNfseResponse response = new ConsultaNfseResponse(
-                    resposta.isEncontrada(),
-                    resposta.codigoStatus(),
-                    resposta.motivoStatus(),
-                    resposta.chaveAcesso(),
-                    resposta.obterNfseXmlDescompactado()
-            );
-
-            return ResponseEntity.ok(response);
         } catch (Exception e) {
             long duracao = System.currentTimeMillis() - inicio;
             if (fiscalAuditLogger != null) {

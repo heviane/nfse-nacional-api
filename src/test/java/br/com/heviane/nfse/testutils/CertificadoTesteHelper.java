@@ -1,5 +1,6 @@
 package br.com.heviane.nfse.testutils;
 
+import br.com.heviane.nfse.adapters.in.security.CertificadoServidorA1;
 import br.com.heviane.nfse.core.domain.CertificadoA1;
 
 import java.io.File;
@@ -12,22 +13,24 @@ import java.nio.file.Files;
  */
 public final class CertificadoTesteHelper {
 
-    private static volatile CertificadoA1 certificadoCache;
+    private static volatile byte[] bytesCache;
+    public static final String TEST_PASSWORD = "testpassword123";
 
     private CertificadoTesteHelper() {
     }
 
     public static synchronized CertificadoA1 obterCertificadoTeste() {
-        if (certificadoCache != null) {
-            return certificadoCache;
+        if (bytesCache == null) {
+            bytesCache = carregarOuGerarBytes();
         }
+        return new CertificadoServidorA1(bytesCache.clone(), TEST_PASSWORD);
+    }
 
+    private static byte[] carregarOuGerarBytes() {
         // 1. Tenta carregar o certificado estático descartável do classpath (rápido e sem dependência de processos do SO)
         try (java.io.InputStream is = CertificadoTesteHelper.class.getResourceAsStream("/certs/teste_a1.p12")) {
             if (is != null) {
-                byte[] bytes = is.readAllBytes();
-                certificadoCache = new CertificadoA1(bytes, "testpassword123");
-                return certificadoCache;
+                return is.readAllBytes();
             }
         } catch (Exception ignored) {
         }
@@ -38,7 +41,6 @@ public final class CertificadoTesteHelper {
             Files.deleteIfExists(tempKeystore.toPath());
             tempKeystore.deleteOnExit();
 
-            String password = "testpassword123";
             String alias = "teste_a1";
             String keytoolExec = resolverKeytoolExecutable();
 
@@ -50,8 +52,8 @@ public final class CertificadoTesteHelper {
                     "-keysize", "2048",
                     "-storetype", "PKCS12",
                     "-keystore", tempKeystore.getAbsolutePath(),
-                    "-storepass", password,
-                    "-keypass", password,
+                    "-storepass", TEST_PASSWORD,
+                    "-keypass", TEST_PASSWORD,
                     "-dname", "CN=EMPRESA DE TESTE LTDA, OU=TI, O=TESTE, C=BR",
                     "-validity", "365"
             );
@@ -66,9 +68,7 @@ public final class CertificadoTesteHelper {
 
             byte[] bytes = Files.readAllBytes(tempKeystore.toPath());
             Files.deleteIfExists(tempKeystore.toPath());
-
-            certificadoCache = new CertificadoA1(bytes, password);
-            return certificadoCache;
+            return bytes;
         } catch (Exception e) {
             throw new RuntimeException("Erro ao inicializar certificado de teste em memória: " + e.getMessage(), e);
         }

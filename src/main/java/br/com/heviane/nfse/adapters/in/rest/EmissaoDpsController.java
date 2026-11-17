@@ -109,42 +109,43 @@ public class EmissaoDpsController {
                 );
             }
 
-            CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha);
             AmbienteSefin ambiente = ambienteServidor;
 
-            RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(request.xmlDps(), ambiente, certificado);
-            long duracao = System.currentTimeMillis() - inicio;
+            try (CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha)) {
+                RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(request.xmlDps(), ambiente, certificado);
+                long duracao = System.currentTimeMillis() - inicio;
 
-            if (fiscalAuditLogger != null) {
-                fiscalAuditLogger.registrarEmissao("REST", idDps, resposta.chaveAcesso(), cnpjEmitente, resposta.numeroProtocolo(), resposta.codigoStatus(), 200, duracao);
-            }
-            if (nfseMetrics != null) {
-                nfseMetrics.registrarEmissao("REST", resposta.isSucesso(), !resposta.isSucesso(), duracao);
-            }
-            if (registroDuravelService != null) {
-                registroDuravelService.salvar(new RegistroEmissaoAuditoria(
-                        Instant.now(),
-                        idDps,
-                        resposta.chaveAcesso(),
-                        resposta.numeroProtocolo(),
+                if (fiscalAuditLogger != null) {
+                    fiscalAuditLogger.registrarEmissao("REST", idDps, resposta.chaveAcesso(), cnpjEmitente, resposta.numeroProtocolo(), resposta.codigoStatus(), 200, duracao);
+                }
+                if (nfseMetrics != null) {
+                    nfseMetrics.registrarEmissao("REST", resposta.isSucesso(), !resposta.isSucesso(), duracao);
+                }
+                if (registroDuravelService != null) {
+                    registroDuravelService.salvar(new RegistroEmissaoAuditoria(
+                            Instant.now(),
+                            idDps,
+                            resposta.chaveAcesso(),
+                            resposta.numeroProtocolo(),
+                            resposta.codigoStatus(),
+                            fiscalAuditLogger != null ? fiscalAuditLogger.mascararCnpj(cnpjEmitente) : cnpjEmitente,
+                            ambiente.name(),
+                            "REST",
+                            MDC.get(CorrelationIdFilter.CORRELATION_ID_KEY)
+                    ));
+                }
+
+                EmissaoDpsResponse response = new EmissaoDpsResponse(
+                        resposta.isSucesso(),
                         resposta.codigoStatus(),
-                        fiscalAuditLogger != null ? fiscalAuditLogger.mascararCnpj(cnpjEmitente) : cnpjEmitente,
-                        ambiente.name(),
-                        "REST",
-                        MDC.get(CorrelationIdFilter.CORRELATION_ID_KEY)
-                ));
+                        resposta.motivoStatus(),
+                        resposta.chaveAcesso(),
+                        resposta.obterNfseXmlDescompactado(),
+                        resposta.numeroProtocolo()
+                );
+
+                return ResponseEntity.ok(response);
             }
-
-            EmissaoDpsResponse response = new EmissaoDpsResponse(
-                    resposta.isSucesso(),
-                    resposta.codigoStatus(),
-                    resposta.motivoStatus(),
-                    resposta.chaveAcesso(),
-                    resposta.obterNfseXmlDescompactado(),
-                    resposta.numeroProtocolo()
-            );
-
-            return ResponseEntity.ok(response);
         } catch (Exception e) {
             long duracao = System.currentTimeMillis() - inicio;
             if (fiscalAuditLogger != null) {
