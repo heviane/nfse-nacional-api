@@ -2,6 +2,7 @@ package br.com.heviane.nfse.adapters.out.signer;
 
 import br.com.heviane.nfse.core.domain.AssinaturaDigitalException;
 import br.com.heviane.nfse.core.domain.CertificadoA1;
+import br.com.heviane.nfse.core.domain.ValidacaoFiscalException;
 import br.com.heviane.nfse.core.ports.out.AssinadorDpsPort;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -72,16 +73,16 @@ public class AssinadorDpsService implements AssinadorDpsPort {
                 tagAlvo = "infDPS";
             } else if ("pedRegEvento".equals(rootName)) {
                 tagAlvo = "infPedReg";
-            } else if (doc.getElementsByTagNameNS(NFSE_NS, "infDPS").getLength() > 0 || doc.getElementsByTagName("infDPS").getLength() > 0) {
+            } else if (contemElemento(doc, "infDPS")) {
                 tagAlvo = "infDPS";
-            } else if (doc.getElementsByTagNameNS(NFSE_NS, "infPedReg").getLength() > 0 || doc.getElementsByTagName("infPedReg").getLength() > 0) {
+            } else if (contemElemento(doc, "infPedReg")) {
                 tagAlvo = "infPedReg";
             } else {
                 throw new AssinaturaDigitalException("Elemento fiscal a ser assinado não reconhecido na raiz <" + rootName + ">.");
             }
 
             return assinarDocumento(doc, root, tagAlvo, certificado);
-        } catch (AssinaturaDigitalException e) {
+        } catch (ValidacaoFiscalException | AssinaturaDigitalException e) {
             throw e;
         } catch (Exception e) {
             throw new AssinaturaDigitalException("Falha ao assinar digitalmente o XML: " + e.getMessage(), e);
@@ -103,7 +104,7 @@ public class AssinadorDpsService implements AssinadorDpsPort {
         try {
             Document doc = parseDocument(xml);
             return assinarDocumento(doc, doc.getDocumentElement(), tagElementoAlvo, certificado);
-        } catch (AssinaturaDigitalException e) {
+        } catch (ValidacaoFiscalException | AssinaturaDigitalException e) {
             throw e;
         } catch (Exception e) {
             throw new AssinaturaDigitalException("Falha ao assinar digitalmente o XML: " + e.getMessage(), e);
@@ -111,6 +112,10 @@ public class AssinadorDpsService implements AssinadorDpsPort {
     }
 
     private String assinarDocumento(Document doc, Element rootElement, String tagElementoAlvo, CertificadoA1 certificado) throws Exception {
+        if (contemAssinatura(doc)) {
+            throw new ValidacaoFiscalException("O documento XML fornecido já contém uma assinatura digital (<Signature>). Não é permitida a aposição de assinatura duplicada.");
+        }
+
         Element targetElement = obterElementoAlvo(doc, tagElementoAlvo);
         String idAttr = targetElement.getAttribute("Id");
         if (idAttr == null || idAttr.isBlank()) {
@@ -247,8 +252,14 @@ public class AssinadorDpsService implements AssinadorDpsPort {
         return (Element) nodes.item(0);
     }
 
-    private Element obterElementoInfDps(Document doc) {
-        return obterElementoAlvo(doc, "infDPS");
+    private boolean contemElemento(Document doc, String tagName) {
+        return doc.getElementsByTagNameNS(NFSE_NS, tagName).getLength() > 0
+                || doc.getElementsByTagName(tagName).getLength() > 0;
+    }
+
+    private boolean contemAssinatura(Document doc) {
+        return doc.getElementsByTagNameNS(XMLDSIG_NS, "Signature").getLength() > 0
+                || doc.getElementsByTagName("Signature").getLength() > 0;
     }
 
     private void registrarAtributoIdAssinado(Document doc) {

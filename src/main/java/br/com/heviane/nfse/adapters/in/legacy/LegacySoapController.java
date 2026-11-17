@@ -313,7 +313,8 @@ public class LegacySoapController {
         }
 
         String decodificado = payload;
-        if (decodificado.contains("&lt;")) {
+        boolean jaPossuiTagsDps = payload.contains("<DPS") || payload.contains("<infDPS");
+        if (!jaPossuiTagsDps && decodificado.contains("&lt;")) {
             decodificado = decodificado
                     .replace("&lt;", "<")
                     .replace("&gt;", ">")
@@ -337,7 +338,13 @@ public class LegacySoapController {
         int fimInfDps = decodificado.indexOf("</infDPS>");
         if (inicioInfDps != -1 && fimInfDps != -1 && fimInfDps > inicioInfDps) {
             String infDps = decodificado.substring(inicioInfDps, fimInfDps + "</infDPS>".length()).trim();
-            String versao = (infDps.contains("<IBSCBS") || decodificado.contains("versao=\"1.01\"") || decodificado.contains("versao='1.01'")) ? "1.01" : "1.00";
+            boolean temIbsCbs = infDps.contains("<IBSCBS") || decodificado.contains("versao=\"1.01\"") || decodificado.contains("versao='1.01'");
+            String versao = temIbsCbs ? "1.01" : "1.00";
+            if (temIbsCbs) {
+                log.info("Normalização SOAP: envelopando <infDPS> avulso na raiz <DPS versao='1.01'> devido à presença de IBS/CBS");
+            } else {
+                log.info("Normalização SOAP: envelopando <infDPS> avulso na raiz <DPS versao='1.00'>");
+            }
             return String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?><DPS xmlns=\"http://www.sped.fazenda.gov.br/nfse\" versao=\"%s\">%s</DPS>", versao, infDps);
         }
 
@@ -364,13 +371,17 @@ public class LegacySoapController {
         boolean temIbsCbs = resultado.contains("<IBSCBS") || (contextoEnvelope != null && contextoEnvelope.contains("versao=\"1.01\""));
         if (temIbsCbs) {
             if (resultado.contains("versao=\"1.00\"")) {
+                log.info("Normalização SOAP: reescrevendo versao='1.00' para '1.01' na DPS devido à presença de elementos de IBS/CBS");
                 resultado = resultado.replace("versao=\"1.00\"", "versao=\"1.01\"");
             } else if (resultado.contains("versao='1.00'")) {
+                log.info("Normalização SOAP: reescrevendo versao='1.00' para '1.01' na DPS devido à presença de elementos de IBS/CBS");
                 resultado = resultado.replace("versao='1.00'", "versao='1.01'");
             } else if (!resultado.contains("versao=")) {
+                log.info("Normalização SOAP: definindo versao='1.01' na DPS devido à presença de elementos de IBS/CBS");
                 resultado = resultado.replace("<DPS ", "<DPS versao=\"1.01\" ");
             }
         } else if (!resultado.contains("versao=")) {
+            log.info("Normalização SOAP: definindo versao='1.00' padrão na DPS ausente de atributo versao");
             resultado = resultado.replace("<DPS ", "<DPS versao=\"1.00\" ");
         }
 

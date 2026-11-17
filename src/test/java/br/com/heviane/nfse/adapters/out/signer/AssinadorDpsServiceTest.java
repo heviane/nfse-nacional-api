@@ -2,6 +2,7 @@ package br.com.heviane.nfse.adapters.out.signer;
 
 import br.com.heviane.nfse.core.domain.AssinaturaDigitalException;
 import br.com.heviane.nfse.core.domain.CertificadoA1;
+import br.com.heviane.nfse.core.domain.ValidacaoFiscalException;
 import br.com.heviane.nfse.core.services.ValidadorSchemaService;
 import br.com.heviane.nfse.testutils.CertificadoTesteHelper;
 import org.junit.jupiter.api.BeforeEach;
@@ -161,6 +162,17 @@ class AssinadorDpsServiceTest {
         // Validação contra o schema XSD oficial
         List<String> erros = validador.validarPedRegEvento(xmlAssinado);
         assertThat(erros).as("pedRegEvento assinado deve ser 100% válido contra o XSD oficial").isEmpty();
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar assinatura com ValidacaoFiscalException quando o documento XML já contiver <Signature>")
+    void deveRejeitarAssinaturaQuandoDocumentoJaContiverSignature() {
+        String xmlAssinado = assinador.assinar(xmlValido, certificado);
+        assertThat(xmlAssinado).contains("<Signature");
+
+        assertThatThrownBy(() -> assinador.assinar(xmlAssinado, certificado))
+                .isInstanceOf(ValidacaoFiscalException.class)
+                .hasMessageContaining("já contém uma assinatura digital (<Signature>)");
     }
 
     @Test

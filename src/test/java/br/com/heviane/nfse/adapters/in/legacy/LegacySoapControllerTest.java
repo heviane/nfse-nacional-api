@@ -231,6 +231,46 @@ class LegacySoapControllerTest {
         String envelopeInfDps = "<soap><Body><infDPS Id=\"DPS123\"><tpAmb>2</tpAmb></infDPS></Body></soap>";
         assertThat(controller.extrairXmlDps(envelopeInfDps)).contains("<DPS").contains("DPS123");
 
+        // Payload com DPS em XML claro e &amp; legítimo em xDescServ: NUNCA deve decodificar para & nu
+        String envelopeComAmpersand = """
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Body>
+                    <DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+                      <infDPS Id="DPS123">
+                        <xDescServ>Consultoria &amp; Treinamento de Software</xDescServ>
+                      </infDPS>
+                    </DPS>
+                  </soapenv:Body>
+                </soapenv:Envelope>
+                """.stripIndent();
+        String xmlExtraido = controller.extrairXmlDps(envelopeComAmpersand);
+        assertThat(xmlExtraido).contains("<xDescServ>Consultoria &amp; Treinamento de Software</xDescServ>");
+        assertThat(xmlExtraido).doesNotContain("Consultoria & Treinamento");
+
+        // Payload com DPS encapsulada em CDATA e &amp; legítimo: NUNCA deve decodificar para & nu
+        String envelopeCdata = """
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Body>
+                    <xmlEnvio><![CDATA[<DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00"><infDPS Id="DPS456"><xDescServ>Pesquisa &amp; Desenvolvimento</xDescServ></infDPS></DPS>]]></xmlEnvio>
+                  </soapenv:Body>
+                </soapenv:Envelope>
+                """.stripIndent();
+        String xmlExtraidoCdata = controller.extrairXmlDps(envelopeCdata);
+        assertThat(xmlExtraidoCdata).contains("<xDescServ>Pesquisa &amp; Desenvolvimento</xDescServ>");
+        assertThat(xmlExtraidoCdata).doesNotContain("Pesquisa & Desenvolvimento");
+
+        // Payload serializado com entidades XML (&lt;DPS...&gt;): deve decodificar entidades adequadamente
+        String envelopeComEntidades = """
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Body>
+                    <xmlEnvio>&lt;DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00"&gt;&lt;infDPS Id="DPS789"&gt;&lt;xDescServ&gt;Consultoria &amp;amp; Auditoria&lt;/xDescServ&gt;&lt;/infDPS&gt;&lt;/DPS&gt;</xmlEnvio>
+                  </soapenv:Body>
+                </soapenv:Envelope>
+                """.stripIndent();
+        String xmlExtraidoEntidades = controller.extrairXmlDps(envelopeComEntidades);
+        assertThat(xmlExtraidoEntidades).contains("<xDescServ>Consultoria &amp; Auditoria</xDescServ>");
+        assertThat(xmlExtraidoEntidades).contains("<infDPS Id=\"DPS789\">");
+
         assertThatThrownBy(() -> controller.extrairXmlDps("<soap><Body>SemDps</Body></soap>"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
