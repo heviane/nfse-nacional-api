@@ -109,4 +109,100 @@ class RegistroEmissaoDuravelServiceTest {
         assertThat(service.buscarPorIdDps("DPS1")).isEmpty();
         assertThat(service.listarUltimas(10)).isEmpty();
     }
+
+    @Test
+    @DisplayName("Deve gravar registro PENDENTE e posteriormente atualizar para CONCLUIDO")
+    void deveGravarRegistroPendenteEAtualizarParaConcluido() {
+        Path arquivo = tempDir.resolve("registro-pendente.jsonl");
+        RegistroEmissaoDuravelService service = new RegistroEmissaoDuravelService(arquivo, true);
+
+        // 1. Salva pré-transmissão como PENDENTE
+        RegistroEmissaoAuditoria pendente = new RegistroEmissaoAuditoria(
+                Instant.now(),
+                "DPS999",
+                null,
+                null,
+                null,
+                "00.***.***/0001-**",
+                "HOMOLOGACAO",
+                "REST",
+                "corr-pendente-1",
+                RegistroEmissaoAuditoria.SITUACAO_PENDENTE
+        );
+        service.salvar(pendente);
+
+        Optional<RegistroEmissaoAuditoria> optPendente = service.buscarPorIdDps("DPS999");
+        assertThat(optPendente).isPresent();
+        assertThat(optPendente.get().situacao()).isEqualTo(RegistroEmissaoAuditoria.SITUACAO_PENDENTE);
+        assertThat(optPendente.get().chaveAcesso()).isNull();
+
+        // 2. Transmissão com sucesso atualiza para CONCLUIDO
+        RegistroEmissaoAuditoria concluido = new RegistroEmissaoAuditoria(
+                Instant.now(),
+                "DPS999",
+                "32052002601000000000019100001000000000000001123456",
+                "PROT-SUCCESS",
+                100,
+                "00.***.***/0001-**",
+                "HOMOLOGACAO",
+                "REST",
+                "corr-pendente-1",
+                RegistroEmissaoAuditoria.SITUACAO_CONCLUIDO
+        );
+        service.salvar(concluido);
+
+        Optional<RegistroEmissaoAuditoria> optConcluido = service.buscarPorIdDps("DPS999");
+        assertThat(optConcluido).isPresent();
+        assertThat(optConcluido.get().situacao()).isEqualTo(RegistroEmissaoAuditoria.SITUACAO_CONCLUIDO);
+        assertThat(optConcluido.get().chaveAcesso()).isEqualTo("32052002601000000000019100001000000000000001123456");
+        assertThat(optConcluido.get().numeroProtocolo()).isEqualTo("PROT-SUCCESS");
+
+        // Busca por chave também deve encontrar
+        Optional<RegistroEmissaoAuditoria> optPorChave = service.buscarPorChave("32052002601000000000019100001000000000000001123456");
+        assertThat(optPorChave).isPresent();
+        assertThat(optPorChave.get().idDps()).isEqualTo("DPS999");
+    }
+
+    @Test
+    @DisplayName("Deve carregar índice em memória na inicialização a partir de arquivo existente no disco")
+    void deveCarregarIndiceDoDiscoNaInicializacao() {
+        Path arquivo = tempDir.resolve("registro-reinicializacao.jsonl");
+        RegistroEmissaoDuravelService service1 = new RegistroEmissaoDuravelService(arquivo, true);
+
+        service1.salvar(new RegistroEmissaoAuditoria(
+                Instant.now(), "DPS_INIT_1", "CHAVE_INIT_1", "PROT1", 100, "CNPJ1", "HOMOLOGACAO", "REST", "c1"
+        ));
+        service1.salvar(new RegistroEmissaoAuditoria(
+                Instant.now(), "DPS_INIT_2", "CHAVE_INIT_2", "PROT2", 100, "CNPJ2", "HOMOLOGACAO", "SOAP", "c2"
+        ));
+
+        // Cria nova instância do serviço apontando para o mesmo arquivo (simulando restart do middleware)
+        RegistroEmissaoDuravelService service2 = new RegistroEmissaoDuravelService(arquivo, true);
+
+        Optional<RegistroEmissaoAuditoria> opt1 = service2.buscarPorIdDps("DPS_INIT_1");
+        assertThat(opt1).isPresent();
+        assertThat(opt1.get().chaveAcesso()).isEqualTo("CHAVE_INIT_1");
+
+        Optional<RegistroEmissaoAuditoria> opt2 = service2.buscarPorChave("CHAVE_INIT_2");
+        assertThat(opt2).isPresent();
+        assertThat(opt2.get().idDps()).isEqualTo("DPS_INIT_2");
+    }
+
+    @Test
+    @DisplayName("Deve contabilizar falha de gravação e acionar métrica quando I/O falhar")
+    void deveContabilizarFalhaDeGravacaoQuandoIoFalhar() {
+        // Aponta para um diretório que impede criação de arquivo com mesmo nome
+        Path arquivoInvalido = tempDir.resolve("diretorio_como_arquivo");
+        java.io.File dir = arquivoInvalido.toFile();
+        dir.mkdir();
+        dir.setReadOnly();
+
+        io.micrometer.core.instrument.simple.SimpleMeterRegistry meterRegistry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        NfseMetrics metrics = new NfseMetrics(meterRegistry);
+        RegistroEmissaoDuravelService service = new RegistroEmissaoDuravelService(arquivoInvalido, true, metrics);
+
+        service.salvar(new RegistroEmissaoAuditoria(Instant.now(), "DPS_FALHA", "CHAVE", "PROT", 100, "CNPJ", "HOMOLOGACAO", "REST", "c1"));
+
+        assertThat(service.getContadorFalhasGravacao()).isGreaterThanOrEqualTo(1);
+    }
 }

@@ -92,4 +92,16 @@ public class NfseMetrics {
                 .register(registry)
                 .record(duracaoMs, TimeUnit.MILLISECONDS);
     }
+
+    /**
+     * Registra falha de I/O na persistência do registro durável de auditoria.
+     */
+    public void registrarFalhaGravacaoAuditoria() {
+        if (registry == null) return;
+
+        Counter.builder("nfse.auditoria.gravacao.falhas")
+                .description("Total de falhas ao gravar registro durável em disco")
+                .register(registry)
+                .increment();
+    }
 }

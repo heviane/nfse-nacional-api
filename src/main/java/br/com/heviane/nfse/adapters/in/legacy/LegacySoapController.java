@@ -194,14 +194,30 @@ public class LegacySoapController {
 
             AmbienteSefin ambiente = nfseProperties.resolverAmbiente();
 
+            String correlationId = MDC.get(CorrelationIdFilter.CORRELATION_ID_KEY);
+            if (correlationId == null || correlationId.isBlank()) {
+                correlationId = UUID.randomUUID().toString();
+            }
+
+            // Registro durável PENDENTE pré-transmissão para resiliência de reconciliação em caso de timeout
+            if (registroDuravelService != null && idDps != null) {
+                registroDuravelService.salvar(new RegistroEmissaoAuditoria(
+                        Instant.now(),
+                        idDps,
+                        null,
+                        null,
+                        null,
+                        fiscalAuditLogger != null ? fiscalAuditLogger.mascararCnpj(cnpjEmitente) : cnpjEmitente,
+                        ambiente.name(),
+                        "SOAP",
+                        correlationId,
+                        RegistroEmissaoAuditoria.SITUACAO_PENDENTE
+                ));
+            }
+
             try (CertificadoA1 certificado = certificadoProvider.obterCertificado(certBase64, certSenha)) {
                 RespostaEmissaoSefin resposta = emitirDpsUseCase.emitir(xmlDps, ambiente, certificado);
                 long duracao = System.currentTimeMillis() - inicio;
-
-                String correlationId = MDC.get(CorrelationIdFilter.CORRELATION_ID_KEY);
-                if (correlationId == null || correlationId.isBlank()) {
-                    correlationId = UUID.randomUUID().toString();
-                }
 
                 if (fiscalAuditLogger != null) {
                     fiscalAuditLogger.registrarEmissao("SOAP", idDps, resposta.chaveAcesso(), cnpjEmitente, resposta.numeroProtocolo(), resposta.codigoStatus(), 200, duracao);
@@ -219,7 +235,8 @@ public class LegacySoapController {
                             fiscalAuditLogger != null ? fiscalAuditLogger.mascararCnpj(cnpjEmitente) : cnpjEmitente,
                             ambiente.name(),
                             "SOAP",
-                            correlationId
+                            correlationId,
+                            resposta.isSucesso() ? RegistroEmissaoAuditoria.SITUACAO_CONCLUIDO : RegistroEmissaoAuditoria.SITUACAO_PROCESSADO
                     ));
                 }
 
