@@ -268,10 +268,13 @@ public class LegacySoapController {
 
     private String mapearMensagemErro(Exception e, String correlationId) {
         if (e instanceof ValidacaoFiscalException valEx) {
+            String mensagemBase = (valEx.getErros() != null && !valEx.getErros().isEmpty())
+                    ? valEx.getMensagemBase()
+                    : valEx.getMessage();
             String errosDetalhados = (valEx.getErros() != null && !valEx.getErros().isEmpty())
                     ? " Detalhes: " + String.join(" | ", valEx.getErros())
                     : "";
-            return "Falha de validação fiscal: " + valEx.getMessage() + errosDetalhados;
+            return "Falha de validação fiscal: " + mensagemBase + errosDetalhados;
         }
 
         if (e instanceof SecurityException secEx) {

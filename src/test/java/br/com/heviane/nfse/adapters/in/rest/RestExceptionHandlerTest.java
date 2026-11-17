@@ -25,7 +25,7 @@ class RestExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Deve mapear ValidacaoFiscalException para HTTP 422 Unprocessable Entity")
+    @DisplayName("Deve mapear ValidacaoFiscalException para HTTP 422 Unprocessable Entity sem duplicar detalhes na mensagem")
     void deveMapearValidacaoFiscalPara422() {
         ValidacaoFiscalException ex = new ValidacaoFiscalException("Erro XSD", List.of("Campo obrigatório ausente"));
         ResponseEntity<ErroResponse> response = handler.handleValidacaoFiscal(ex);
@@ -33,7 +33,8 @@ class RestExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().statusHttp()).isEqualTo(422);
-        assertThat(response.getBody().detalhes()).contains("Campo obrigatório ausente");
+        assertThat(response.getBody().mensagem()).isEqualTo("Erro XSD");
+        assertThat(response.getBody().detalhes()).containsExactly("Campo obrigatório ausente");
     }
 
     @Test
@@ -111,6 +112,34 @@ class RestExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().statusHttp()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("Deve mapear IllegalStateException de certificado para HTTP 500 sem vazar caminho do arquivo do servidor")
+    void deveMapearIllegalStateExceptionDeCertificadoPara500SemVazarCaminho() {
+        IllegalStateException ex = new IllegalStateException(
+                "Arquivo de certificado digital não encontrado no caminho configurado (NFSE_CERT_PATH): /opt/certs/privado.pfx"
+        );
+        ResponseEntity<ErroResponse> response = handler.handleIllegalState(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().statusHttp()).isEqualTo(500);
+        assertThat(response.getBody().mensagem()).isEqualTo("Certificado digital A1 não configurado ou inacessível no servidor.");
+        assertThat(response.getBody().mensagem()).doesNotContain("/opt/certs/privado.pfx");
+        assertThat(response.getBody().mensagem()).doesNotContain("NFSE_CERT_PATH");
+    }
+
+    @Test
+    @DisplayName("Deve mapear IllegalStateException genérico para HTTP 500 com mensagem sanitizada")
+    void deveMapearIllegalStateExceptionGenericoPara500() {
+        IllegalStateException ex = new IllegalStateException("Estado inconsistente interno de recurso");
+        ResponseEntity<ErroResponse> response = handler.handleIllegalState(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().statusHttp()).isEqualTo(500);
+        assertThat(response.getBody().mensagem()).isEqualTo("Falha de configuração interna no servidor.");
     }
 
     @Test

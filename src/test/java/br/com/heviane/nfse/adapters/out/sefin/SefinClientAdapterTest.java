@@ -194,7 +194,12 @@ class SefinClientAdapterTest {
 
         assertThatThrownBy(() -> adapter.emitirDps(requisicao, certificado))
                 .isInstanceOf(SefinTransmissaoException.class)
-                .hasMessageContaining("HTTP 500");
+                .hasMessage("Erro HTTP 500 retornado pelo Sefin Nacional.")
+                .satisfies(ex -> {
+                    SefinTransmissaoException ste = (SefinTransmissaoException) ex;
+                    assertThat(ste.getCorpoResposta()).isEqualTo("Erro Interno no Sefin");
+                    assertThat(ste.getMessage()).doesNotContain("Erro Interno no Sefin");
+                });
 
         mockServer.removeContext("/nfse");
     }

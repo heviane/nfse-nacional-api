@@ -22,8 +22,11 @@ public class RestExceptionHandler {
     @ExceptionHandler(ValidacaoFiscalException.class)
     public ResponseEntity<ErroResponse> handleValidacaoFiscal(ValidacaoFiscalException ex) {
         log.warn("Erro de validação fiscal: {}", ex.getMessage());
+        String mensagem = (ex.getErros() != null && !ex.getErros().isEmpty())
+                ? ex.getMensagemBase()
+                : ex.getMessage();
         ErroResponse erro = new ErroResponse(
-                ex.getMessage(),
+                mensagem,
                 ex.getErros(),
                 HttpStatus.UNPROCESSABLE_ENTITY.value()
         );
@@ -100,16 +103,16 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErroResponse> handleIllegalState(IllegalStateException ex) {
-        log.warn("Estado ilegal / configuração ausente: {}", ex.getMessage());
-        HttpStatus status = ex.getMessage() != null && ex.getMessage().toLowerCase().contains("certificado")
-                ? HttpStatus.BAD_REQUEST
-                : HttpStatus.INTERNAL_SERVER_ERROR;
+        log.error("Falha de configuração interna ou estado ilegal no servidor: {}", ex.getMessage());
+        String mensagemCliente = (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("certificado"))
+                ? "Certificado digital A1 não configurado ou inacessível no servidor."
+                : "Falha de configuração interna no servidor.";
 
         ErroResponse erro = new ErroResponse(
-                ex.getMessage(),
-                status.value()
+                mensagemCliente,
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
         );
-        return ResponseEntity.status(status).body(erro);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
     }
 
     @ExceptionHandler(Exception.class)

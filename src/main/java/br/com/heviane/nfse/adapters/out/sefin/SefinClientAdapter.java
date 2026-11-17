@@ -319,6 +319,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             SefinEventoCancelamentoResponseDto dto = objectMapper.readValue(body, SefinEventoCancelamentoResponseDto.class);
             RespostaEventoCancelamento resposta = dto.paraDominio();
             if (!resposta.isSucesso()) {
+                log.debug("Corpo da resposta de rejeição no cancelamento pelo Sefin: {}", body);
                 throw new SefinTransmissaoException(
                         String.format("Rejeição de cancelamento pelo Sefin (Status %d): %s", resposta.codigoStatus(), resposta.motivoStatus()),
                         status,
@@ -329,8 +330,9 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             return resposta;
         }
 
+        log.debug("Corpo da resposta HTTP {} ao registrar cancelamento no Sefin: {}", status, body);
         throw new SefinTransmissaoException(
-                String.format("Erro HTTP %d ao registrar cancelamento no Sefin: %s", status, body),
+                String.format("Erro HTTP %d ao registrar cancelamento no Sefin Nacional.", status),
                 status,
                 null,
                 body
@@ -364,6 +366,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             SefinEmissaoResponseDto dto = objectMapper.readValue(body, SefinEmissaoResponseDto.class);
             RespostaEmissaoSefin resposta = dto.paraDominio();
             if (!resposta.isSucesso() && !resposta.isEmProcessamento()) {
+                log.debug("Corpo da resposta de rejeição na emissão pelo Sefin: {}", body);
                 throw new SefinTransmissaoException(
                         String.format("Rejeição do Sefin Nacional (Status %d): %s", resposta.codigoStatus(), resposta.motivoStatus()),
                         status,
@@ -374,8 +377,9 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             return resposta;
         }
 
+        log.debug("Corpo da resposta HTTP {} na emissão de DPS pelo Sefin: {}", status, body);
         throw new SefinTransmissaoException(
-                String.format("Erro HTTP %d retornado pelo Sefin Nacional: %s", status, body),
+                String.format("Erro HTTP %d retornado pelo Sefin Nacional.", status),
                 status,
                 null,
                 body
@@ -390,6 +394,7 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             SefinConsultaNfseResponseDto dto = objectMapper.readValue(body, SefinConsultaNfseResponseDto.class);
             RespostaConsultaNfse resposta = dto.paraDominio();
             if (!resposta.isEncontrada()) {
+                log.debug("Corpo da resposta de consulta não autorizada no Sefin: {}", body);
                 throw new SefinTransmissaoException(
                         String.format("Consulta retornou status não autorizado (%d): %s", resposta.codigoStatus(), resposta.motivoStatus()),
                         status,
@@ -400,8 +405,9 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             return resposta;
         }
 
+        log.debug("Corpo da resposta HTTP {} na consulta de NFS-e no Sefin: {}", status, body);
         throw new SefinTransmissaoException(
-                String.format("Erro HTTP %d ao consultar NFS-e no Sefin: %s", status, body),
+                String.format("Erro HTTP %d ao consultar NFS-e no Sefin Nacional.", status),
                 status,
                 null,
                 body
@@ -422,8 +428,9 @@ public class SefinClientAdapter implements TransmissorSefinPort {
             return dto.paraDominio();
         }
 
+        log.debug("Corpo da resposta HTTP {} na consulta de DPS no Sefin: {}", status, body);
         throw new SefinTransmissaoException(
-                String.format("Erro HTTP %d ao consultar DPS por Id no Sefin: %s", status, body),
+                String.format("Erro HTTP %d ao consultar DPS por Id no Sefin Nacional.", status),
                 status,
                 null,
                 body

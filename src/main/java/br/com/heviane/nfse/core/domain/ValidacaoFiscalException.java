@@ -9,15 +9,21 @@ import java.util.List;
  */
 public class ValidacaoFiscalException extends RuntimeException {
 
+    private final String mensagemBase;
     private final List<String> erros;
 
     public ValidacaoFiscalException(String mensagem, List<String> erros) {
         super(mensagem + (erros != null && !erros.isEmpty() ? ": " + String.join("; ", erros) : ""));
+        this.mensagemBase = mensagem;
         this.erros = erros != null ? List.copyOf(erros) : Collections.emptyList();
     }
 
     public ValidacaoFiscalException(String mensagem) {
         this(mensagem, Collections.emptyList());
+    }
+
+    public String getMensagemBase() {
+        return mensagemBase != null ? mensagemBase : getMessage();
     }
 
     public List<String> getErros() {
