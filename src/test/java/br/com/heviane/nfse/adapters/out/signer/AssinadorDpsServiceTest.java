@@ -58,7 +58,7 @@ class AssinadorDpsServiceTest {
         assertThat(xmlAssinado).contains("Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"");
 
         // 5. Referência deve apontar para o Id da DPS
-        assertThat(xmlAssinado).contains("URI=\"#DPS353060710005555555555500900000001903128101\"");
+        assertThat(xmlAssinado).contains("URI=\"#DPS353060710000000000019100001000001903128101\"");
 
         // 6. Deve conter os dados do Certificado X.509 em KeyInfo
         assertThat(xmlAssinado).contains("<X509Certificate>");

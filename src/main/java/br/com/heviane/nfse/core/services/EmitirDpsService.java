@@ -62,10 +62,13 @@ public class EmitirDpsService implements EmitirDpsUseCase {
         // 1. Validação estrita de coerência do ambiente fiscal (<tpAmb>) - Princípio de Imutabilidade
         validarTipoAmbiente(xmlDps, amb);
 
-        // 2. Validação estrita do schema XSD
+        // 2. Validação estrita de coerência do Id da DPS contra os campos declarados
+        validarCoerenciaIdDps(xmlDps);
+
+        // 3. Validação estrita do schema XSD
         validadorSchemaPort.validarDpsOuFalhar(xmlDps);
 
-        // 3. Assinatura digital ICP-Brasil A1 (RSA-SHA256)
+        // 4. Assinatura digital ICP-Brasil A1 (RSA-SHA256)
         String xmlDpsAssinado = assinadorDpsPort.assinar(xmlDps, certificado);
 
         // 4. Transmissão com handshake mTLS e resiliência de reconciliação
@@ -247,6 +250,53 @@ public class EmitirDpsService implements EmitirDpsUseCase {
                         String.format("Inconsistência de ambiente fiscal: O XML da DPS declara <tpAmb>%d</tpAmb>, mas o serviço está configurado para operar em %s (código %d). Corrija o campo <tpAmb> no ERP ou aponte a requisição para o ambiente correspondente.",
                                 tpAmbXml, amb, amb.getCodigo())
                 );
+            }
+        }
+    }
+
+    private void validarCoerenciaIdDps(String xmlDps) {
+        Pattern patternId = Pattern.compile("<infDPS\\b[^>]*\\bId=[\"']([^\"']+)[\"']");
+        Matcher matcherId = patternId.matcher(xmlDps);
+        if (!matcherId.find()) {
+            return;
+        }
+        String idDeclarado = matcherId.group(1);
+
+        Pattern patternCLocEmi = Pattern.compile("<cLocEmi>(\\d+)</cLocEmi>");
+        Pattern patternSerie = Pattern.compile("<serie>(\\d+)</serie>");
+        Pattern patternNDps = Pattern.compile("<nDPS>(\\d+)</nDPS>");
+        Pattern patternCnpjPrest = Pattern.compile("<prest>[\\s\\S]*?<CNPJ>(\\d+)</CNPJ>[\\s\\S]*?</prest>");
+        Pattern patternCpfPrest = Pattern.compile("<prest>[\\s\\S]*?<CPF>(\\d+)</CPF>[\\s\\S]*?</prest>");
+
+        Matcher matcherCLocEmi = patternCLocEmi.matcher(xmlDps);
+        Matcher matcherSerie = patternSerie.matcher(xmlDps);
+        Matcher matcherNDps = patternNDps.matcher(xmlDps);
+        Matcher matcherCnpj = patternCnpjPrest.matcher(xmlDps);
+        Matcher matcherCpf = patternCpfPrest.matcher(xmlDps);
+
+        boolean temCLocEmi = matcherCLocEmi.find();
+        boolean temSerie = matcherSerie.find();
+        boolean temNDps = matcherNDps.find();
+        boolean temCnpj = matcherCnpj.find();
+        boolean temCpf = matcherCpf.find();
+
+        if (temCLocEmi && temSerie && temNDps && (temCnpj || temCpf)) {
+            String cLocEmi = matcherCLocEmi.group(1);
+            String serie = matcherSerie.group(1);
+            String nDps = matcherNDps.group(1);
+            String tipoInsc = temCnpj ? DpsIdHelper.TIPO_INSC_CNPJ : DpsIdHelper.TIPO_INSC_CPF;
+            String documento = temCnpj ? matcherCnpj.group(1) : matcherCpf.group(1);
+
+            try {
+                String idEsperado = DpsIdHelper.gerarId(cLocEmi, tipoInsc, documento, serie, nDps);
+                if (!idDeclarado.equals(idEsperado)) {
+                    throw new ValidacaoFiscalException(
+                            String.format("Inconsistência no atributo Id da DPS: o Id informado '%s' não corresponde aos dados declarados no XML (esperado: '%s' para cLocEmi=%s, tipoInsc=%s, documento=%s, serie=%s, nDPS=%s). Corrija o atributo Id na origem.",
+                                    idDeclarado, idEsperado, cLocEmi, tipoInsc, documento, serie, nDps)
+                    );
+                }
+            } catch (IllegalArgumentException e) {
+                throw new ValidacaoFiscalException("Falha ao validar coerência do Id da DPS: " + e.getMessage());
             }
         }
     }

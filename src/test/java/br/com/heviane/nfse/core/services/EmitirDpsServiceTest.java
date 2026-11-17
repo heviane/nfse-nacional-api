@@ -306,4 +306,56 @@ class EmitirDpsServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Ambiente é obrigatório para emissão fiscal.");
     }
+
+    @Test
+    @DisplayName("Deve rejeitar emissão com ValidacaoFiscalException quando Id da DPS divergir dos campos declarados no XML")
+    void deveRejeitarEmissaoQuandoIdDpsDivergirDosCamposDeclarados() {
+        String xmlDpsComIdDivergente = """
+                <DPS versao="1.00">
+                    <infDPS Id="DPS353060710005555555555500900000000000000001">
+                        <tpAmb>2</tpAmb>
+                        <serie>00001</serie>
+                        <nDPS>1</nDPS>
+                        <cLocEmi>3530607</cLocEmi>
+                        <prest><CNPJ>00000000000191</CNPJ></prest>
+                    </infDPS>
+                </DPS>
+                """;
+
+        assertThatThrownBy(() -> service.emitir(xmlDpsComIdDivergente, AmbienteSefin.HOMOLOGACAO, certificado))
+                .isInstanceOf(ValidacaoFiscalException.class)
+                .hasMessageContaining("Inconsistência no atributo Id da DPS: o Id informado 'DPS353060710005555555555500900000000000000001' não corresponde aos dados declarados no XML");
+
+        verify(assinadorDpsPort, never()).assinar(anyString(), any());
+        verify(transmissorSefinPort, never()).emitirDps(any(), any());
+    }
+
+    @Test
+    @DisplayName("Deve permitir emissão quando Id da DPS for perfeitamente coerente com os campos declarados")
+    void devePermitirEmissaoQuandoIdDpsForPerfeitamenteCoerenteComCamposDeclarados() {
+        String xmlDpsCoerente = """
+                <DPS versao="1.00">
+                    <infDPS Id="DPS353060710000000000019100001000000000000001">
+                        <tpAmb>2</tpAmb>
+                        <serie>00001</serie>
+                        <nDPS>1</nDPS>
+                        <cLocEmi>3530607</cLocEmi>
+                        <prest><CNPJ>00000000000191</CNPJ></prest>
+                    </infDPS>
+                </DPS>
+                """;
+
+        RespostaEmissaoSefin respostaMock = new RespostaEmissaoSefin(
+                2, "Sefin_1.0", "2026-11-05T12:00:00-03:00",
+                100, "Autorizado", CHAVE_ACESSO_50, "GZIP"
+        );
+        when(assinadorDpsPort.assinar(eq(xmlDpsCoerente), eq(certificado))).thenReturn(xmlDpsCoerente + "<Signature/>");
+        when(transmissorSefinPort.emitirDps(any(RequisicaoEnvioDps.class), eq(certificado))).thenReturn(respostaMock);
+
+        RespostaEmissaoSefin resultado = service.emitir(xmlDpsCoerente, AmbienteSefin.HOMOLOGACAO, certificado);
+
+        assertThat(resultado).isNotNull();
+        assertThat(resultado.isSucesso()).isTrue();
+        verify(assinadorDpsPort).assinar(eq(xmlDpsCoerente), eq(certificado));
+    }
 }
