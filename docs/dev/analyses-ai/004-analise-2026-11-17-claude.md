@@ -1,4 +1,4 @@
-# Análise do `nfse-nacional-api` (17/11/2026)
+# Análise do `nfse-nacional-api` por Claude (17/11/2026)
 
 Revisei o código, os XSDs, os testes e a documentação. A maior parte dos itens das análises anteriores (001, 002, 003) já foi resolvida: retry sem engolir exceções de domínio, ambiente autoritativo, cancelamento assinado com Id `PRE…`, coerência do Id da DPS, reconciliação por `GET /dps/{id}`, cache de `CertificadoA1`. Abaixo estão os problemas que **ainda existem**, em ordem de gravidade.
 

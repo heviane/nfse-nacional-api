@@ -108,6 +108,29 @@ O desenvolvimento é orientado a especificações (**Spec-Driven Development —
 
 ---
 
+### Épico 8: Evolução Operacional & Persistência Relacional (Fase 2 do Roadmap Técnico) (⚪ A Fazer pós-homologação)
+
+| Status |    ID    | Prioridade | Item                                                                                          | Descrição / Critérios de Aceite                                                                                                                                                                                                                   |
+| :----: | :------: | :--------: | :-------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|   ⚪   | `OPS-02` |    `P1`    | **Migração do Histórico Fiscal para Banco Relacional (PostgreSQL / Flyway / Spring Data JPA)** | Substituir o armazenamento em `.jsonl` por banco relacional estruturado quando o volume exigir. Criar tabelas de histórico e conciliação com índices por CNPJ, competência, chave e situação (`PENDENTE`, `CONCLUIDO`, `PROCESSADO`, `FALHA`). |
+|   ⚪   | `OPS-03` |    `P2`    | **Fila de Processamento Assíncrono Desacoplada (Worker / Mensageria)**                        | Desacoplar polling de status 105 da thread HTTP REST via mensageria (RabbitMQ, SQS ou Spring Async/Events) para suportar emissões em alto volume sem reter conexões HTTP.                                                                       |
+|   ⚪   | `OPS-04` |    `P2`    | **Hardening de CI/CD & Segurança de Dependências**                                            | Fixar GitHub Actions por SHA de commit imutável e definir política de bloqueio no OWASP Dependency-Check (falhar pipeline em vulnerabilidades com CVSS ≥ 9.0).                                                                                  |
+|   ⚪   | `OPS-05` |    `P1`    | **Pipeline de CD e Deploy Automatizado na BrasilCloud**                                       | Workflow GitHub Actions para compilação do `.war`, deploy contínuo via SSH/SFTP no Tomcat gerenciado, validação pós-deploy (`GET /health`) e rollback automático.                                                                                 |
+
+---
+
+### Épico 9: Produto Comercial Multiempresa & SaaS (Fase 3 do Roadmap de Negócio) (💡 Ideação / Em Análise)
+
+| Status |    ID     | Prioridade | Item                                                                  | Descrição / Critérios de Aceite                                                                                                                                                                         |
+| :----: | :-------: | :--------: | :-------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|   💡   | `PROD-01` |    `P1`    | **Arquitetura Multi-tenant & Isolamento por Empresa**                 | Identificação dinâmica do emissor via autenticação (API Key / JWT), garantindo estrito isolamento lógico de configurações fiscais, credenciais e histórico entre múltiplos clientes no mesmo runtime.  |
+|   💡   | `PROD-02` |    `P1`    | **Gestão Segura de Certificados Digitais em Nuvem (Cofre / Vault)**   | Armazenamento criptografado de certificados A1 de múltiplos clientes com rotação programada, alertas de expiração e isolamento de chaves privadas estritamente em memória.                             |
+|   💡   | `PROD-03` |    `P2`    | **Geração e Download de DANFSe (PDF)**                                | Módulo de renderização visual do Documento Auxiliar da NFS-e Nacional em PDF a partir do XML oficial distribuído pelo Sefin Nacional.                                                                 |
+|   💡   | `PROD-04` |    `P2`    | **Webhooks de Eventos Fiscais & Notificações Assíncronas**             | Disparo automatizado de callbacks HTTP aos ERPs clientes notificando autorização, rejeição ou cancelamento de notas em tempo real.                                                                      |
+|   💡   | `PROD-05` |    `P2`    | **Painel Administrativo Web (Dashboard de Gestão Fiscal e Métricas)**  | Interface gráfica moderna (React/Vite) para monitoramento de emissores, volume de notas, métricas Micrometer, status de certificados e feed de comunicados oficiais da Receita Federal.                |
+
+---
+
 ## 💡 Banco de Ideias & Melhorias Futuras
 
 Propostas técnicas para avaliação nas próximas iterações:

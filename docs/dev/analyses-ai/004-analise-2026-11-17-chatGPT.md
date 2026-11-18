@@ -1,4 +1,4 @@
-# Análise do `nfse-nacional-api` (17/11/2026)
+# Análise do `nfse-nacional-api` por chatGPT (17/11/2026)
 
 Analisei a estrutura pública do repositório [heviane/nfse-nacional-api](https://github.com/heviane/nfse-nacional-api?utm_source=chatgpt.com), incluindo o README, configuração Maven, diretrizes de desenvolvimento e documentação técnica disponível.
 
