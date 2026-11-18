@@ -45,5 +45,3 @@ E:\Projects\GitHub\heviane\project-starter-kit/
 ```
 
 ---
-
-## 🚦
