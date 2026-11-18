@@ -37,6 +37,7 @@ application-local.yaml
 *.zip
 *.tar.gz
 *.rar
+!src/test/resources/**
 hs_err_pid*
 replay_pid*
 

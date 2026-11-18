@@ -334,7 +334,7 @@ class LegacySoapControllerTest {
                             <DPS versao="1.00">
                               <infDPS Id="DPS320520020000000000019100001000000000000031">
                                 <tpAmb>2</tpAmb>
-                                <IBSCBS><totCIBS><vTotNF>100.00</vTotNF></IBSCBS>
+                                <IBSCBS><totCIBS><vTotNF>100.00</vTotNF></totCIBS></IBSCBS>
                               </infDPS>
                             </DPS>
                           </infNFSe>
