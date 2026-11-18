@@ -1,6 +1,6 @@
 # SPEC-004: Extensão da Camada Anticorrupção (ACL GeneXus) para Consulta e Cancelamento SOAP
 
-> **Status:** `Aprovado`  
+> **Status:** `Aprovado (aguardando amostras reais do cliente)`  
 > **Autor(a):** @heviane  
 > **Data de Criação:** 2026-11-09 &bull; **Última Atualização:** 2026-11-09  
 > **Épico Relacionado:** [Épico 6 — Exposição da API REST, Camada Anticorrupção & Deploy BrasilCloud](https://github.com/heviane/nfse-nacional-api/issues/7)  

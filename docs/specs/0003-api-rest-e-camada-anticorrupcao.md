@@ -77,8 +77,11 @@ A aplicação atua como um middleware desacoplado com dois propósitos fundament
 ## 4. ⚙️ Provedor de Certificado Digital em Memória
 
 A resolução do certificado A1 segue a hierarquia:
-1. **Prioridade 1:** Headers da requisição HTTP (`X-Certificado-Base64` / `X-Certificado-Senha`).
-2. **Prioridade 2:** Variáveis de ambiente do servidor configuradas no `setenv.sh` do Tomcat:
+1. **Prioridade 1:** Headers da requisição HTTP (`X-Certificado-Base64` / `X-Certificado-Senha`), quando explicitamente habilitado via `NFSE_ALLOW_CERT_HEADERS=true`.
+2. **Prioridade 2:** Arquivo em disco no servidor configurado via:
+   - `NFSE_CERT_PATH`: Caminho absoluto do arquivo `.pfx` / `.p12` no servidor (com cache em memória e invalidação por `lastModified`).
+   - `NFSE_CERT_PASSWORD`: Senha do certificado.
+3. **Prioridade 3:** Variáveis de ambiente com certificado em Base64:
    - `NFSE_CERT_BASE64`: Conteúdo do `.pfx` codificado em Base64.
    - `NFSE_CERT_PASSWORD`: Senha do certificado.
 

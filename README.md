@@ -42,10 +42,11 @@ flowchart LR
 
 ## 🚀 Funcionalidades do MVP
 
-- [x] **Emissão de DPS:** Envio síncrono e assíncrono de DPS gerando a NFS-e oficial.
-- [x] **Consulta de Notas & Lotes:** Consulta do status de processamento e recuperação do XML/DANFSE.
-- [x] **Eventos da Nota:** Registro de cancelamento e substituição de NFS-e.
+- [x] **Emissão de DPS:** Envio e transmissão síncrona/assíncrona de DPS individual gerando a NFS-e oficial nacional.
+- [x] **Consulta de NFS-e & DPS:** Consulta de situação por Id da DPS e recuperação de NFS-e autorizada por Chave de Acesso (50 dígitos).
+- [x] **Eventos da Nota:** Registro de evento de cancelamento oficial da NFS-e (Evento 101101).
 - [x] **Gerenciamento de Certificado A1:** Carga e leitura segura de certificados em memória sem persistência desprotegida.
+- [x] **Camada Anticorrupção (ACL SOAP):** Emulação transparente do WebService municipal da SIL Tecnologia para ERPs legados (GeneXus 18).
 
 ---
 

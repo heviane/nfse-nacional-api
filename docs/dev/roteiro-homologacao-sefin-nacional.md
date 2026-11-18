@@ -101,8 +101,8 @@ Dispare a emissão pelo próprio ERP GeneXus ou via `curl` simulando o envelope 
 ```bash
 curl -X POST http://localhost:8080/prefeitura/notafiscal/nfse.asmx \
   -H "Content-Type: text/xml; charset=utf-8" \
-  -H "SOAPAction: \"http://www.abrasf.org.br/nfse.xsd/GerarNfse\"" \
-  --data-binary @scripts/samples/envelope-soap-envio-dps.xml
+  -H "SOAPAction: \"http://www.siltecnologia.com.br/GerarNfse\"" \
+  --data-binary @src/test/resources/samples/envelope-soap-genexus.xml
 ```
 
 ### Passo 4: Avaliação do Retorno do Sefin Nacional

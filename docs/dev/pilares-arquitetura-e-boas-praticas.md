@@ -79,7 +79,7 @@ graph TD
   - O repositório mantém documentação sincronizada em tempo real com o código-fonte:
     - **ADRs (`docs/adrs/`):** Histórico de decisões arquiteturais com alternativas consideradas e justificativas técnicas (ex: rejeição de JAXB em favor de DOM puro no Java 17).
     - **Specs (`docs/specs/`):** Especificações formais orientadas a testes (Spec-Driven Development).
-    - **Glossário (`docs/glossary.md`):** Dicionário de terminologias da Receita Federal, ABRASF e GeneXus.
+    - **Glossário (`docs/glossario-nfse.md`):** Dicionário de terminologias da Receita Federal, ABRASF e GeneXus.
     - **Manuais de Operação (`docs/dev/` e `docs/clients/`):** Procedimentos de deploy, rollback, roteiro de homologação e resolução de problemas.
 * **Benefícios:**
   - Eliminação da "arqueologia de código".

@@ -70,15 +70,15 @@ public class NfseCoreConfiguration {
     }
 
     @Bean
-    public OpenAPI openAPI() {
+    public OpenAPI openAPI(@org.springframework.beans.factory.annotation.Value("${info.app.version:0.1.0-SNAPSHOT}") String appVersion) {
         return new OpenAPI()
                 .info(new Info()
                         .title("NFS-e Nacional API & Middleware")
-                        .version("1.0.0")
+                        .version(appVersion)
                         .description("API REST e Middleware de Integração com o Ambiente Nacional da NFS-e (Sefin Nacional / ADN). " +
                                 "Inclui Camada Anticorrupção (ACL) para emulação de WebService SOAP para ERPs legados.")
                         .contact(new Contact().name("Heviane").url("https://github.com/heviane/nfse-nacional-api"))
-                        .license(new License().name("Apache 2.0")))
+                        .license(new License().name("MIT").url("https://opensource.org/licenses/MIT")))
                 .addSecurityItem(new SecurityRequirement().addList("ApiKeyAuth").addList("BearerAuth"))
                 .components(new Components()
                         .addSecuritySchemes("ApiKeyAuth", new SecurityScheme()
