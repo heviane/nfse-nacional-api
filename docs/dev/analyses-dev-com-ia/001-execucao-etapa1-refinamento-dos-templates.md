@@ -1,4 +1,4 @@
-# Refinamento dos Templates
+# Etapa 1: Refinamento dos Templates
 
 O refinamento dos **Templates** é a base mais concreta para garantir que os próximos projetos comecem com qualidade sênior desde o "commit zero".
 
