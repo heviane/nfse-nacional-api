@@ -16,6 +16,7 @@
 ## 🎯 Metodologia Central: Spec-Driven Development (SDD)
 
 Antes de escrever qualquer código de funcionalidade:
+
 1. **Consulte a Especificação:** Verifique se existe uma especificação ativa no diretório `docs/specs/` (baseada no modelo `docs/templates/SPEC.md`).
 2. **Entenda os Critérios de Aceite:** Trabalhe orientado aos cenários de teste e critérios de aceite descritos na spec.
 3. **Pequenos Ciclos de Entrega:** Implemente em incrementos pequenos, testando e validando a cada passo.
@@ -50,10 +51,10 @@ Antes de escrever qualquer código de funcionalidade:
 
 ## 📝 Convenção de Commits (Conventional Commits)
 
-Todas as mensagens de commit sugeridas ou criadas pelo agente devem seguir rigorosamente o padrão:
+Todas as mensagens de commit sugeridas ou criadas pelo agente devem seguir a especificação formal do **Conventional Commits**:
 
 ```text
-<tipo>(<escopo>): <descrição curta no imperativo>
+<tipo>(<escopo>): <descrição curta no imperativo em inglês>
 
 [corpo opcional explicando o motivo da mudança]
 
@@ -61,6 +62,7 @@ Todas as mensagens de commit sugeridas ou criadas pelo agente devem seguir rigor
 ```
 
 ### Tipos Permitidos:
+
 * `feat`: Nova funcionalidade para o usuário.
 * `fix`: Correção de bug.
 * `refactor`: Refatoração de código que não altera comportamento nem corrige bug.
@@ -68,6 +70,23 @@ Todas as mensagens de commit sugeridas ou criadas pelo agente devem seguir rigor
 * `docs`: Alterações exclusivamente em documentação.
 * `chore`: Atualização de tarefas de build, pacotes ou ferramentas auxiliares.
 * `perf`: Mudança de código que melhora performance.
+
+### Escopos Canônicos Recomendados:
+
+* `core`: Regras de negócio, emissores fiscais e serviços de domínio.
+* `crypto`: Assinatura digital RSA-SHA256, mTLS e gestão de certificados digitais.
+* `soap`: Camada Anticorrupção (ACL) GeneXus, envelope XML e WSDL.
+* `xml`: Schemas e validação de pacotes XSD v1.00.
+* `api`: Controladores REST, DTOs e endpoints HTTP.
+* `docs`: Alterações de documentação e especificações.
+* `ci`: Pipelines e automações de build.
+
+### Regras Mandatórias de Atomicidade e Idioma:
+
+1. **Commit Atômico & Responsabilidade Única (Single-Purpose Commits):** Cada commit DEVE conter estritamente um único propósito lógico. É proibido criar "commits combo" misturando refatoração com documentação, ou novas features com atualização de dependências.
+2. **Reversibilidade Limpa (Clean Revert):** Todo commit deve ser isolado e autocontido, permitindo `git revert <hash>` sem introduzir efeitos colaterais em arquivos não correlacionados.
+3. **Garantia de Pipeline Verde Contínuo (Always Green / Bisect-Safe):** Nenhum commit intermediário pode deixar o repositório quebrado. A cada commit individual, todos os testes automatizados e compilação do Maven devem passar com 100% verde.
+4. **Idioma Canônico & Modo Imperativo:** Todas as mensagens de commit DEVEM ser escritas em **inglês**, utilizando verbos no modo imperativo (`add`, `fix`, `sync`, `enforce`, `bump`, `polish`, `remove`), assegurando conformidade com padrões internacionais de engenharia e ferramentas de release automatizado.
 
 ---
 
