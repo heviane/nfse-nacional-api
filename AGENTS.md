@@ -49,20 +49,25 @@ Antes de escrever qualquer código de funcionalidade:
 * **Zero Vazamento de Dados Sensíveis de Clientes (Privacidade & LGPD):** NUNCA enviar, expor ou comitar dados sensíveis ou reais de clientes (Razão Social, Nome Fantasia, CNPJ, Inscrição Municipal, CPF, Endereço, Telefone, E-mail, Chaves de Acesso reais) para o repositório remoto Git. Quaisquer exemplos, testes unitários, payloads ou documentações públicas DEVEM utilizar estritamente dados fictícios/genéricos sanitizados.
 * **Proibição Estrita de Testes em Produção sem Aprovação Humana Explícita:** Os agentes NUNCA devem executar requisições, testes de emissão, cancelamento ou consultas contra os ambientes de PRODUÇÃO de serviços governamentais (Sefin Nacional, Receita Federal, Prefeituras). Testes em produção exigem obrigatoriamente solicitação prévia formal e aprovação humana explícita (`Human-in-the-Loop`). Todo teste do agente deve ser direcionado exclusivamente ao ambiente de HOMOLOGAÇÃO ou dublês de teste (Mocks).
 * **Imutabilidade Absoluta dos Dados Fiscais Declarados pelo Cliente:** Nenhum valor de campo ou dado de negócio informado pelo cliente (inclusive `<tpAmb>`, valores, alíquotas ou dados cadastrais) deve ser alterado ou harmonizado silenciosamente pela API. Havendo qualquer divergência de ambiente, configuração ou dados fiscais, o middleware DEVE rejeitar a requisição e retornar uma mensagem de erro clara e instrutiva para que o cliente aplique a devida correção na origem (ERP) e reenvie.
+* **Auditoria de Pull Requests e Dependências Seguras:** Ao atuar no repositório, consulte os Pull Requests abertos via `gh pr list`. PRs com atualizações de dependências automatizadas (ex.: Dependabot, GitHub Actions) com CI verde e escopo seguro (minor/patch) devem ser incorporados via **Squash Merge** e sincronizados localmente (`git pull`). PRs conflitantes devem ser rejeitados com feedback técnico explícito.
+* **Nomenclatura Canônica em Inglês:** Nomes de pastas, diretórios e arquivos (`.md`, `.java`, `.xml`, `.json`, `.yaml`) DEVEM ser SEMPRE escritos em **inglês** em formato `kebab-case` para diretórios/docs ou convenções canônicas Java (`PascalCase` para classes, `camelCase` para métodos/variáveis). Os conteúdos textuais das documentações permanecem em Português (pt-BR).
 
 ---
 
-## 📦 Padrões de Código e Arquitetura
+## 📦 5. Padrões de Código e Arquitetura
 
 * **Stack Oficial:** Java 17+, Maven, Spring Boot (com empacotamento WAR para servlet container Tomcat).
 * **Princípios:** Siga os princípios SOLID, Clean Code e Clean Architecture. Separe claramente o Core Fiscal (validação de schemas XSD, geração de DPS e assinatura) dos adaptadores web e clientes HTTP.
 * **Validações Fiscais:** Validação estrita contra Schemas XSD oficiais do Sefin Nacional antes de qualquer tentativa de transmissão.
 * **Assinatura Digital:** Padrão W3C XML Signature (RSA-SHA256) na tag `infDPS` via JCA (Java Cryptography Architecture) e certificados PKCS#12 (A1).
 * **Tratamento de Erros:** Evite blocos `catch` vazios. Capture exceções fiscais específicas e registre logs estruturados sem vazar dados sensíveis.
+* **Integridade de Testes (Anti-Test Tampering):** NUNCA ajustar ou flexibilizar asserções de testes existentes apenas para forçar aprovação de código com defeito. Testes automatizados expressam os critérios objetivos de aceitação da especificação (`SPEC.md`). Se um teste falhar, corrija a implementação em `src/`, NUNCA fragilize, comente ou mascare as asserções de teste.
+* **Prevenção de Deterioração Documental (Anti-Doc Rot):** NUNCA manter blocos extensos de código duplicados na documentação técnica (`docs/`) após sua implementação no código-fonte. A documentação pós-implementação deve focar no *porquê*, arquitetura e regras fiscais, referenciando os arquivos reais via links.
+* **Eliminação de Código Zumbi (Zero Zombie Code):** NUNCA manter código morto, métodos comentados ou rascunhos abandonados no repositório. O histórico do Git é o arquivo definitivo; trechos obsoletos devem ser removidos cirurgicamente.
 
 ---
 
-## 📝 Convenção de Commits (Conventional Commits)
+## 📝 6. Convenção de Commits (Conventional Commits)
 
 Todas as mensagens de commit sugeridas ou criadas pelo agente devem seguir a especificação formal do **Conventional Commits**:
 
@@ -100,10 +105,13 @@ Todas as mensagens de commit sugeridas ou criadas pelo agente devem seguir a esp
 2. **Reversibilidade Limpa (Clean Revert):** Todo commit deve ser isolado e autocontido, permitindo `git revert <hash>` sem introduzir efeitos colaterais em arquivos não correlacionados.
 3. **Garantia de Pipeline Verde Contínuo (Always Green / Bisect-Safe):** Nenhum commit intermediário pode deixar o repositório quebrado. A cada commit individual, todos os testes automatizados e compilação do Maven devem passar com 100% verde.
 4. **Idioma Canônico & Modo Imperativo:** Todas as mensagens de commit DEVEM ser escritas em **inglês**, utilizando verbos no modo imperativo (`add`, `fix`, `sync`, `enforce`, `bump`, `polish`, `remove`), assegurando conformidade com padrões internacionais de engenharia e ferramentas de release automatizado.
+5. **Rastreabilidade de IA & Co-Autoria (Git Co-Authorship):** Todo commit sugerido ou gerado com o auxílio de um agente de IA DEVE incluir no rodapé da mensagem o trailer canônico do Git: `Co-authored-by: Google Antigravity <antigravity[bot]@google.com>` (ou do respectivo modelo/agente), assegurando transparência, proveniência de código e visibilidade nativa de co-autoria no GitHub.
 
 ---
 
-## 🚀 Comandos Rápidos do Projeto
+## 🚀 7. Comandos Rápidos do Projeto
+
+* **Auditoria de PRs Remotos:** `gh pr list`
 
 * **Compilação e Resolução de Dependências:** `mvn clean compile`
 * **Execução em Desenvolvimento:** `mvn spring-boot:run`
